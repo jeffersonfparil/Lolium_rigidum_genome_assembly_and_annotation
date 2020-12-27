@@ -1,7 +1,5 @@
 #!/bin/bash
 ### Filter-out reads with average PHRED score < 10 with nanofilt
-pip3 install nanofilt
-pip3 install nanofilt --upgrade
 ### e.g.
 cd /data/Lolium_rigidum_ASSEMBLY
 echo '#!/bin/bash
@@ -15,11 +13,6 @@ cat FAST5/lol_full_protocol/*-nanofilted.fastq > FASTQ/lolium5.fastq ### About h
 rm nanofilt_for_parallel.sh
 
 ### Remove  adapters with porechop
-git clone https://github.com/rrwick/Porechop.git
-cd Porechop
-python3 setup.py install --user
-porechop -h
-cd -
 ### e.g.
 cd /data/Lolium_rigidum_ASSEMBLY
 time \
