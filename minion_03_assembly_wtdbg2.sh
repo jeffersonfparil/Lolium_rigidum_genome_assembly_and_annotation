@@ -1,7 +1,5 @@
 #!/bin/bash
 ### De novo assembly with wtdbg2
-git clone https://github.com/ruanjue/wtdbg2
-cd wtdbg2 && make
 ### e.g.
 cd /data/Lolium_rigidum_ASSEMBLY
 mkdir ASSEMBLY/

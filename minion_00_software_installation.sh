@@ -1,7 +1,7 @@
 #!/bin/bash
-#############################
-### Software installation ###
-#############################
+##############################################
+### Software installation for MinION reads ###
+##############################################
 
 ### Parameters:
 DIR=/data/Lolium_rigidum_ASSEMBLY/jeff_lolium/
@@ -28,10 +28,21 @@ chmod +x fastqc
 pip3 install nanofilt
 pip3 install nanofilt --upgrade
 
-
 ### Install porechop
 git clone https://github.com/rrwick/Porechop.git
 cd Porechop
 python3 setup.py install --user
 porechop -h
 cd -
+
+### Install wtdbg2
+git clone https://github.com/ruanjue/wtdbg2
+cd wtdbg2 && make
+#quick start with wtdbg2.pl
+./wtdbg2.pl -h
+
+### Download canu
+wget https://github.com/marbl/canu/releases/download/v1.9/canu-1.9.Linux-amd64.tar.xz
+tar xf canu-1.9.Linux-amd64.tar.xz
+cd canu-1.9/Linux-amd64/bin/
+./canu -h
