@@ -18,12 +18,6 @@ echo "deb http://mirror.oxfordnanoportal.com/apt ${PLATFORM}-stable non-free" | 
 sudo apt-get update
 sudo apt-get install ont-guppy ### cpu+gpu version; or sudo apt-get install ont-guppy-cpu for the cpu-only version
 
-### Download FastQC
-wget http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.7.zip
-unzip fastqc*
-cd FastQC
-chmod +x fastqc
-
 ### Install nanofilt using pip3 (assumes python3)
 pip3 install nanofilt
 pip3 install nanofilt --upgrade
@@ -40,9 +34,11 @@ git clone https://github.com/ruanjue/wtdbg2
 cd wtdbg2 && make
 #quick start with wtdbg2.pl
 ./wtdbg2.pl -h
+cd -
 
 ### Download canu
 wget https://github.com/marbl/canu/releases/download/v1.9/canu-1.9.Linux-amd64.tar.xz
 tar xf canu-1.9.Linux-amd64.tar.xz
 cd canu-1.9/Linux-amd64/bin/
 ./canu -h
+cd -
