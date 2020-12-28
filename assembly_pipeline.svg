@@ -816,8 +816,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="362.87163"
-     inkscape:cy="370.39611"
+     inkscape:cx="270.87163"
+     inkscape:cy="366.39611"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -855,7 +855,7 @@
      transform="translate(0,-125.02083)">
     <g
        id="g24654"
-       transform="translate(-0.39655202)">
+       transform="translate(0.13261465)">
       <g
          id="g24643">
         <path
@@ -872,7 +872,7 @@
     </g>
     <g
        id="g23682"
-       transform="translate(0,-26.987496)">
+       transform="translate(0.52916667,-26.987496)">
       <path
          style="fill:none;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.5291667;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker21792)"
          d="m 209.55065,262.60414 v 5.29167 h 27.78125 v 18.52083"
@@ -886,7 +886,7 @@
     </g>
     <g
        id="g23654"
-       transform="translate(0,-26.987496)">
+       transform="translate(0.52916667,-26.987496)">
       <path
          inkscape:connector-curvature="0"
          id="path19862"
@@ -900,7 +900,7 @@
     </g>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.5291667;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker13902)"
-       d="m 237.40761,198.55897 27.58281,28.66332"
+       d="m 237.93678,198.55897 27.58281,28.66332"
        id="path13896"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
@@ -908,16 +908,16 @@
        sodipodi:nodetypes="cc"
        inkscape:connector-curvature="0"
        id="path13898"
-       d="m 237.72816,198.69399 -26.9875,28.3822"
+       d="m 238.25733,198.69399 -26.9875,28.3822"
        style="fill:none;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.5291667;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker10215)" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.5291667;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker8774)"
-       d="m 133.6095,140.36668 v 15.02487"
+       d="m 134.13867,140.36668 v 15.02487"
        id="path8770"
        inkscape:connector-curvature="0" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.5291667;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker5378)"
-       d="M 237.32682,140.43282 V 189.599"
+       d="M 237.85599,140.43282 V 189.599"
        id="path5374"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
@@ -925,102 +925,19 @@
        sodipodi:nodetypes="cc"
        inkscape:connector-curvature="0"
        id="path4012"
-       d="m 133.67088,198.62869 27.33829,28.52252"
+       d="m 134.20005,198.62869 27.33829,28.52252"
        style="fill:none;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.5291667;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker4016)" />
     <path
        inkscape:connector-curvature="0"
        id="path2848"
-       d="m 133.6095,164.17918 v 25.55211"
+       d="m 134.13867,164.17918 v 25.55211"
        style="fill:none;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.5291667;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker2852)" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.5291667;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker16042)"
-       d="m 133.74691,198.69399 -26.9875,28.3822"
+       d="m 134.27608,198.69399 -26.9875,28.3822"
        id="path1580"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
-    <rect
-       style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.53990382;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       id="rect8829"
-       width="82.020844"
-       height="97.895844"
-       x="2.6458333"
-       y="127.13754" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05555534px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="43.633862"
-       y="137.63168"
-       id="text1602"><tspan
-         sodipodi:role="line"
-         id="tspan1604"
-         x="43.633862"
-         y="137.63168">Softwares</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="22.896433"
-       y="149.11215"
-       id="text1608"><tspan
-         sodipodi:role="line"
-         id="tspan1610"
-         x="22.896435"
-         y="149.11215">Pre-processing</tspan></text>
-    <text
-       id="text1614"
-       y="154.93298"
-       x="12.842266"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       xml:space="preserve"><tspan
-         sodipodi:role="line"
-         id="tspan1652"
-         x="12.842266"
-         y="154.93298">- guppy (MinION)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1654"
-         x="12.842266"
-         y="156.69687" /><tspan
-         sodipodi:role="line"
-         id="tspan1656"
-         x="12.842266"
-         y="158.46075">- nanofilt (MinION)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1658"
-         x="12.842266"
-         y="160.22466" /><tspan
-         sodipodi:role="line"
-         id="tspan1660"
-         x="12.842266"
-         y="161.98854">- porechop (MinION)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1662"
-         x="12.842266"
-         y="163.75243" /><tspan
-         sodipodi:role="line"
-         id="tspan1664"
-         x="12.842266"
-         y="165.51631">- BayesHammer [SPAdes module] (Illumina)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1666"
-         x="12.842266"
-         y="167.28021" /><tspan
-         sodipodi:role="line"
-         id="tspan1668"
-         x="12.842266"
-         y="169.0441">- fastQC (Illumina &amp; MinION)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1670"
-         x="12.842266"
-         y="170.80798" /></text>
-    <text
-       id="text1674"
-       y="180.06841"
-       x="26.595776"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       xml:space="preserve"><tspan
-         sodipodi:role="line"
-         id="tspan1698"
-         x="26.595776"
-         y="180.06841">De novo assembly</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777778px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
@@ -1028,56 +945,12 @@
        y="185.62466"
        id="text1696"><tspan
          sodipodi:role="line"
-         id="tspan1688">- wtdbg2 (MinION)</tspan><tspan
+         id="tspan1712"></tspan><tspan
          sodipodi:role="line"
-         id="tspan1690"></tspan><tspan
-         sodipodi:role="line"
-         id="tspan1692">- canu (MinION)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1694"></tspan><tspan
-         sodipodi:role="line"
-         id="tspan1696">- SPAdes (Illumina)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1699"></tspan><tspan
-         sodipodi:role="line"
-         id="tspan1701">- Platanus-allee (Illumina)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1703"></tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="29.889977"
-       y="207.32047"
-       id="text1734"><tspan
-         sodipodi:role="line"
-         id="tspan1754"
-         x="29.889977"
-         y="207.32047">Consensus assembly</tspan></text>
-    <text
-       id="text1752"
-       y="213.14131"
-       x="12.842266"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       xml:space="preserve"><tspan
-         sodipodi:role="line"
-         id="tspan1410"
-         x="12.842266"
-         y="213.14131">- Platanus-allee (Illumina or MinION)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1412"
-         x="12.842266"
-         y="214.9052" /><tspan
-         sodipodi:role="line"
-         id="tspan1414"
-         x="12.842266"
-         y="216.66908">- Pilon (MinION assembly + Illumina reads)</tspan><tspan
-         sodipodi:role="line"
-         id="tspan1416"
-         x="12.842266"
-         y="218.43298" /></text>
+         id="tspan1714"></tspan></text>
     <g
        id="g1846"
-       transform="translate(5.2916726,-26.987496)">
+       transform="translate(5.8208393,-26.987496)">
       <rect
          style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.33101678;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          id="rect1764"
@@ -1112,7 +985,7 @@
     </g>
     <g
        id="g1859"
-       transform="translate(26.988157,-26.987496)">
+       transform="translate(27.517324,-26.987496)">
       <rect
          y="154.12497"
          x="198.43748"
@@ -1147,7 +1020,7 @@
     </g>
     <g
        id="g1349"
-       transform="translate(5.2916745,-24.341652)">
+       transform="translate(5.8208412,-24.341652)">
       <rect
          y="180.58331"
          x="113.77082"
@@ -1169,41 +1042,41 @@
     <text
        id="text1792-8"
        y="147.5432"
-       x="133.57324"
+       x="134.1024"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
          sodipodi:role="line"
          id="tspan1344"
-         x="133.57324"
+         x="134.1024"
          y="147.5432">guppy</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="133.61028"
+       x="134.13943"
        y="173.7356"
        id="text1353"><tspan
          sodipodi:role="line"
          id="tspan1365"
-         x="133.61028"
+         x="134.13943"
          y="173.7356">fastQC, nanofilt</tspan><tspan
          sodipodi:role="line"
          id="tspan1367"
-         x="133.61028"
+         x="134.13943"
          y="175.49948" /><tspan
          sodipodi:role="line"
          id="tspan1369"
-         x="133.61028"
+         x="134.13943"
          y="177.26337">and</tspan><tspan
          sodipodi:role="line"
          id="tspan1371"
-         x="133.61028"
+         x="134.13943"
          y="179.02727" /><tspan
          sodipodi:role="line"
          id="tspan1373"
-         x="133.61028"
+         x="134.13943"
          y="180.79115">porechop</tspan></text>
     <g
-       transform="translate(5.2916745,9.9537733)"
+       transform="translate(5.8208412,9.9537733)"
        id="g1394">
       <rect
          style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.28346565;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -1225,25 +1098,27 @@
     </g>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777778px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
-       x="119.97808"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="120.50725"
        y="214.80388"
        id="text1400"><tspan
          sodipodi:role="line"
-         id="tspan1705">wtdbg2</tspan></text>
+         id="tspan1705"
+         x="120.50725"
+         y="214.80388">wtdbg2</tspan></text>
     <text
        id="text1406"
        y="214.82196"
-       x="147.55072"
+       x="148.07988"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
          sodipodi:role="line"
          id="tspan1408"
-         x="147.55072"
+         x="148.07988"
          y="214.82196">canu</tspan></text>
     <g
        id="g1424"
-       transform="translate(-22.224983,47.095841)">
+       transform="translate(-21.695816,47.095841)">
       <rect
          y="180.58331"
          x="113.77082"
@@ -1277,7 +1152,7 @@
          style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.28346565;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     </g>
     <g
-       transform="translate(33.337515,47.095841)"
+       transform="translate(33.866682,47.095841)"
        id="g1442">
       <rect
          style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.28346565;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -1314,15 +1189,15 @@
     <text
        id="text1448"
        y="250.425"
-       x="133.55257"
+       x="134.08173"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
          sodipodi:role="line"
          id="tspan1450"
-         x="133.55257"
+         x="134.08173"
          y="250.425">Platanus-allee</tspan></text>
     <g
-       transform="translate(5.2916745,79.507304)"
+       transform="translate(5.8208412,79.507304)"
        id="g1462">
       <rect
          style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.28346565;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -1359,31 +1234,31 @@
     <text
        id="text1476"
        y="161.26721"
-       x="237.18031"
+       x="237.70947"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
          sodipodi:role="line"
          id="tspan1480"
-         x="237.18031"
+         x="237.70947"
          y="161.26721">fastQC</tspan><tspan
          sodipodi:role="line"
          id="tspan1482"
-         x="237.18031"
+         x="237.70947"
          y="163.0311" /><tspan
          sodipodi:role="line"
          id="tspan1484"
-         x="237.18031"
+         x="237.70947"
          y="164.79498">and</tspan><tspan
          sodipodi:role="line"
          id="tspan1486"
-         x="237.18031"
+         x="237.70947"
          y="166.55888" /><tspan
          sodipodi:role="line"
          id="tspan1488"
-         x="237.18031"
+         x="237.70947"
          y="168.32277">BayesHammer</tspan></text>
     <g
-       transform="translate(109.00899,9.9537733)"
+       transform="translate(109.53816,9.9537733)"
        id="g1496">
       <rect
          style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.28346565;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -1406,25 +1281,25 @@
     <text
        id="text1500"
        y="215.16992"
-       x="223.13809"
+       x="223.66725"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
          sodipodi:role="line"
          id="tspan1508"
-         x="223.13809"
+         x="223.66725"
          y="215.16992">SPAdes</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="251.71519"
+       x="252.24435"
        y="215.14925"
        id="text1504"><tspan
          sodipodi:role="line"
          id="tspan1506"
-         x="251.71519"
+         x="252.24435"
          y="215.14925">Platanus-allee</tspan></text>
     <g
-       transform="translate(81.227096,47.095841)"
+       transform="translate(81.756263,47.095841)"
        id="g1520">
       <rect
          style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.28346565;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -1460,7 +1335,7 @@
     </g>
     <g
        id="g1532"
-       transform="translate(136.78958,47.095841)">
+       transform="translate(137.31875,47.095841)">
       <rect
          y="180.58331"
          x="113.77082"
@@ -1495,7 +1370,7 @@
     </g>
     <g
        id="g1554"
-       transform="translate(109.00899,79.507304)">
+       transform="translate(109.53816,79.507304)">
       <rect
          y="180.58331"
          x="113.77082"
@@ -1531,15 +1406,15 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="185.45946"
+       x="185.98862"
        y="278.7955"
        id="text1560"><tspan
          sodipodi:role="line"
          id="tspan1562"
-         x="185.45946"
+         x="185.98862"
          y="278.7955">Pilon</tspan></text>
     <g
-       transform="translate(57.150332,106.62713)"
+       transform="translate(57.679499,106.62713)"
        id="g1574">
       <rect
          style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.28346565;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -1576,12 +1451,168 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="237.26988"
+       x="237.79904"
        y="250.42497"
        id="text11110"><tspan
          y="250.42497"
-         x="237.26988"
+         x="237.79904"
          id="tspan11108"
          sodipodi:role="line">Platanus-allee</tspan></text>
+    <g
+       id="g1788">
+      <rect
+         y="127.13754"
+         x="2.6458333"
+         height="97.895844"
+         width="82.020844"
+         id="rect8829"
+         style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#aeaeae;stroke-width:0.53990382;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text1602"
+         y="137.63168"
+         x="43.633862"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05555534px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           y="137.63168"
+           x="43.633862"
+           id="tspan1604"
+           sodipodi:role="line">Softwares</tspan></text>
+      <text
+         id="text1608"
+         y="149.11215"
+         x="22.896433"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           y="149.11215"
+           x="22.896435"
+           id="tspan1610"
+           sodipodi:role="line">Pre-processing</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         x="12.842266"
+         y="154.93298"
+         id="text1614"><tspan
+           y="154.93298"
+           x="12.842266"
+           id="tspan1652"
+           sodipodi:role="line">- guppy (MinION)</tspan><tspan
+           y="156.69687"
+           x="12.842266"
+           id="tspan1654"
+           sodipodi:role="line" /><tspan
+           y="158.46075"
+           x="12.842266"
+           id="tspan1656"
+           sodipodi:role="line">- nanofilt (MinION)</tspan><tspan
+           y="160.22466"
+           x="12.842266"
+           id="tspan1658"
+           sodipodi:role="line" /><tspan
+           y="161.98854"
+           x="12.842266"
+           id="tspan1660"
+           sodipodi:role="line">- porechop (MinION)</tspan><tspan
+           y="163.75243"
+           x="12.842266"
+           id="tspan1662"
+           sodipodi:role="line" /><tspan
+           y="165.51631"
+           x="12.842266"
+           id="tspan1664"
+           sodipodi:role="line">- BayesHammer [SPAdes module] (Illumina)</tspan><tspan
+           y="167.28021"
+           x="12.842266"
+           id="tspan1666"
+           sodipodi:role="line" /><tspan
+           y="169.0441"
+           x="12.842266"
+           id="tspan1668"
+           sodipodi:role="line">- fastQC (Illumina &amp; MinION)</tspan><tspan
+           y="170.80798"
+           x="12.842266"
+           id="tspan1670"
+           sodipodi:role="line" /></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         x="26.595776"
+         y="180.06841"
+         id="text1674"><tspan
+           y="180.06841"
+           x="26.595776"
+           id="tspan1698"
+           sodipodi:role="line">De novo assembly</tspan></text>
+      <text
+         id="text1734"
+         y="207.32047"
+         x="29.889977"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           y="207.32047"
+           x="29.889977"
+           id="tspan1754"
+           sodipodi:role="line">Consensus assembly</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         x="12.842266"
+         y="213.14131"
+         id="text1752"><tspan
+           y="213.14131"
+           x="12.842266"
+           id="tspan1410"
+           sodipodi:role="line">- Platanus-allee (Illumina or MinION)</tspan><tspan
+           y="214.9052"
+           x="12.842266"
+           id="tspan1412"
+           sodipodi:role="line" /><tspan
+           y="216.66908"
+           x="12.842266"
+           id="tspan1414"
+           sodipodi:role="line">- Pilon (MinION assembly + Illumina reads)</tspan><tspan
+           y="218.43298"
+           x="12.842266"
+           id="tspan1416"
+           sodipodi:role="line" /></text>
+      <text
+         id="text1736"
+         y="185.62424"
+         x="12.842266"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           y="185.62424"
+           x="12.842266"
+           id="tspan1738"
+           sodipodi:role="line">- wtdbg2 (MinION)</tspan><tspan
+           y="187.38812"
+           x="12.842266"
+           id="tspan1740"
+           sodipodi:role="line"></tspan><tspan
+           y="189.15201"
+           x="12.842266"
+           id="tspan1742"
+           sodipodi:role="line">- canu (MinION)</tspan><tspan
+           y="190.91591"
+           x="12.842266"
+           id="tspan1744"
+           sodipodi:role="line"></tspan><tspan
+           y="192.67979"
+           x="12.842266"
+           id="tspan1746"
+           sodipodi:role="line">- SPAdes (Illumina)</tspan><tspan
+           y="194.44368"
+           x="12.842266"
+           id="tspan1748"
+           sodipodi:role="line"></tspan><tspan
+           y="196.20757"
+           x="12.842266"
+           id="tspan1750"
+           sodipodi:role="line">- Platanus-allee (Illumina)</tspan><tspan
+           y="197.97147"
+           x="12.842266"
+           id="tspan1752"
+           sodipodi:role="line"></tspan></text>
+    </g>
   </g>
 </svg>
