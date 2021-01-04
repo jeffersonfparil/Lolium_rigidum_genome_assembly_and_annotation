@@ -4,7 +4,7 @@
 ##############################################
 
 ### Parameters:
-DIR=/data/Lolium_rigidum_ASSEMBLY/jeff_lolium/
+DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/
 
 ### Navigate to working directory
 cd $DIR
@@ -42,3 +42,6 @@ tar xf canu-1.9.Linux-amd64.tar.xz
 cd canu-1.9/Linux-amd64/bin/
 ./canu -h
 cd -
+
+### Clean-up
+rm canu-1.9.Linux-amd64.tar.xz

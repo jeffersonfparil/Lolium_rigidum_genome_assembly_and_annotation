@@ -1,19 +1,30 @@
 #!/bin/bash
-### Filter-out reads with average PHRED score < 10 with nanofilt
-### e.g.
-cd /data/Lolium_rigidum_ASSEMBLY
-echo '#!/bin/bash
-     FNAME=$1
-     NanoFilt -q 10 ${FNAME} > ${FNAME%.fastq*}-nanofilted.fastq
-     ' > nanofilt_for_parallel.sh
-chmod +x nanofilt_for_parallel.sh
-time \
-parallel ./nanofilt_for_parallel.sh {} ::: $(ls FAST5/lol_full_protocol/*.fastq)
-cat FAST5/lol_full_protocol/*-nanofilted.fastq > FASTQ/lolium5.fastq ### About half of the reads were discarded! So maybe realx -q from 10 to 5?
-rm nanofilt_for_parallel.sh
+#######################################################
+### Filter and trimm-off adapters from MinION reads ###
+#######################################################
 
-### Remove  adapters with porechop
-### e.g.
-cd /data/Lolium_rigidum_ASSEMBLY
+### Input:
+### (1) MinION reads in compressed fastq format (minion.fastq.gz)
+
+### Outputs:
+### (1) Filtered reads (minion-filtered.fastq.gz)
+### (2) Filtered and trimmed reads (minion-filtered-trimmed.fastq.gz)
+
+### Parameters:
+DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/
+
+### Navigate to the working directory
+cd $DIR
+
+### Filter-out reads with average PHRED score < 10 with nanofilt (PHRED threshold based on a qualitative look at the FastQC output)
 time \
-porechop --threads 32 --input FASTQ/lolium5.fastq --output FASTQ/lolium5-porechoped.fastq
+     gunzip -c minion.fastq.gz | \
+     NanoFilt -q 10 | \
+     gzip > minion-filtered.fastq.gz
+
+### Trim-off adapters with porechop
+time \
+porechop \
+     --threads 32 \
+     --input minion-filtered.fastq.gz \
+     --output minion-filtered-trimmed.fastq.gz

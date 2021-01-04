@@ -4,7 +4,7 @@
 ################################################
 
 ### Parameters:
-DIR=/data/Lolium_rigidum_ASSEMBLY/jeff_lolium/
+DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/
 
 ### Navigate to working directory
 cd $DIR
@@ -30,3 +30,12 @@ tar -xzf Platanus_allee_v2.2.2_Linux_x86_64.tgz
 cd Platanus_allee_v2.2.2_Linux_x86_64/
 ./platanus_allee
 cd -
+
+### Install Biopython, and pandas
+pip3 install biopython
+pip3 install pandas
+
+### Clean-up
+rm fastqc_v0.11.7.zip
+rm SPAdes-3.14.1-Linux.tar.gz
+rm Platanus_allee_v2.2.2_Linux_x86_64.tgz
