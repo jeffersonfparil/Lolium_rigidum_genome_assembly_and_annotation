@@ -22,26 +22,31 @@ cd $DIR
 
 ### Quality check
 time parallel ${FASTQC} {} ::: $(ls *.fastq.gz)
+mkdir QC/
+mv *.html QC/
+mv *.zip QC/
 
 ### Bayesian error correction (may need to link python3 via: sudo ln -s /usr/bin/python3 /usr/bin/python)
 time \
 for i in 0 1 2 3 4
 do
 # i=1
-mkdir ${DIR}/BayesHammer_output_WGS-${i}/
+mkdir BayesHammer_output_WGS-${i}/
 time \
 $SPADES \
     --only-error-correction \
     --threads 32 \
     --memory 280 \
-    -1 ${DIR}/LOL-WGS-${i}_combined_R1.fastq.gz \
-    -2 ${DIR}/LOL-WGS-${i}_combined_R2.fastq.gz \
-    -o ${DIR}/BayesHammer_output_WGS-${i}/
+    -1 LOL-WGS-${i}_combined_R1.fastq.gz \
+    -2 LOL-WGS-${i}_combined_R2.fastq.gz \
+    -o BayesHammer_output_WGS-${i}/
 done
 
 ### Clean-up
-mkdir QC/
-mv *.html QC/
-mv *.zip QC/
-
 mkdir BayesHammer_output/
+for i in 0 1 2 3 4
+do
+# i=1
+echo $i
+mv BayesHammer_output_WGS-${i}/corrected/LOL-WGS-*_R*.fastq.*.fastq.gz BayesHammer_output/ ### exclude the unpaired fastq.gz file from each read-pair
+done
