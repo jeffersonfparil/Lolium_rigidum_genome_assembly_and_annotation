@@ -7,11 +7,11 @@ Assembly of the *Lolium rigidum*, L. genome and genome annotations.
 
 Our objective is to generate a better genome assembly and genome annotations than that of the closely-related forage crop species [*Lolium perenne*](https://onlinelibrary.wiley.com/doi/full/10.1111/tpj.13037). The tentative genome assembly workflow is illustrated below:
 
-![assembly](misc/assembly_pipeline.png)
+![assembly](misc/assembly_pipeline.svg)
 
 The genome annotation pipeline has not been drafted yet:
 
-![annotation](misc/annotation_pipeline.png)
+![annotation](misc/annotation_pipeline.svg)
 
 The softwares we are using are linked below:
 - [Biopython](https://biopython.org/)
