@@ -28,3 +28,7 @@ porechop \
      --threads 32 \
      --input minion-filtered.fastq.gz \
      --output minion-filtered-trimmed.fastq.gz
+
+### Count the total number of bases sequenced
+zcat minion-filtered-trimmed.fastq.gz | paste - - - - | cut -f 2 | tr -d '\n' | wc -c > minion-filtered-trimmed.base.count
+### As of 2021-01-07 we have ~5 billion bases (5,369,872,027) sequenced which means ~2.68X depth of coverage

@@ -33,6 +33,9 @@ gzip ${OUTPUT}/minion.fastq
 ### Quality check
 time $FASTQC ${OUTPUT}/minion.fastq.gz
 
+### Count the total number of bases sequenced
+zcat ${OUTPUT}/minion.fastq.gz | paste - - - - | cut -f 2 | tr -d '\n' | wc -c > minion.base.count
+
 ### Clean-up
 mkdir guppy_output/
 mv *.fastq guppy_output/
