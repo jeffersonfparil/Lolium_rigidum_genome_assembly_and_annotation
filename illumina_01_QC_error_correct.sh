@@ -73,7 +73,7 @@ mv BayesHammer_output_WGS-*/corrected/*.fastq.*.fastq.gz BayesHammer_output/ ###
 time \
 for i in 1.0 1.1
 do
-# i=1
+# i=1.0
 mkdir BayesHammer_output_WGS-${i}/
 time \
 $SPADES \

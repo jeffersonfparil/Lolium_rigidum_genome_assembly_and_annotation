@@ -32,3 +32,43 @@ porechop \
 ### Count the total number of bases sequenced
 zcat minion-filtered-trimmed.fastq.gz | paste - - - - | cut -f 2 | tr -d '\n' | wc -c > minion-filtered-trimmed.base.count
 ### As of 2021-01-07 we have ~5 billion bases (5,369,872,027) sequenced which means ~2.68X depth of coverage
+
+### Plot histogram of read lengths
+echo '
+using FASTX
+using CodecZlib
+using Plots
+vec_lengths = []
+try
+     for record in FASTX.FASTQ.Reader(CodecZlib.GzipDecompressorStream(open("minion-filtered-trimmed.fastq.gz")))
+          # seq = FASTX.FASTQ.sequence(record)
+          push!(vec_lengths, FASTX.FASTQ.seqlen(record))
+     end
+catch
+     run(`gunzip minion-filtered-trimmed.fastq.gz`)
+     for record in FASTX.FASTQ.Reader(open("minion-filtered-trimmed.fastq"))
+          seq = FASTX.FASTQ.sequence(record)
+          push!(vec_lengths, length(seq))
+     end
+     run(`gzip minion-filtered-trimmed.fastq`)
+end
+vec_lengths = convert(Array{Int64,1}, vec_lengths)
+# using UnicodePlots
+# UnicodePlots.histogram(vec_lengths)
+hist = Plots.histogram(vec_lengths, legend=false);
+savefig("minion-filtered-trimmed.readlen.hist.svg")
+' > readlen_hist.jl
+julia readlen_hist.jl
+
+
+# ### TESTING SPAdes' BayesHammer error correction on these MinION (ONT) long read sequences
+# SPADES=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/SPAdes-3.14.1-Linux/bin/spades.py
+# mkdir BayesHammer_on_longreads_test_20210108/
+# time \
+# $SPADES \
+#     --only-error-correction \
+#     --threads 12 \
+#     --memory 45 \
+#     -s minion-filtered-trimmed.fastq.gz \
+#     -o BayesHammer_on_longreads_test_20210108/
+
