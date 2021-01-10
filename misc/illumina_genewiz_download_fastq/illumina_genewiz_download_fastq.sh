@@ -5,8 +5,8 @@ login_info=$1 #specify full path
 outdir=$2
 
 # #test:
-# login_info=/data/Athaliana_RNAseq/login.info
-# outdir=/data/Athaliana_RNAseq/
+# login_info=login_info_examples.csv
+# outdir=/data/
 
 echo "[Credentials]" > ~/.ossutilconfig
 echo "language=EN" >> ~/.ossutilconfig
