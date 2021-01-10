@@ -43,44 +43,14 @@ $SPADES \
     -o BayesHammer_output_WGS-${i}/
 done
 
-### Clean-up
+### Clean-up and another QC
 mkdir BayesHammer_output/
-mv BayesHammer_output_WGS-*/corrected/*.fastq.*.fastq.gz BayesHammer_output/ ### exclude the unpaired fastq.gz file from each read-pair
+mv BayesHammer_output_WGS-*/ BayesHammer_output/
+cd BayesHammer_output/
+mv BayesHammer_output_WGS-*/corrected/*.fastq.*.fastq.gz . ### exclude the unpaired fastq.gz file from each read-pair
 
-###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-### Repeat LOL-WGS-1* but divide into 2 first so that we don;t run into "<jemalloc>: Error in malloc(): out of memory"
-# time parallel gzip -d {} ::: $(ls *.fastq.gz)
-
-# wc -l *.fastq
-
-# head -n 220242640 LOL-WGS-1_combined_R1.fastq > 1.0-R1.fastq
-# head -n 220242640 LOL-WGS-1_combined_R2.fastq > 1.0-R2.fastq
-
-# tail -n 220242640 LOL-WGS-1_combined_R1.fastq > 1.1-R1.fastq
-# tail -n 220242640 LOL-WGS-1_combined_R2.fastq > 1.1-R2.fastq
-
-# gzip 1.0-R1.fastq
-# gzip 1.0-R2.fastq
-# gzip 1.1-R1.fastq
-# gzip 1.1-R2.fastq
-
-# mv 1.0-R1.fastq.gz LOL-WGS-1.0_combined_R1.fastq.gz
-# mv 1.0-R2.fastq.gz LOL-WGS-1.0_combined_R2.fastq.gz
-# mv 1.1-R1.fastq.gz LOL-WGS-1.1_combined_R1.fastq.gz
-# mv 1.1-R2.fastq.gz LOL-WGS-1.1_combined_R2.fastq.gz
-time \
-for i in 1.0 1.1
-do
-# i=1.0
-mkdir BayesHammer_output_WGS-${i}/
-time \
-$SPADES \
-    --only-error-correction \
-    --threads 32 \
-    --memory 280 \
-    -1 LOL-WGS-${i}_combined_R1.fastq.gz \
-    -2 LOL-WGS-${i}_combined_R2.fastq.gz \
-    -o BayesHammer_output_WGS-${i}/
-done
+time parallel ${FASTQC} {} ::: $(ls *.fastq.gz)
+mkdir QC/
+mv *.html QC/
+mv *.zip QC/
+cd -

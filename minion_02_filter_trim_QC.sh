@@ -61,14 +61,13 @@ savefig("minion-filtered-trimmed.readlen.hist.svg")
 julia readlen_hist.jl
 
 
-# ### TESTING SPAdes' BayesHammer error correction on these MinION (ONT) long read sequences
-# SPADES=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/SPAdes-3.14.1-Linux/bin/spades.py
-# mkdir BayesHammer_on_longreads_test_20210108/
-# time \
-# $SPADES \
-#     --only-error-correction \
-#     --threads 12 \
-#     --memory 45 \
-#     -s minion-filtered-trimmed.fastq.gz \
-#     -o BayesHammer_on_longreads_test_20210108/
-
+### TESTING SPAdes' BayesHammer error correction on these MinION (ONT) long read sequences
+SPADES=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/SPAdes-3.14.1-Linux/bin/spades.py
+mkdir BayesHammer_on_longreads_test_20210108/
+time \
+$SPADES \
+    --only-error-correction \
+    --threads 32 \
+    --memory 280 \
+    -s minion-filtered-trimmed.fastq.gz \
+    -o BayesHammer_on_longreads_test_20210108/
