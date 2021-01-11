@@ -9,6 +9,8 @@
 ### Outputs:
 ### (1) Filtered reads (minion-filtered.fastq.gz)
 ### (2) Filtered and trimmed reads (minion-filtered-trimmed.fastq.gz)
+### (3) Number of bases sequenced after filtering and trimming (minion-filtered-trimmed.base.count)
+### (4) Histogram of read length distribution (minion-filtered-trimmed.readlen.hist.svg)
 
 ### Parameters:
 DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/
@@ -60,14 +62,3 @@ savefig("minion-filtered-trimmed.readlen.hist.svg")
 ' > readlen_hist.jl
 julia readlen_hist.jl
 
-
-### TESTING SPAdes' BayesHammer error correction on these MinION (ONT) long read sequences
-SPADES=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/SPAdes-3.14.1-Linux/bin/spades.py
-mkdir BayesHammer_on_longreads_test_20210108/
-time \
-$SPADES \
-    --only-error-correction \
-    --threads 32 \
-    --memory 280 \
-    -s minion-filtered-trimmed.fastq.gz \
-    -o BayesHammer_on_longreads_test_20210108/

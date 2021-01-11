@@ -11,7 +11,8 @@
 
 ### Outputs:
 ### (1) Quality check html and zip files (*_fastqc.html and *_fastqc.zip)
-### (2) Error corrected reads in compressed fastq format (*cor.fastq.gz)
+### (2) Error corrected reads in compressed fastq format (BayesHammer_output/*.cor.fastq.gz)
+### (3) Number of bases sequenced after BayesHammer error correction (illumina-corrected.base.count)
 
 ### Parameters:
 DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA
@@ -47,10 +48,24 @@ done
 mkdir BayesHammer_output/
 mv BayesHammer_output_WGS-*/ BayesHammer_output/
 cd BayesHammer_output/
-mv BayesHammer_output_WGS-*/corrected/*.fastq.*.fastq.gz . ### exclude the unpaired fastq.gz file from each read-pair
-
-time parallel ${FASTQC} {} ::: $(ls *.fastq.gz)
+mv BayesHammer_output_WGS-*/corrected/*.cor.fastq.gz . ### exclude the unpaired fastq.gz file from each read-pair
+time parallel ${FASTQC} {} ::: $(ls *.cor.fastq.gz)
 mkdir QC/
 mv *.html QC/
 mv *.zip QC/
 cd -
+
+### Count the total number of bases sequenced
+echo '#!/bin/bash
+f=$1
+zcat ${f} | paste - - - - | cut -f 2 | tr -d "\n" | wc -c > ${f}.base.count
+' > parallel_count_bases.sh
+chmod +x parallel_count_bases.sh
+time \
+parallel ./parallel_count_bases.sh {} ::: $(ls BayesHammer_output/*.cor.fastq.gz)
+cat BayesHammer_output/*.base.count | paste -sd+ | bc > illumina-corrected.base.count
+### As of 2021-01-11 we have ~200.6 billion bases (200,617,065,600) sequenced which means ~100X depth of coverage
+
+### Clean-up
+rm parallel_count_bases.sh
+rm BayesHammer_output/*.base.count

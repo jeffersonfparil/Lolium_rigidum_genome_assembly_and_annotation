@@ -4,7 +4,7 @@
 ################################################
 
 ### Inputs:
-### (1) Error-corrected Illumina reads in compressed fastq format (*cor.fastq.gz)
+### (1) Error-corrected Illumina reads in compressed fastq format (BayesHammer_output/*cor.fastq.gz)
 
 ### Outputs:
 ### (1) scaffolds.fasta - contains resulting scaffolds (recommended for use as resulting sequences)
@@ -16,7 +16,7 @@
 ### Parameters:
 INPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/BayesHammer_output/
 SPADES=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/SPAdes-3.14.1-Linux/bin/spades.py
-OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSMEBLY/
+OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/
 
 ### Intialise and spades output folder
 mkdir ${OUTPUT_DIR}/SPADES_Lori_i1/
@@ -25,7 +25,6 @@ mkdir ${OUTPUT_DIR}/SPADES_Lori_i1/
 time \
 $SPADES \
     --only-assembler \
-    --careful \
     --threads 32 \
     --memory 280 \
     --pe1-1 ${INPUT_DIR}/LOL-WGS-0_combined_R1.fastq.00.0_0.cor.fastq.gz --pe1-2 ${INPUT_DIR}/LOL-WGS-0_combined_R2.fastq.00.0_0.cor.fastq.gz \
