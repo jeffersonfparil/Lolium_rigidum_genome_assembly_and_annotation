@@ -14,6 +14,7 @@ The genome annotation pipeline has not been drafted yet:
 ![annotation](misc/annotation_pipeline.svg)
 
 The softwares we are using are linked below:
+- Augustus [repository](https://github.com/Gaius-Augustus/Augustus) and [wiki](http://bioinf.uni-greifswald.de/bioinf/wiki/pmwiki.php?n=Augustus.Augustus)
 - [Biopython](https://biopython.org/)
 - [Canu](https://canu.readthedocs.io/en/latest/)
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)

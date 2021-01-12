@@ -34,8 +34,9 @@ wtdbg2/wtpoa-cns -t 32 \
                  -fo ${OUTPUT_BASENAME}.raw.fa
 
 ### Assembly statistics
-
-### (1) count the length of each scaffold
+### (1) count the total number of bases ###56,430,521:::20210112
+grep "len" ${OUTPUT_BASENAME}.raw.fa | cut -d'=' -f2 | paste -s -d'+' | bc > ${OUTPUT_BASENAME}.base.count
+### (2) count the length of each scaffold (generic script in python; a bash command like the one above will work faster but the use of the 'len' grep search key is not generic)
 echo 'from Bio import SeqIO
 import pandas as pd
 import sys
@@ -50,8 +51,8 @@ out.columns = ["SCAFFOLD", "LENGTH"]
 out = out.sort_values(["LENGTH"], ascending=[0])
 out.to_csv(fname_assembly.split(".")[0] + "-scaffold_stats.csv", header=True, sep=",")
 ' > extract_scaffold_stats.py
-
-### (2) calculate N50, L50 and plot
+python3 extract_scaffold_stats.py ${OUTPUT_BASENAME}.raw.fa
+### (3) calculate N50, L50 and plot
 echo '# generate histogram of scaffold sizes of the Lolium perenne reference genome
 library(RColorBrewer)
 library(stringr)
@@ -90,13 +91,13 @@ legend("right", legend=c(paste0("Assembly size = ", round(genome_size/1000000000
 						 ))
 dev.off()
 '  > extract_scaffold_stats.r
-
-### Execute
-python3 extract_scaffold_stats.py ${OUTPUT_BASENAME}.raw.fa
 Rscript extract_scaffold_stats.r ${OUTPUT_BASENAME}-scaffold_stats.csv
 
 ### Clean-up
 rm extract_scaffold_stats.*
+mkdir Lori_m1/
+mv Lori_m1.* Lori_m1/
+mv Lori_m1-* Lori_m1/
 
 ### Miscellaneous
 ### polish consensus, not necessary if you want to polish the assemblies using other tools

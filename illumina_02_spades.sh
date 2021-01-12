@@ -19,13 +19,14 @@ SPADES=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104
 OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/
 
 ### Intialise and spades output folder
-mkdir ${OUTPUT_DIR}/SPADES_Lori_i1/
+cd ${OUTPUT_DIR}
+mkdir SPADES_Lori_i1/
 
-### Assemble
+### Assemble with 16 threads and 280 RAM (number of threads reduced to avoid insufficient memory allocation per thread)
 time \
 $SPADES \
     --only-assembler \
-    --threads 32 \
+    --threads 16 \
     --memory 280 \
     --pe1-1 ${INPUT_DIR}/LOL-WGS-0_combined_R1.fastq.00.0_0.cor.fastq.gz --pe1-2 ${INPUT_DIR}/LOL-WGS-0_combined_R2.fastq.00.0_0.cor.fastq.gz \
     --pe2-1 ${INPUT_DIR}/LOL-WGS-1.0_combined_R1.fastq.00.0_0.cor.fastq.gz --pe2-2 ${INPUT_DIR}/LOL-WGS-1.0_combined_R2.fastq.00.0_0.cor.fastq.gz \

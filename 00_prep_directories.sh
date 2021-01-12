@@ -15,3 +15,4 @@ mkdir FASTQ/
 mkdir FASTQ/MINION/
 mkdir FASTQ/ILLUMINA/
 mkdir ASSEMBLY/
+mkdir ANNOTATION/
