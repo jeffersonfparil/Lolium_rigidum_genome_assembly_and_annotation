@@ -43,12 +43,13 @@ $SPADES \
     -2 LOL-WGS-${i}_combined_R2.fastq.gz \
     -o BayesHammer_output_WGS-${i}/
 done
+### Took 3 days, 6 hours, 14 minutes, and 47.296 seconds on 32 threads and 280 GB of RAM
 
 ### Clean-up and another QC
 mkdir BayesHammer_output/
 mv BayesHammer_output_WGS-*/ BayesHammer_output/
 cd BayesHammer_output/
-mv BayesHammer_output_WGS-*/corrected/*.cor.fastq.gz . ### exclude the unpaired fastq.gz file from each read-pair
+mv BayesHammer_output_WGS-*/corrected/*R*.fastq.*.cor.fastq.gz . ### exclude the unpaired fastq.gz file from each read-pair
 time parallel ${FASTQC} {} ::: $(ls *.cor.fastq.gz)
 mkdir QC/
 mv *.html QC/
