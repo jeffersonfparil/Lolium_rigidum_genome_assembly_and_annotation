@@ -29,6 +29,7 @@ mv *.html QC/
 mv *.zip QC/
 
 ### Bayesian error correction (may need to link python3 via: sudo ln -s /usr/bin/python3 /usr/bin/python)
+### (Computation time: 3 days, 6 hours, 14 minutes, and 47.296 seconds on 32 threads and 280 GB of RAM)
 time \
 for i in 0 1.0 1.1 2 3 4 5
 do
@@ -43,9 +44,8 @@ $SPADES \
     -2 LOL-WGS-${i}_combined_R2.fastq.gz \
     -o BayesHammer_output_WGS-${i}/
 done
-### Took 3 days, 6 hours, 14 minutes, and 47.296 seconds on 32 threads and 280 GB of RAM
 
-### Clean-up and another QC
+### Clean-up and another QC (21 minutes on 32 threads and 280GB RAM)
 mkdir BayesHammer_output/
 mv BayesHammer_output_WGS-*/ BayesHammer_output/
 cd BayesHammer_output/
