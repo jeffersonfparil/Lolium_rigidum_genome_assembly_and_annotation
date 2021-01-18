@@ -22,12 +22,18 @@ OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_2021
 cd ${OUTPUT_DIR}
 mkdir SPADES_Lori_i1/
 
-### Assemble with 16 threads and 280 RAM (number of threads reduced to avoid insufficient memory allocation per thread)
+### ERROR: 32 threads and 280 GB RAM
+### ERROR STILL: Assemble with 16 threads and 280 RAM (number of threads reduced to avoid insufficient memory allocation per thread)
+### ERROR STILL: 32 threads and 200 GB RAM and with the --isolate flag
+### ERROR STILL: 32 threads, 280 GB RAM, and specifying k-mer length to 33 since no errors were found at this point
+### TRYING: 32 threads, 280 GB RAM, specifying k-mer length to 33, and removing --isolate flag
 time \
 $SPADES \
     --only-assembler \
-    --threads 16 \
+    --isolate \
+    --threads 32 \
     --memory 280 \
+    -k 33 \
     --pe1-1 ${INPUT_DIR}/LOL-WGS-0_combined_R1.fastq.00.0_0.cor.fastq.gz --pe1-2 ${INPUT_DIR}/LOL-WGS-0_combined_R2.fastq.00.0_0.cor.fastq.gz \
     --pe2-1 ${INPUT_DIR}/LOL-WGS-1.0_combined_R1.fastq.00.0_0.cor.fastq.gz --pe2-2 ${INPUT_DIR}/LOL-WGS-1.0_combined_R2.fastq.00.0_0.cor.fastq.gz \
     --pe2-1 ${INPUT_DIR}/LOL-WGS-1.1_combined_R1.fastq.00.0_0.cor.fastq.gz --pe2-2 ${INPUT_DIR}/LOL-WGS-1.1_combined_R2.fastq.00.0_0.cor.fastq.gz \
