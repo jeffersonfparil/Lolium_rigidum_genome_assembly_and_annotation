@@ -29,7 +29,8 @@ mkdir SPADES_Lori_i1/
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, and removing --isolate flag
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, but only 1 library
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, and concatenated all libraries into a single file
-### TRYING: 32 threads, 280 GB RAM, --isolate flag, concatenated all libraries into a single file, and reduced k-mer length from 33 to 21
+### ERROR STILL: 32 threads, 280 GB RAM, --isolate flag, concatenated all libraries into a single file, and reduced k-mer length from 33 to 21
+### TRYING: 32 threads, 250 GB RAM, --isolate flag, concatenated all libraries into a single file, and using default k range
 # time \
 # $SPADES \
 #     --only-assembler \
@@ -52,8 +53,7 @@ $SPADES \
     --only-assembler \
     --isolate \
     --threads 32 \
-    --memory 280 \
-    -k 21 \
+    --memory 250 \
     --pe1-1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz \
     --pe1-2 ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
     -o ${OUTPUT_DIR}/SPADES_Lori_i1/
@@ -78,7 +78,7 @@ echo '#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 # The amount of memory in megabytes per process in the job:
-#SBATCH --mem=600GB
+#SBATCH --mem=550GB
 # The maximum running time of the job in days-hours:mins:sec
 #SBATCH --time=5-0:0:0
 # Send yourself an email when the job:
