@@ -64,11 +64,6 @@ parallel ./augustus_parallel.sh ${AUGUSTUS} {1} {2} \
     ::: $(ls Lori_*.ctg*.fa) \
     ::: $(echo ${GENE_LISTS} | cut -d' ' -f1-3)
 
-### Annotation with RNAseq data
-# Read this:
-# http://bioinf.uni-greifswald.de/augustus/binaries/readme.rnaseq.html
-
-
 ### Merge across scaffolds per genome assembly per gene list
 echo '#!/bin/bash
 assembly=$1
@@ -90,6 +85,11 @@ parallel ./merge_gff_parallel.sh {1} {2} \
     ::: ${ASSEMBLIES} \
     ::: ${GENE_LISTS}
 
+
+### Annotation with RNAseq data
+# Read this:
+# http://bioinf.uni-greifswald.de/augustus/binaries/readme.rnaseq.html
+# Use the per scaffold fasta files?
 
 ### Clean-up
 rm split_assembly_by_scaffold.py

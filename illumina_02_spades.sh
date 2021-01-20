@@ -28,7 +28,8 @@ mkdir SPADES_Lori_i1/
 ### ERROR STILL: 32 threads, 280 GB RAM, and specifying k-mer length to 33 since no errors were found at this point
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, and removing --isolate flag
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, but only 1 library
-### TRYING: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, and concatenated all libraries into a single file
+### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, and concatenated all libraries into a single file
+### TRYING: 32 threads, 280 GB RAM, --isolate flag, concatenated all libraries into a single file, and reduced k-mer length from 33 to 21
 # time \
 # $SPADES \
 #     --only-assembler \
@@ -52,7 +53,7 @@ $SPADES \
     --isolate \
     --threads 32 \
     --memory 280 \
-    -k 33 \
+    -k 21 \
     --pe1-1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz \
     --pe1-2 ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
     -o ${OUTPUT_DIR}/SPADES_Lori_i1/
@@ -105,5 +106,6 @@ SPAdes-3.14.1-Linux/bin/spades.py \
 ### submit the job and execute
 sbatch Lrigidum_gassembly.slurm
 ### monitoring
+cd /data/gpfs/projects/punim0543/jparil/GENOME_ASSEMBLY_Lolium_rigidum/
 squeue -u jparil
 check_project_usage
