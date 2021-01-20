@@ -27,10 +27,6 @@ mkdir SPADES_Lori_i1/
 ### ERROR STILL: 32 threads and 200 GB RAM and with the --isolate flag
 ### ERROR STILL: 32 threads, 280 GB RAM, and specifying k-mer length to 33 since no errors were found at this point
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, and removing --isolate flag
-### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, but only 1 library
-### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, and concatenated all libraries into a single file
-### ERROR STILL: 32 threads, 280 GB RAM, --isolate flag, concatenated all libraries into a single file, and reduced k-mer length from 33 to 21
-### TRYING: 32 threads, 250 GB RAM, --isolate flag, concatenated all libraries into a single file, and using default k range
 # time \
 # $SPADES \
 #     --only-assembler \
@@ -46,6 +42,10 @@ mkdir SPADES_Lori_i1/
 #     --pe5-1 ${INPUT_DIR}/LOL-WGS-4_combined_R1.fastq.00.0_0.cor.fastq.gz --pe5-2 ${INPUT_DIR}/LOL-WGS-4_combined_R2.fastq.00.0_0.cor.fastq.gz \
 #     --pe6-1 ${INPUT_DIR}/LOL-WGS-5_combined_R1.fastq.00.0_0.cor.fastq.gz --pe6-2 ${INPUT_DIR}/LOL-WGS-5_combined_R2.fastq.00.0_0.cor.fastq.gz \
 #     -o ${OUTPUT_DIR}/SPADES_Lori_i1/
+### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, but only 1 library
+### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, and concatenated all libraries into a single file
+### ERROR STILL: 32 threads, 280 GB RAM, --isolate flag, concatenated all libraries into a single file, and reduced k-mer length from 33 to 21
+### TRYING: 32 threads, 250 GB RAM, --isolate flag, concatenated all libraries into a single file, and using default k range
 cat ${INPUT_DIR}/LOL-WGS-*_R1.fastq.*.cor.fastq.gz > ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz
 cat ${INPUT_DIR}/LOL-WGS-*_R2.fastq.*.cor.fastq.gz > ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz
 time \
