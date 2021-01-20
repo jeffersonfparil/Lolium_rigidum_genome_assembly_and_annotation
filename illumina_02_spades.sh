@@ -78,7 +78,7 @@ echo '#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 # The amount of memory in megabytes per process in the job:
-#SBATCH --mem=500GB
+#SBATCH --mem=600GB
 # The maximum running time of the job in days-hours:mins:sec
 #SBATCH --time=5-0:0:0
 # Send yourself an email when the job:
@@ -100,6 +100,7 @@ SPAdes-3.14.1-Linux/bin/spades.py \
     --isolate \
     --threads 32 \
     --memory 500 \
+    -k 21,33
     --pe1-1 Lrigidum_illumina_150bp_R1.fastq.gz --pe1-2 Lrigidum_illumina_150bp_R2.fastq.gz \
     -o OUTPUT/
 ' > Lrigidum_gassembly.slurm
