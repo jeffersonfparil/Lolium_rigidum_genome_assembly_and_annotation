@@ -59,6 +59,8 @@ $SPADES \
     -o ${OUTPUT_DIR}/SPADES_Lori_i1/
 
 ### TEST: Run on spartan physical partition with 500 GB RAM
+# cd /data/gpfs/projects/punim0543/jparil/GENOME_ASSEMBLY_Lolium_rigidum/
+cd /scratch/punim0543/jparil
 ### concatenate the BayesHammer-corrected reads into a single fastq.gz read pair
 cat *_R1.fastq.*.cor.fastq.gz > Lrigidum_illumina_150bp_R1.fastq.gz
 cat *_R2.fastq.*.cor.fastq.gz > Lrigidum_illumina_150bp_R2.fastq.gz
@@ -78,7 +80,7 @@ echo '#!/bin/bash
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 # The amount of memory in megabytes per process in the job:
-#SBATCH --mem=550GB
+#SBATCH --mem=500GB
 # The maximum running time of the job in days-hours:mins:sec
 #SBATCH --time=5-0:0:0
 # Send yourself an email when the job:
@@ -93,13 +95,14 @@ echo '#!/bin/bash
 ### load modules
 module load spades/3.14.0-python-3.7.4
 ### Execute
-cd /data/gpfs/projects/punim0543/jparil/GENOME_ASSEMBLY_Lolium_rigidum/
+# cd /data/gpfs/projects/punim0543/jparil/GENOME_ASSEMBLY_Lolium_rigidum/
+cd /scratch/punim0543/jparil
 time \
 SPAdes-3.14.1-Linux/bin/spades.py \
     --only-assembler \
     --isolate \
     --threads 32 \
-    --memory 500 \
+    --memory 490 \
     -k 21,33
     --pe1-1 Lrigidum_illumina_150bp_R1.fastq.gz --pe1-2 Lrigidum_illumina_150bp_R2.fastq.gz \
     -o OUTPUT/
@@ -107,6 +110,7 @@ SPAdes-3.14.1-Linux/bin/spades.py \
 ### submit the job and execute
 sbatch Lrigidum_gassembly.slurm
 ### monitoring
-cd /data/gpfs/projects/punim0543/jparil/GENOME_ASSEMBLY_Lolium_rigidum/
+# cd /data/gpfs/projects/punim0543/jparil/GENOME_ASSEMBLY_Lolium_rigidum/
+cd /scratch/punim0543/jparil
 squeue -u jparil
 check_project_usage
