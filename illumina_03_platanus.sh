@@ -34,11 +34,10 @@ ${PLATANUS} \
 time \
 ${PLATANUS} \
     phase \
-    -c ${OUTPUT_DIR}/PLATANUS_Lori_i2/Lori_i2_contig.fa ${OUTPUT_DIR}/PLATANUS_Lori_i2/Lori_i2_junctionKmer.fa \
+    -c ${OUTPUT_DIR}/PLATANUS_Lori_i2/Lori_i2_contig.fa \
     -IP1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
-    -t 32 \
-    -m 200 \
-    -o ${OUTPUT_DIR}/PLATANUS_Lori_i2/Lori_i2 \
+    -t 12 \
+    -o Lori_i2 \
     2>phase.log
 
 platanus_allee \
