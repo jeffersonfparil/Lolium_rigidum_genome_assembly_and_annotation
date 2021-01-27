@@ -39,12 +39,13 @@ ${PLATANUS} \
     -t 12 \
     -o Lori_i2 \
     2>phase.log
+mv Lori_i2_*.* ${OUTPUT_DIR}/PLATANUS_Lori_i2/
+mv  Lori_i2_intermediateResults/ Lori_i2_intermediateResults_phasing/
+mv  Lori_i2_intermediateResults_phasing/ ${OUTPUT_DIR}/PLATANUS_Lori_i2/
+mv phase.log ${OUTPUT_DIR}/PLATANUS_Lori_i2/
 
 platanus_allee \
     consensus \
-    -c out_primaryBubble.fa out_nonBubbleHomoCandidate.fa \
-    -IP1 PE_1.fq PE_2.fq \
-    -OP2 MP_1.fq MP_2.fq \
-    -p PacBio.fq -x 10X_barcoded.fq \
-    -x 10X_barcoded.fq \
+    -c ${OUTPUT_DIR}/PLATANUS_Lori_i2/Lori_i2_primaryBubble.fa \
+    -IP1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
     2>consensus.log
