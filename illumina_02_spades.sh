@@ -45,18 +45,19 @@ mkdir SPADES_Lori_i1/
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, but only 1 library
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, and concatenated all libraries into a single file
 ### ERROR STILL: 32 threads, 280 GB RAM, --isolate flag, concatenated all libraries into a single file, and reduced k-mer length from 33 to 21
-### TRYING: 32 threads, 250 GB RAM, --isolate flag, concatenated all libraries into a single file, and using default k range
-cat ${INPUT_DIR}/LOL-WGS-*_R1.fastq.*.cor.fastq.gz > ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz
-cat ${INPUT_DIR}/LOL-WGS-*_R2.fastq.*.cor.fastq.gz > ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz
-time \
-$SPADES \
-    --only-assembler \
-    --isolate \
-    --threads 32 \
-    --memory 250 \
-    --pe1-1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz \
-    --pe1-2 ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
-    -o ${OUTPUT_DIR}/SPADES_Lori_i1/
+### ERROR STILL: 32 threads, 250 GB RAM, --isolate flag, concatenated all libraries into a single file, and using default k range
+### TRYING: 20 threads, 270 GB RAM, --isolate flag, concatenated all libraries into a single file, and using default k range
+# cat ${INPUT_DIR}/LOL-WGS-*_R1.fastq.*.cor.fastq.gz > ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz
+# cat ${INPUT_DIR}/LOL-WGS-*_R2.fastq.*.cor.fastq.gz > ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz
+# time \
+# $SPADES \
+#     --only-assembler \
+#     --isolate \
+#     --threads 20 \
+#     --memory 270 \
+#     --pe1-1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz \
+#     --pe1-2 ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
+#     -o ${OUTPUT_DIR}/SPADES_Lori_i1/
 
 ### TEST: Run on spartan physical partition with 500 GB RAM
 # cd /data/gpfs/projects/punim0543/jparil/GENOME_ASSEMBLY_Lolium_rigidum/
@@ -103,7 +104,6 @@ SPAdes-3.14.1-Linux/bin/spades.py \
     --isolate \
     --threads 32 \
     --memory 490 \
-    -k 21,33
     --pe1-1 Lrigidum_illumina_150bp_R1.fastq.gz --pe1-2 Lrigidum_illumina_150bp_R2.fastq.gz \
     -o OUTPUT/
 ' > Lrigidum_gassembly.slurm
@@ -114,3 +114,22 @@ sbatch Lrigidum_gassembly.slurm
 cd /scratch/punim0543/jparil
 squeue -u jparil
 check_project_usage
+
+
+### Assembling per pair of fastq read files
+for i in 0 1.0 1.1 2 3 4 5
+do
+# i=0
+mkdir ${OUTPUT_DIR}/SPADES_Lori_i1/${i}/
+time \
+$SPADES \
+    --only-assembler \
+    --isolate \
+    --threads 32 \
+    --memory 280 \
+    --pe1-1 ${INPUT_DIR}/LOL-WGS-${i}_combined_R1.fastq.00.0_0.cor.fastq.gz \
+    --pe1-2 ${INPUT_DIR}/LOL-WGS-${i}_combined_R2.fastq.00.0_0.cor.fastq.gz \
+    -o ${OUTPUT_DIR}/SPADES_Lori_i1/${i}/
+done
+
+### Then merge them all with platanus-allee?! 2021-01-26
