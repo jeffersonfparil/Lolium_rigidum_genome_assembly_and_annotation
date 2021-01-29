@@ -17,9 +17,12 @@ FASTQC=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104
 INPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FAST5/
 OUTPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/
 
+### Navigate to the output directory
+cd $OUTPUT
+
 ### Basecalling with guppy ###~5 days 17 hours:::32cores:::~280Gb:::20210104
 time \
-$GUPPY \
+${GUPPY} \
     --input_path ${INPUT} \
     --save_path ${OUTPUT} \
     --flowcell FLO-MIN106 \
