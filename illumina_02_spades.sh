@@ -79,9 +79,9 @@ echo '#!/bin/bash
 #SBATCH --account=punim0543
 # Maximum number of tasks/CPU cores used by the job:
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=32
+#SBATCH --cpus-per-task=64
 # The amount of memory in megabytes per process in the job:
-#SBATCH --mem=1000GB
+#SBATCH --mem=1400GB
 # The maximum running time of the job in days-hours:mins:sec
 #SBATCH --time=7-0:0:0
 # Send yourself an email when the job:
@@ -101,10 +101,10 @@ cd /scratch/punim0543/jparil
 time \
 SPAdes-3.14.1-Linux/bin/spades.py \
     --only-assembler \
-    --isolate \
-    --threads 32 \
-    --memory 990 \
-    --pe1-1 Lrigidum_illumina_150bp_R1.fastq.gz --pe1-2 Lrigidum_illumina_150bp_R2.fastq.gz \
+    --threads 64 \
+    --memory 1390 \
+    --pe1-1 Lrigidum_illumina_150bp_R1.fastq.gz \
+    --pe1-2 Lrigidum_illumina_150bp_R2.fastq.gz \
     -o OUTPUT/
 ' > Lrigidum_gassembly.slurm
 ### submit the job and execute
