@@ -11,7 +11,7 @@
 ### (2) contigs.fasta - contains resulting contigs
 ### (3) assembly_graph.gfa - contains SPAdes assembly graph and scaffolds paths in GFA 1.0 format
 ### (4) assembly_graph.fastg - contains SPAdes assembly graph in FASTG format
-### (5) Lori_i1_MAC-merged.fasta - MAC-merged meta-assembly (merged iteratively SPADES-assembled libraries, i.e. Lori_i1_*.fasta)
+### (5) Lori_is_MAC-merged.fasta - MAC-merged meta-assembly (merged iteratively SPADES-assembled libraries, i.e. Lori_is_*.fasta)
 
 ### Parameters:
 INPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/BayesHammer_output/
@@ -117,7 +117,7 @@ squeue -u jparil
 check_project_usage
 
 
-### Assembling per pair of fastq read files
+### Assembling per pair of fastq read files (output: scaffolds.fasta)
 for i in 0 1.0 1.1 2 3 4 5
 do
 # i=0
@@ -139,13 +139,13 @@ cd ${OUTPUT_DIR}/Lori_is/
 for i in 0 1.0 1.1 2 3 4 5
 do
 # i=0
-cp ${OUTPUT_DIR}/Lori_is/${i}/scaffolds.fasta Lori_i1_${i}.fasta
+cp ${OUTPUT_DIR}/Lori_is/${i}/scaffolds.fasta Lori_is_${i}.fasta
 done
 ### merge
 time \
-php ${MAC} Lori_i1_*.fasta .
+php ${MAC} Lori_is_*.fasta .
 ### clean-up
-mv MixOut.fasta Lori_i1_MAC-merged.fasta
+mv MixOut.fasta Lori_is_MAC-merged.fasta
 mkdir MAC_misc_output/
 mv Mixcontig* MAC_misc_output/
 mv *.nuc.* MAC_misc_output/

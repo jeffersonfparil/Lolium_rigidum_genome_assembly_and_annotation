@@ -8,14 +8,13 @@ ASSEMBLY_FASTA=$1
 
 ### OUTPUTS:
 ### (1) ${ASSEMBLY_FASTA}.base.count - total number of bases and excluding Ns
-### (2) ${ASSEMBLY_FASTA%.*}-scaffold_stats.csv - lengths per scaffold
-### (2) ${ASSEMBLY_FASTA%.*}-draft_genome_distribution_N50_L50.svg - svg image of scaffold distribution and and assembly statistics
-
-
+### (2) ${ASSEMBLY_FASTA}.scaffold_stats.csv - lengths per scaffold
+### (2) ${ASSEMBLY_FASTA}.draft_genome_distribution_N50_L50.svg - svg image of scaffold distribution and and assembly statistics
 
 ### (1) count the total number of bases (line1: total; line2: excluding Ns)
 grep -v ">" ${ASSEMBLY_FASTA} | wc -c > ${ASSEMBLY_FASTA}.base.count
 grep -v ">" ${ASSEMBLY_FASTA} | grep -v "N" | wc -c >> ${ASSEMBLY_FASTA}.base.count
+
 ### (2) count the length of each scaffold (generic script in python; a bash command like the one above will work faster but the use of the 'len' grep search key is not generic)
 echo 'from Bio import SeqIO
 import pandas as pd
@@ -29,9 +28,12 @@ with open(fname_assembly, "rU") as genome:
 out = pd.DataFrame(id_len)
 out.columns = ["SCAFFOLD", "LENGTH", "LENGTH_NO_Ns"]
 out = out.sort_values(["LENGTH"], ascending=[0])
-out.to_csv(fname_assembly.split(".")[0] + "-scaffold_stats.csv", header=True, sep=",")
+out.to_csv(fname_assembly + ".scaffold_stats.csv", header=True, sep=",")
 ' > extract_scaffold_stats.py
-python3 extract_scaffold_stats.py ${ASSEMBLY_FASTA}
+python3 extract_scaffold_stats.py ${ASSEMBLY_FASTA} && \
+	echo "Scaffold lengths: ${ASSEMBLY_FASTA}.scaffold_stats.csv" || \
+	echo "Error. Install Bio and/or pandas via pip3 install BioPython and pip3 install pandas."
+
 ### (3) calculate N50, L50 and plot
 echo '# generate histogram of scaffold sizes of the Lolium perenne reference genome
 library(RColorBrewer)
@@ -51,7 +53,7 @@ genome_size_no_Ns = sum(dat$LENGTH_NO_Ns)
 dat = dat[order(dat$LENGTH, decreasing=FALSE),]
 dat$CUMM_LENGTH = cumsum(dat$LENGTH)
 dat$CUMM_COVER = dat$CUMM_LENGTH*100 / genome_size
-svg(str_replace(fname_scaffold_stats, "-scaffold_stats.csv", "-draft_genome_distribution_N50_L50.svg"), width=15, height=8)
+svg(str_replace(fname_scaffold_stats, ".scaffold_stats.csv", ".draft_genome_distribution_N50_L50.svg"), width=15, height=8)
 par(mfrow=c(1,2), mar=c(7,7,2,2))
 hist(dat$LENGTH, col=pastel_colours[1], border=set1_colours[1], nclass=20, xlab="Scaffold Size (bp)", main="", las=2)
 legend("right", legend=c(paste0("Total number of scaffolds = ", nrow(dat)),
@@ -67,13 +69,15 @@ segments(x0=x1, x1=x1, y0=0, y1=y1, lty=2, lwd=2, col=set1_colours[1])
 segments(x0=0, x1=x1, y0=50, y1=50, lty=2, lwd=2, col=set1_colours[1])
 grid()
 legend("right", legend=c(paste0("Assembly size = ", round(genome_size/1e9, 2), " Gb"),
-						 paste0("Assembly size  (Ns exlulded) = ", round(genome_size_no_Ns/1e9, 2), " Gb (", round((genome_size-genome_size_no_Ns)*100/genome_size, 4), "% Ns)"),
+						 paste0("Assembly size  (Ns excluded) = ", round(genome_size_no_Ns/1e9, 2), " Gb (", round((genome_size-genome_size_no_Ns)*100/genome_size, 4), "% Ns)"),
 						 paste0("N50 = ", round(N50/1000), " kb"),
 						 paste0("L50 = ", round(L50), " scaffolds")
 						 ))
 dev.off()
 '  > extract_scaffold_stats.r
-Rscript extract_scaffold_stats.r ${ASSEMBLY_FASTA%.*}-scaffold_stats.csv
+Rscript extract_scaffold_stats.r ${ASSEMBLY_FASTA}.scaffold_stats.csv && \
+	echo "Assembly statistics: ${ASSEMBLY_FASTA%.*}.draft_genome_distribution_N50_L50.svg" || \
+	echo "Error. Install RColorBrewer and/or stringr via > install.packages('RColorBrewer') and > install.packages('stringr')."
 
 ### Clean up
 rm extract_scaffold_stats.*

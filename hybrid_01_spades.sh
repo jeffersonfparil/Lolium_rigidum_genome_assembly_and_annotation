@@ -22,13 +22,13 @@ OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_2021
 
 ### Intialise and spades output folder
 cd ${OUTPUT_DIR}
-mkdir HYBRID_SPADES_Lori/
+mkdir Lori_hs/
 
 ### Hybrid assembly per pair of fastq read files
 for i in 0 1.0 1.1 2 3 4 5
 do
 # i=0
-mkdir ${OUTPUT_DIR}/HYBRID_SPADES_Lori/${i}/
+mkdir ${OUTPUT_DIR}/Lori_hs/${i}/
 time \
 $SPADES \
     --only-assembler \
@@ -38,5 +38,5 @@ $SPADES \
     --pe1-1 ${INPUT_DIR_ILLUMINA}/LOL-WGS-${i}_combined_R1.fastq.00.0_0.cor.fastq.gz \
     --pe1-2 ${INPUT_DIR_ILLUMINA}/LOL-WGS-${i}_combined_R2.fastq.00.0_0.cor.fastq.gz \
     --nanopore ${INPUT_DIR_MINION}/minion-filtered-trimmed.fastq.gz \
-    -o ${OUTPUT_DIR}/HYBRID_SPADES_Lori/${i}/
+    -o ${OUTPUT_DIR}/Lori_hs/${i}/
 done
