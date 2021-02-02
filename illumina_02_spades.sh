@@ -11,11 +11,12 @@
 ### (2) contigs.fasta - contains resulting contigs
 ### (3) assembly_graph.gfa - contains SPAdes assembly graph and scaffolds paths in GFA 1.0 format
 ### (4) assembly_graph.fastg - contains SPAdes assembly graph in FASTG format
-
+### (5) Lori_i1_MAC-merged.fasta - MAC-merged meta-assembly (merged iteratively SPADES-assembled libraries, i.e. Lori_i1_*.fasta)
 
 ### Parameters:
 INPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/BayesHammer_output/
 SPADES=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/SPAdes-3.14.1-Linux/bin/spades.py
+MAC=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/MAC/MAC.php
 OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/
 
 ### Intialise and spades output folder
@@ -132,4 +133,20 @@ $SPADES \
     -o ${OUTPUT_DIR}/SPADES_Lori_i1/${i}/
 done
 
-### Then merge them all with platanus-allee?! 2021-01-26
+### Then merge them all with MAC [Merging assemblies by using adjacency algebraic model and classification](https://github.com/bioinfomaticsCSU/MAC)
+### rename based on sublibrary ID
+cd ${OUTPUT_DIR}/SPADES_Lori_i1/
+for i in 0 1.0 1.1 2 3 4 5
+do
+# i=0
+cp ${OUTPUT_DIR}/SPADES_Lori_i1/${i}/scaffolds.fasta Lori_i1_${i}.fasta
+done
+### merge
+time \
+php ${MAC} Lori_i1_*.fasta .
+### clean-up
+mv MixOut.fasta Lori_i1_MAC-merged.fasta
+mkdir MAC_misc_output/
+mv Mixcontig* MAC_misc_output/
+mv *.nuc.* MAC_misc_output/
+mv parsefile.fasta MAC_misc_output/

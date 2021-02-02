@@ -21,15 +21,22 @@ OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_2021
 cd ${OUTPUT_DIR}
 mkdir PLATANUS_Lori_i2/
 
+for i in 0 1.0 1.1 2 3 4 5
+do
+# i=1.0
 time \
 ${PLATANUS} \
     assemble \
-    -f ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
-    -k 32 \
+    -f ${INPUT_DIR}/LOL-WGS-${i}_combined_R1.fastq.00.0_0.cor.fastq.gz ${INPUT_DIR}/LOL-WGS-${i}_combined_R2.fastq.00.0_0.cor.fastq.gz \
     -t 32 \
     -m 200 \
     -o ${OUTPUT_DIR}/PLATANUS_Lori_i2/Lori_i2 \
     2> ${OUTPUT_DIR}/PLATANUS_Lori_i2/assembly.log
+
+
+
+
+
 
 time \
 ${PLATANUS} \

@@ -3,8 +3,19 @@
 ### Assembly statistics
 ASSEMBLY_FASTA=$1
 
-### (1) count the total number of bases ###56,430,521:::20210112
-grep "len" ${OUTPUT_BASENAME}.raw.fa | cut -d'=' -f2 | paste -s -d'+' | bc > ${OUTPUT_BASENAME}.base.count
+### INPUT:
+### (1) Genome assembly in fasta format
+
+### OUTPUTS:
+### (1) ${ASSEMBLY_FASTA}.base.count - total number of bases and excluding Ns
+### (2) ${ASSEMBLY_FASTA%.*}-scaffold_stats.csv - lengths per scaffold
+### (2) ${ASSEMBLY_FASTA%.*}-draft_genome_distribution_N50_L50.svg - svg image of scaffold distribution and and assembly statistics
+
+
+
+### (1) count the total number of bases (line1: total; line2: excluding Ns)
+grep -v ">" ${ASSEMBLY_FASTA} | wc -c > ${ASSEMBLY_FASTA}.base.count
+grep -v ">" ${ASSEMBLY_FASTA} | grep -v "N" | wc -c >> ${ASSEMBLY_FASTA}.base.count
 ### (2) count the length of each scaffold (generic script in python; a bash command like the one above will work faster but the use of the 'len' grep search key is not generic)
 echo 'from Bio import SeqIO
 import pandas as pd
@@ -14,9 +25,9 @@ fname_assembly = sys.argv[1]
 id_len = []
 with open(fname_assembly, "rU") as genome:
     for scaffold in SeqIO.parse(genome, "fasta"):
-        id_len.append([str(scaffold.id), len(scaffold)])
+        id_len.append([str(scaffold.id), len(scaffold), len(str(scaffold.seq).replace("N", ""))])
 out = pd.DataFrame(id_len)
-out.columns = ["SCAFFOLD", "LENGTH"]
+out.columns = ["SCAFFOLD", "LENGTH", "LENGTH_NO_Ns"]
 out = out.sort_values(["LENGTH"], ascending=[0])
 out.to_csv(fname_assembly.split(".")[0] + "-scaffold_stats.csv", header=True, sep=",")
 ' > extract_scaffold_stats.py
@@ -36,6 +47,7 @@ min_size = min(dat$LENGTH)
 max_size = max(dat$LENGTH)
 mean_size = mean(dat$LENGTH)
 genome_size = sum(dat$LENGTH)
+genome_size_no_Ns = sum(dat$LENGTH_NO_Ns)
 dat = dat[order(dat$LENGTH, decreasing=FALSE),]
 dat$CUMM_LENGTH = cumsum(dat$LENGTH)
 dat$CUMM_COVER = dat$CUMM_LENGTH*100 / genome_size
@@ -54,7 +66,8 @@ y1 = 50
 segments(x0=x1, x1=x1, y0=0, y1=y1, lty=2, lwd=2, col=set1_colours[1])
 segments(x0=0, x1=x1, y0=50, y1=50, lty=2, lwd=2, col=set1_colours[1])
 grid()
-legend("right", legend=c(paste0("Assembly size = ", round(genome_size/1000000000, 2), " Gb"),
+legend("right", legend=c(paste0("Assembly size = ", round(genome_size/1e9, 2), " Gb"),
+						 paste0("Assembly size  (Ns exlulded) = ", round(genome_size_no_Ns/1e9, 2), " Gb (", round((genome_size-genome_size_no_Ns)*100/genome_size, 4), "% Ns)"),
 						 paste0("N50 = ", round(N50/1000), " kb"),
 						 paste0("L50 = ", round(L50), " scaffolds")
 						 ))

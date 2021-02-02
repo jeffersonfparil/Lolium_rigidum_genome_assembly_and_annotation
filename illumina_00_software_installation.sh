@@ -35,7 +35,17 @@ cd -
 pip3 install biopython
 pip3 install pandas
 
+### Install php and mummer for MACS meta-assembler
+sudo apt install -y php
+wget https://sourceforge.net/projects/mummer/files/mummer/3.23/MUMmer3.23.tar.gz
+tar -xzf MUMmer3.23.tar.gz
+cd MUMmer3.23/
+make install
+cd -
+git clone https://github.com/bioinfomaticsCSU/MAC.git
+
 ### Clean-up
 rm fastqc_v0.11.7.zip
 rm SPAdes-3.14.1-Linux.tar.gz
 rm Platanus_allee_v2.2.2_Linux_x86_64.tgz
+rm MUMmer3.23.tar.gz
