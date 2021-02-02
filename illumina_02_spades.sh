@@ -21,7 +21,7 @@ OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_2021
 
 ### Intialise and spades output folder
 cd ${OUTPUT_DIR}
-mkdir SPADES_Lori_i1/
+mkdir Lori_is/
 
 ### ERROR: 32 threads and 280 GB RAM
 ### ERROR STILL: Assemble with 16 threads and 280 RAM (number of threads reduced to avoid insufficient memory allocation per thread)
@@ -42,7 +42,7 @@ mkdir SPADES_Lori_i1/
 #     --pe4-1 ${INPUT_DIR}/LOL-WGS-3_combined_R1.fastq.00.0_0.cor.fastq.gz --pe4-2 ${INPUT_DIR}/LOL-WGS-3_combined_R2.fastq.00.0_0.cor.fastq.gz \
 #     --pe5-1 ${INPUT_DIR}/LOL-WGS-4_combined_R1.fastq.00.0_0.cor.fastq.gz --pe5-2 ${INPUT_DIR}/LOL-WGS-4_combined_R2.fastq.00.0_0.cor.fastq.gz \
 #     --pe6-1 ${INPUT_DIR}/LOL-WGS-5_combined_R1.fastq.00.0_0.cor.fastq.gz --pe6-2 ${INPUT_DIR}/LOL-WGS-5_combined_R2.fastq.00.0_0.cor.fastq.gz \
-#     -o ${OUTPUT_DIR}/SPADES_Lori_i1/
+#     -o ${OUTPUT_DIR}/Lori_is/
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, but only 1 library
 ### ERROR STILL: 32 threads, 280 GB RAM, specifying k-mer length to 33, --isolate flag, and concatenated all libraries into a single file
 ### ERROR STILL: 32 threads, 280 GB RAM, --isolate flag, concatenated all libraries into a single file, and reduced k-mer length from 33 to 21
@@ -58,7 +58,7 @@ mkdir SPADES_Lori_i1/
 #     --memory 270 \
 #     --pe1-1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz \
 #     --pe1-2 ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
-#     -o ${OUTPUT_DIR}/SPADES_Lori_i1/
+#     -o ${OUTPUT_DIR}/Lori_is/
 
 ### TEST: Run on spartan physical partition with 500 GB RAM
 # cd /data/gpfs/projects/punim0543/jparil/GENOME_ASSEMBLY_Lolium_rigidum/
@@ -121,7 +121,7 @@ check_project_usage
 for i in 0 1.0 1.1 2 3 4 5
 do
 # i=0
-mkdir ${OUTPUT_DIR}/SPADES_Lori_i1/${i}/
+mkdir ${OUTPUT_DIR}/Lori_is/${i}/
 time \
 $SPADES \
     --only-assembler \
@@ -130,16 +130,16 @@ $SPADES \
     --memory 280 \
     --pe1-1 ${INPUT_DIR}/LOL-WGS-${i}_combined_R1.fastq.00.0_0.cor.fastq.gz \
     --pe1-2 ${INPUT_DIR}/LOL-WGS-${i}_combined_R2.fastq.00.0_0.cor.fastq.gz \
-    -o ${OUTPUT_DIR}/SPADES_Lori_i1/${i}/
+    -o ${OUTPUT_DIR}/Lori_is/${i}/
 done
 
 ### Then merge them all with MAC [Merging assemblies by using adjacency algebraic model and classification](https://github.com/bioinfomaticsCSU/MAC)
 ### rename based on sublibrary ID
-cd ${OUTPUT_DIR}/SPADES_Lori_i1/
+cd ${OUTPUT_DIR}/Lori_is/
 for i in 0 1.0 1.1 2 3 4 5
 do
 # i=0
-cp ${OUTPUT_DIR}/SPADES_Lori_i1/${i}/scaffolds.fasta Lori_i1_${i}.fasta
+cp ${OUTPUT_DIR}/Lori_is/${i}/scaffolds.fasta Lori_i1_${i}.fasta
 done
 ### merge
 time \
