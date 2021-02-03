@@ -73,4 +73,4 @@ ${PLATANUS} \
     ### output:
     ### (1) phase.log
     ### (2) Lori_ip_intermediateResults/
-
+done
