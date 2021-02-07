@@ -12,17 +12,18 @@
 ### (2) Quality check html and zip files (minion_fastqc.html and minion_fastqc.zip)
 
 ### Parameters:
-GUPPY=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/GUPPY/ont-guppy-cpu/bin/guppy_basecaller
 FASTQC=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FastQC/fastqc
-INPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FAST5/
+# INPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FAST5/
+INPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/RAW_MINION_OUTPUT_MOVE_FAST5_TO_FAST5_WHEN_FINISHED/FAST5_NEW_2021_Lori_min_123/
 OUTPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/
+mkdir ${OUTPUT}/guppy_output_Lori_min_1_2_3_3b/; OUTPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/guppy_output_Lori_min_1_2_3_3b/
 
 ### Navigate to the output directory
 cd $OUTPUT
 
 ### Basecalling with guppy ###~5 days 17 hours:::32cores:::~280Gb:::20210104
 time \
-${GUPPY} \
+guppy_basecaller \
     --input_path ${INPUT} \
     --save_path ${OUTPUT} \
     --flowcell FLO-MIN106 \
