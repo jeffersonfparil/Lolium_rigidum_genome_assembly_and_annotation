@@ -12,7 +12,8 @@ ASSEMBLY_FASTA=$1
 ### (2) ${ASSEMBLY_FASTA}.draft_genome_distribution_N50_L50.svg - svg image of scaffold distribution and and assembly statistics
 
 ### (1) count the total number of bases (line1: total; line2: excluding Ns)
-grep -v ">" ${ASSEMBLY_FASTA} | wc -c > ${ASSEMBLY_FASTA}.base.count
+grep -v ">" ${ASSEMBLY_FASTA} | sed ':a;N;$!ba;s/\n//g' | wc -c > ${ASSEMBLY_FASTA}.base.count
+# cat ${ASSEMBLY_FASTA} | paste - - | cut -f2 | sed ':a;N;$!ba;s/\n//g' | wc -c > ${ASSEMBLY_FASTA}.base.count ### similarly with paste|cut
 grep -v ">" ${ASSEMBLY_FASTA} | grep -v "N" | wc -c >> ${ASSEMBLY_FASTA}.base.count
 
 ### (2) count the length of each scaffold (generic script in python; a bash command like the one above will work faster but the use of the 'len' grep search key is not generic)

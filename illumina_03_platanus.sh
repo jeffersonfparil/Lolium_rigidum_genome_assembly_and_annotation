@@ -33,12 +33,55 @@ ${PLATANUS} \
 
 
 
+### testing concatenated all reads EXCEPT 1.0 and 1.0 on ssh_bike
+cat ${INPUT_DIR}/LOL-WGS-{0,2,3,4,5}_combined_R1*.fastq.gz > ${INPUT_DIR}/Lrigidum_illumina_150bp_R1_SUBSET.fastq.gz
+cat ${INPUT_DIR}/LOL-WGS-{0,2,3,4,5}_combined_R2*.fastq.gz > ${INPUT_DIR}/Lrigidum_illumina_150bp_R2_SUBSET.fastq.gz
+time \
+${PLATANUS} \
+    assemble \
+    -f ${INPUT_DIR}/Lrigidum_illumina_150bp_R1_SUBSET.fastq.gz ${INPUT_DIR}/Lrigidum_illumina_150bp_R2_SUBSET.fastq.gz \
+    -t 12 \
+    -m 45 \
+    -o ${OUTPUT_DIR}/Lori_ip/Lori_ip \
+    2> ${OUTPUT_DIR}/Lori_ip/assembly.log
 
 
+### filtering out low quality reads with fastp while splitting into 10 ~equally sized fastq files
+git clone https://github.com/OpenGene/fastp.git
+cd fastp
+make
+sudo make install
+
+time \
+fastp --in1 Lrigidum_illumina_150bp_R1.fastq \
+      --in2 Lrigidum_illumina_150bp_R2.fastq \
+      --out1 fastp_filtered_R1.fastq \
+      --out2 fastp_filtered_R2.fastq \
+      --disable_adapter_trimming \
+      --disable_length_filtering \
+      --average_qual 32 \
+      --split 10 \
+      --overrepresentation_analysis \
+      --html fastp.html \
+      --thread 12
 
 
+### assessing each fastq chunk
+echo '#!/bin/bash
+fastp -i ${1}.fastp_filtered_R1.fastq \
+-AQL \
+--overrepresentation_analysis \
+--html ${1}.fastp.html \
+--json ${1}.fastp.json \
+--thread 12
+' > fastp_parallel.sh
+chmod +x fastp_parallel.sh
+time \
+parallel ./fastp_parallel.sh {} ::: 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010
+rm fastp_parallel.sh
 
-### Iterate across libraries
+
+### will test iterating across libraries
 for i in 0 1.0 1.1 2 3 4 5
 do
 # i=1.0
