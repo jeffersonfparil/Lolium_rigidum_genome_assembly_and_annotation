@@ -13,14 +13,15 @@ The genome annotation pipeline has not been drafted yet:
 
 ![annotation](misc/annotation_pipeline.svg)
 
-The softwares we are using are linked below:
+The software we are using are linked below:
 - Augustus [repository](https://github.com/Gaius-Augustus/Augustus) and [wiki](http://bioinf.uni-greifswald.de/bioinf/wiki/pmwiki.php?n=Augustus.Augustus)
 - [Biopython](https://biopython.org/)
 - [Canu](https://canu.readthedocs.io/en/latest/)
 - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 - [Guppy](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1727-y)
+- [haslr](https://github.com/vpc-ccg/haslr)
+- [minia](https://github.com/GATB/gatb-minia-pipeline)
 - [Nanofilt](https://github.com/wdecoster/nanofilt)
-- [Platanus-allee](http://platanus.bio.titech.ac.jp/platanus2)
 - [Porechop](https://github.com/rrwick/Porechop)
-- [SPAdes](https://github.com/ablab/spades/blob/spades_3.14.1/README.md)
+- [wengan](https://github.com/adigenova/wengan)
 - [wtdbg2](https://www.nature.com/articles/s41592-019-0669-3)

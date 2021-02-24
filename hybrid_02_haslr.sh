@@ -1,7 +1,7 @@
 #!/bin/bash
-###########################################################
-### Hybrid assembly using Illumina and MinION via HASLR ###
-###########################################################
+############################################################
+### Hybrid assembly using MinION with Illumina via HASLR ###
+############################################################
 
 ### Inputs:
 ### (1) Error-corrected Illumina reads in compressed fastq format (BayesHammer_output/*cor.fastq.gz)
