@@ -1,6 +1,6 @@
 #!/bin/bash
 ############################################################
-### Hybrid assembly using Illumina and MinION via SPAdes ###
+### Hybrid assembly using MinION with Illumina via HASLR ###
 ############################################################
 
 ### Inputs:
@@ -8,35 +8,27 @@
 ### (1) MinION reads in compressed fastq format (BayesHammer_output/*cor.fastq.gz)
 
 ### Outputs:
-### (1) 
+### (1) asm.final.fa
 ### (2) 
 ### (3) 
 ### (4) 
 
-
 ### Parameters:
 INPUT_DIR_ILLUMINA=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/BayesHammer_output/
 INPUT_DIR_MINION=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/
-SPADES=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/SPAdes-3.14.1-Linux/bin/spades.py
+HASLR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/haslr/bin/haslr.py
 OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/
 
 ### Intialise and spades output folder
 cd ${OUTPUT_DIR}
-mkdir Lori_hs/
+mkdir Lori_hh/
 
-### Hybrid assembly per pair of fastq read files
-for i in 0 1.0 1.1 2 3 4 5
-do
-# i=0
-mkdir ${OUTPUT_DIR}/Lori_hs/${i}/
+### Assemble
 time \
-$SPADES \
-    --only-assembler \
-    --isolate \
-    --threads 32 \
-    --memory 280 \
-    --pe1-1 ${INPUT_DIR_ILLUMINA}/LOL-WGS-${i}_combined_R1.fastq.00.0_0.cor.fastq.gz \
-    --pe1-2 ${INPUT_DIR_ILLUMINA}/LOL-WGS-${i}_combined_R2.fastq.00.0_0.cor.fastq.gz \
-    --nanopore ${INPUT_DIR_MINION}/minion-filtered-trimmed.fastq.gz \
-    -o ${OUTPUT_DIR}/Lori_hs/${i}/
-done
+${HASLR} \
+--threads 32 \
+--out ${OUTPUT_DIR}/Lori_hh/ \
+--genome 2g \
+--long ${INPUT_DIR_MINION}/minion-filtered-trimmed.fastq.gz \
+--type nanopore \
+--short ${INPUT_DIR_ILLUMINA}/Lrigidum_illumina_150bp_R1.fastq.gz ${INPUT_DIR_ILLUMINA}/Lrigidum_illumina_150bp_R2.fastq.gz

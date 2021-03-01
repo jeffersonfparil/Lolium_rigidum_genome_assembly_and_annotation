@@ -13,10 +13,8 @@
 
 ### Parameters:
 FASTQC=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FastQC/fastqc
-# INPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FAST5/
-INPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/RAW_MINION_OUTPUT_MOVE_FAST5_TO_FAST5_WHEN_FINISHED/FAST5_NEW_2021_Lori_min_123/
+INPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FAST5/
 OUTPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/
-mkdir ${OUTPUT}/guppy_output_Lori_min_1_2_3_3b/; OUTPUT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/guppy_output_Lori_min_1_2_3_3b/
 
 ### Navigate to the output directory
 cd $OUTPUT
@@ -32,13 +30,15 @@ guppy_basecaller \
 
 ### Concatenate all fastq into a single file and compress
 cat ${OUTPUT}/*.fastq > ${OUTPUT}/minion.fastq
+
+### Count the total number of bases sequenced
+cat ${OUTPUT}/minion.fastq | paste - - - - | cut -f 2 | tr -d '\n' | wc -c > minion.base.count
+
+### Compress
 gzip ${OUTPUT}/minion.fastq
 
 ### Quality check
-time $FASTQC ${OUTPUT}/minion.fastq.gz
-
-### Count the total number of bases sequenced
-zcat ${OUTPUT}/minion.fastq.gz | paste - - - - | cut -f 2 | tr -d '\n' | wc -c > minion.base.count
+time ${FASTQC} -t 12 ${OUTPUT}/minion.fastq.gz
 
 ### Clean-up
 mkdir guppy_output/

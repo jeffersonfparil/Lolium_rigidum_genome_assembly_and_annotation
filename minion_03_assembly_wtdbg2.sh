@@ -18,7 +18,7 @@ WTDBG2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104
 
 ### De novo assembly with wtdbg2 (assemble ont read >=1G or preset3) ###~40minutes:::12cores:::47Gb:::20210104
 time \
-$WTDBG2 \
+${WTDBG2} \
     -p 19 \
     -AS 2 \
     -s 0.05 \

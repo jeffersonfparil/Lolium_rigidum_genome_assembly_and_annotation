@@ -14,6 +14,7 @@
 
 ### Parameters:
 DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/
+FASTQC=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FastQC/fastqc
 
 ### Navigate to the working directory
 cd $DIR
@@ -23,6 +24,7 @@ time \
      gunzip -c minion.fastq.gz | \
      NanoFilt -q 10 | \
      gzip > minion-filtered.fastq.gz
+time ${FASTQC} -t 12 minion-filtered.fastq.gz
 
 ### Trim-off adapters with porechop
 time \
@@ -30,6 +32,7 @@ porechop \
      --threads 32 \
      --input minion-filtered.fastq.gz \
      --output minion-filtered-trimmed.fastq.gz
+time ${FASTQC} -t 12 minion-filtered-trimmed.fastq.gz
 
 ### Count the total number of bases sequenced
 zcat minion-filtered-trimmed.fastq.gz | paste - - - - | cut -f 2 | tr -d '\n' | wc -c > minion-filtered-trimmed.base.count
@@ -62,3 +65,4 @@ savefig("minion-filtered-trimmed.readlen.hist.svg")
 ' > readlen_hist.jl
 julia readlen_hist.jl
 
+### Ended up with ~28 Gb, which equates to ~10X sequencing depth of the Lolium rigidum genome [2021-03-01]

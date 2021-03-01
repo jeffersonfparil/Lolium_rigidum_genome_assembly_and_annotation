@@ -7,7 +7,7 @@
 ### (1) Error-corrected Illumina reads in compressed fastq format (BayesHammer_output/*cor.fastq.gz)
 
 ### Outputs:
-### (1) assembly.fasta
+### (1) Lori_im_final.contigs.fa
 ### (2) 
 
 ### Parameters:
@@ -19,12 +19,14 @@ OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_2021
 cd ${OUTPUT_DIR}
 mkdir Lori_im/
 
-### Execute
+### Execute (May need to spcify the full path to work)
 time \
 ${MINIA} \
     -1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz \
     -2 ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
-    --max-memory 40000 \
-    --nb-cores 12 \
+    --max-memory 280000 \
+    --nb-cores 32 \
     -o ${OUTPUT_DIR}/Lori_im/Lori_im
 
+### Assess assembly
+./assembly_statistics.sh ${OUTPUT_DIR}/Lori_im/Lori_im_final.contigs.fa

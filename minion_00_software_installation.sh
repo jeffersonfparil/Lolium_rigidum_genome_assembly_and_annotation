@@ -36,12 +36,5 @@ cd wtdbg2 && make
 ./wtdbg2.pl -h
 cd -
 
-### Download canu
-wget https://github.com/marbl/canu/releases/download/v1.9/canu-1.9.Linux-amd64.tar.xz
-tar xf canu-1.9.Linux-amd64.tar.xz
-cd canu-1.9/Linux-amd64/bin/
-./canu -h
-cd -
-
 ### Clean-up
 rm canu-1.9.Linux-amd64.tar.xz

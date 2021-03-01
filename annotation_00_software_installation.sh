@@ -37,10 +37,11 @@ sudo apt install -y --no-install-recommends python3-biopython
 # cd -
 # make install Augustus but first comment-out bam2wig make which causes problems with HTSlib not being located when it is actually installed
 cd Augustus/
-cp auxprogs/Makefile auxprogs/Makefile.bk
-sed -i 's/	cd bam2wig; make/	#cd bam2wig; make/g' auxprogs/Makefile
-make ### execute 'make clean' first to restart, then 'make' again
+### if you encounter any compilation errors at sudo make install then execute the commented-out script below:
+# cp auxprogs/Makefile auxprogs/Makefile.bk
+# sed -i 's/	cd bam2wig; make/	#cd bam2wig; make/g' auxprogs/Makefile
+# make clean
+make
 sudo make install
 # test
 make unit_test
-
