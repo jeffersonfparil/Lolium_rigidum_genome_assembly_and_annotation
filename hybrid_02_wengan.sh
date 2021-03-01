@@ -28,8 +28,8 @@ time \
 ${WENGAN} \
     -x ontraw \
     -a M \
-    -s Lrigidum_illumina_150bp_R1.fastq.gz,Lrigidum_illumina_150bp_R2.fastq.gz \
-    -l MERGE_TEMP_20210217.fastq.gz \
-    -t 12 \
+    -s ${INPUT_DIR_ILLUMINA}/Lrigidum_illumina_150bp_R1.fastq.gz,${INPUT_DIR_ILLUMINA}/Lrigidum_illumina_150bp_R2.fastq.gz \
+    -l ${INPUT_DIR_MINION}/minion-filtered-trimmed.fastq.gz \
+    -t 32 \
     -g 2200 \
-    -p Lori_hw
+    -p ${OUTPUT_DIR}/Lori_hw/Lori_hw

@@ -32,3 +32,6 @@ ${HASLR} \
 --long ${INPUT_DIR_MINION}/minion-filtered-trimmed.fastq.gz \
 --type nanopore \
 --short ${INPUT_DIR_ILLUMINA}/Lrigidum_illumina_150bp_R1.fastq.gz ${INPUT_DIR_ILLUMINA}/Lrigidum_illumina_150bp_R2.fastq.gz
+
+### Statistics
+./assembly_statistics.sh Lori_hh/asm_contigs*/asm.final.fa
