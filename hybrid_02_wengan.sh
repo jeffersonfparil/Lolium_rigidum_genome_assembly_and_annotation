@@ -14,13 +14,13 @@
 ### (4) 
 
 ### Parameters:
-INPUT_DIR_ILLUMINA=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/BayesHammer_output/
-INPUT_DIR_MINION=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/
+INPUT_DIR_ILLUMINA=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/BayesHammer_output
+INPUT_DIR_MINION=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION
 WENGAN=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/wengan-v0.2-bin-Linux/wengan.pl
-OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/
+OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
 
 ### Intialise and spades output folder
-cd ${OUTPUT_DIR}
+cd ${OUTPUT_DIR}/
 mkdir Lori_hw/
 
 ### Assemble: test on ssh_hose 20210217

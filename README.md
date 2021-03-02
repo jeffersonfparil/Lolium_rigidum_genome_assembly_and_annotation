@@ -9,7 +9,7 @@ Our objective is to generate a better genome assembly and genome annotations tha
 
 ![assembly](misc/assembly_pipeline.svg)
 
-The genome annotation pipeline has not been drafted yet:
+The genome annotation pipeline has not been drafted yet (will need to update):
 
 ![annotation](misc/annotation_pipeline.svg)
 
