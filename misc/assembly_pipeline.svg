@@ -906,8 +906,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="55.48287"
-     inkscape:cy="217.85342"
+     inkscape:cx="313.98287"
+     inkscape:cy="213.85342"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -1396,22 +1396,22 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;opacity:1;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       x="112.87734"
+       x="161.03209"
        y="273.93509"
        id="text13507"><tspan
          sodipodi:role="line"
          id="tspan14169"
-         x="112.87734"
+         x="161.03209"
          y="273.93509">wengan</tspan></text>
     <text
        id="text11569"
        y="274.61292"
-       x="160.82195"
+       x="112.66719"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777767px;line-height:50%;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;opacity:1;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.2895014px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
          sodipodi:role="line"
          id="tspan11571"
-         x="160.82195"
+         x="112.66719"
          y="274.61292">haslr</tspan></text>
     <text
        id="text13503"
@@ -1426,7 +1426,7 @@
     <g
        style="opacity:1"
        id="g15603"
-       transform="translate(32.592051,105.10374)">
+       transform="translate(-15.562696,105.10374)">
       <rect
          y="180.58331"
          x="113.77082"
@@ -1447,7 +1447,7 @@
     </g>
     <g
        id="g15611"
-       transform="translate(-15.562696,105.10374)">
+       transform="translate(32.592051,105.10374)">
       <rect
          y="180.58331"
          x="113.77082"

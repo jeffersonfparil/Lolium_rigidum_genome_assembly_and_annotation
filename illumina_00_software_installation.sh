@@ -29,11 +29,13 @@ make test ### may get python2 errors just remove duplicate libraries and reinsta
 ### Install BESST for scaffolding via conda
 ###### install Miniconda
 # wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh
-# chmod +x Miniconda2-latest-Linux-x86_64.sh ### respond appropriately to the prompts
+# chmod +x Miniconda2-latest-Linux-x86_64.sh; ./Miniconda2-latest-Linux-x86_64.sh ### respond appropriately to the prompts
+# conda config --set auto_activate_base false ### disable conda autoactivation
 # rm Miniconda2-latest-Linux-x86_64.sh
 ###### activate conda environment and install BESST via pip
-source activate 
-sudo pip install BESST
+source /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/Miniconda/bin/activate
+conda install -c bioconda besst 
+runBESST -h
 
 ### Clean-up
 rm fastqc_v0.11.7.zip

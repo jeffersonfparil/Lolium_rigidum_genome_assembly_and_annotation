@@ -19,91 +19,91 @@ AUGUSTUS=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_202101
 ### Navigate to working directory
 cd $OUTPUT_DIR
 
-### List of genome assemblies
-ASSEMBLIES=$(ls ${INPUT_DIR}/ | grep "Lori_" | sed 's/.fasta//g')
+# ### List of genome assemblies
+# ASSEMBLIES=$(ls ${INPUT_DIR}/ | grep "Lori_" | sed 's/.fasta//g')
 
-### List of gene lists we will be using to find homologs in the assemblies
-GENE_LISTS=$(echo "rice maize arabidopsis")
+# ### List of gene lists we will be using to find homologs in the assemblies
+# GENE_LISTS=$(echo "rice maize arabidopsis")
 
-### Annotation with rice, maize, and arabidopsis genes
-### (1) split the genome assemblies by scaffold
-echo 'from Bio import SeqIO
-import pandas as pd
-import sys
-import os
-fname_assembly = sys.argv[1]
-# fname_assembly = "/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_m1/Lori_m1.raw.fa"
-id_assembly = os.path.basename(fname_assembly).split(".")[0]
-with open(fname_assembly, "rU") as genome:
-    for scaffold in SeqIO.parse(genome, "fasta"):
-        seq_string = SeqIO.FastaIO.as_fasta_2line(scaffold)
-        f = open(id_assembly + "." + scaffold.id + ".fa", "w")
-        f.write(seq_string)
-        f.close()
-' > split_assembly_by_scaffold.py
-time \
-parallel python3 split_assembly_by_scaffold.py {} ::: $(ls ${INPUT_DIR}/Lori_*.fasta)
-### (2) run Augustus in parallel per scaffold per assembly per species genes
-echo '#!/bin/bash
-AUGUSTUS=$1
-FASTA=$2
-SPECIES=$3
-# AUGUSTUS=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/Augustus/bin/augustus
-# FASTA=ctg1.fa
-# SPECIES=rice #SPECIES=maize #SPECIES=arabidopsis
-${AUGUSTUS} \
-    --species=${SPECIES} \
-    --genemodel=partial \
-    ${FASTA} \
-    > ${FASTA}.${SPECIES}.gff
-' > augustus_parallel.sh
-chmod +x augustus_parallel.sh
-time \
-parallel ./augustus_parallel.sh ${AUGUSTUS} {1} {2} \
-    ::: $(ls Lori_*.fa) \
-    ::: $(echo ${GENE_LISTS} | cut -d' ' -f1-3)
+# ### Annotation with rice, maize, and arabidopsis genes
+# ### (1) split the genome assemblies by scaffold
+# echo 'from Bio import SeqIO
+# import pandas as pd
+# import sys
+# import os
+# fname_assembly = sys.argv[1]
+# # fname_assembly = "/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_m1/Lori_m1.raw.fa"
+# id_assembly = os.path.basename(fname_assembly).split(".")[0]
+# with open(fname_assembly, "rU") as genome:
+#     for scaffold in SeqIO.parse(genome, "fasta"):
+#         seq_string = SeqIO.FastaIO.as_fasta_2line(scaffold)
+#         f = open(id_assembly + "." + scaffold.id + ".fa", "w")
+#         f.write(seq_string)
+#         f.close()
+# ' > split_assembly_by_scaffold.py
+# time \
+# parallel python3 split_assembly_by_scaffold.py {} ::: $(ls ${INPUT_DIR}/Lori_*.fasta)
+# ### (2) run Augustus in parallel per scaffold per assembly per species genes
+# echo '#!/bin/bash
+# AUGUSTUS=$1
+# FASTA=$2
+# SPECIES=$3
+# # AUGUSTUS=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/Augustus/bin/augustus
+# # FASTA=ctg1.fa
+# # SPECIES=rice #SPECIES=maize #SPECIES=arabidopsis
+# ${AUGUSTUS} \
+#     --species=${SPECIES} \
+#     --genemodel=partial \
+#     ${FASTA} \
+#     > ${FASTA}.${SPECIES}.gff
+# ' > augustus_parallel.sh
+# chmod +x augustus_parallel.sh
+# time \
+# parallel ./augustus_parallel.sh ${AUGUSTUS} {1} {2} \
+#     ::: $(ls Lori_*.fa) \
+#     ::: $(echo ${GENE_LISTS} | cut -d' ' -f1-3)
 
-### Merge across scaffolds per genome assembly per gene list
-echo '#!/bin/bash
-assembly=$1
-species_gene_list=$2
-# ### test
-# assembly=Lori_hw
-# species_gene_list=rice
-f1=$(ls ${assembly}.*.${species_gene_list}.gff | head -n1)
-line_number=$(echo $(grep -n "# ----- prediction" ${f1} | cut -d: -f1) - 1 | bc)
-if [ ${line_number} -eq "-1" ]
-then
-    touch ${assembly}.${species_gene_list}.gff
-else
-    head -${line_number} ${f1} > ${assembly}.${species_gene_list}.gff
-fi
-for f in $(ls ${assembly}.*.${species_gene_list}.gff)
-do
-    line_number=$(grep -n "# ----- prediction" ${f} | cut -d: -f1)
-    n_match=$(grep -n "# ----- prediction" ${f} | wc -l)
-    # echo $line_number
-    if [ ${n_match} -ne 0 ]
-    then
-        tail -n+${line_number} ${f} >> ${assembly}.${species_gene_list}.gff
-    fi
-done
-' > merge_gff_parallel.sh
-chmod +x merge_gff_parallel.sh
-time \
-parallel ./merge_gff_parallel.sh {1} {2} \
-    ::: ${ASSEMBLIES} \
-    ::: ${GENE_LISTS}
+# ### Merge across scaffolds per genome assembly per gene list
+# echo '#!/bin/bash
+# assembly=$1
+# species_gene_list=$2
+# # ### test
+# # assembly=Lori_hw
+# # species_gene_list=rice
+# f1=$(ls ${assembly}.*.${species_gene_list}.gff | head -n1)
+# line_number=$(echo $(grep -n "# ----- prediction" ${f1} | cut -d: -f1) - 1 | bc)
+# if [ ${line_number} -eq "-1" ]
+# then
+#     touch ${assembly}.${species_gene_list}.gff
+# else
+#     head -${line_number} ${f1} > ${assembly}.${species_gene_list}.gff
+# fi
+# for f in $(ls ${assembly}.*.${species_gene_list}.gff)
+# do
+#     line_number=$(grep -n "# ----- prediction" ${f} | cut -d: -f1)
+#     n_match=$(grep -n "# ----- prediction" ${f} | wc -l)
+#     # echo $line_number
+#     if [ ${n_match} -ne 0 ]
+#     then
+#         tail -n+${line_number} ${f} >> ${assembly}.${species_gene_list}.gff
+#     fi
+# done
+# ' > merge_gff_parallel.sh
+# chmod +x merge_gff_parallel.sh
+# time \
+# parallel ./merge_gff_parallel.sh {1} {2} \
+#     ::: ${ASSEMBLIES} \
+#     ::: ${GENE_LISTS}
 
-### Move per scaffold and per gene list sequence and annotations into a separate folder
-mkdir INDIVIDUAL_AUGUSTUS_PER_SCAFFOLD_OUTPUT/
-ls | grep "Lori_h" | grep "\.fa$" | xargs -I {} mv {} INDIVIDUAL_AUGUSTUS_PER_SCAFFOLD_OUTPUT/
-ls | grep "Lori_h" | grep '.fa.' | grep "gff$" | xargs -I {} mv {} INDIVIDUAL_AUGUSTUS_PER_SCAFFOLD_OUTPUT/
+# ### Move per scaffold and per gene list sequence and annotations into a separate folder
+# mkdir INDIVIDUAL_AUGUSTUS_PER_SCAFFOLD_OUTPUT/
+# ls | grep "Lori_h" | grep "\.fa$" | xargs -I {} mv {} INDIVIDUAL_AUGUSTUS_PER_SCAFFOLD_OUTPUT/
+# ls | grep "Lori_h" | grep '.fa.' | grep "gff$" | xargs -I {} mv {} INDIVIDUAL_AUGUSTUS_PER_SCAFFOLD_OUTPUT/
 
-### Clean-up
-rm split_assembly_by_scaffold.py
-rm augustus_parallel.sh
-rm merge_gff_parallel.sh
+# ### Clean-up
+# rm split_assembly_by_scaffold.py
+# rm augustus_parallel.sh
+# rm merge_gff_parallel.sh
 
 
 
@@ -175,7 +175,46 @@ sudo apt install -y bamtools
 sudo apt install -y ncbi-blast+
 
 ### (5) ProtHint
+sudo cpanm threads ### install threads perl module
+sudo cpanm YAML ### install YAML perl module
+sudo cpanm Thread::Queue ### install Thread::Queue perl module
+
 git clone https://github.com/gatech-genemark/ProtHint.git
 cd ProtHint/
 ### add ProtHint to path
 echo "export PROTHINT_PATH=${DIR}/ProtHint/bin/"  >> ~/.bashrc
+# ### TEST
+# cd /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/
+# ### download viridiplantae protein sequences
+# wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
+# ### ProtHint test
+# PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
+# ${PROTHINT} Lori_hh.fasta odb10_plants_fasta.tar.gz
+cd -
+
+### (6) Download STAR executable
+git clone https://github.com/alexdobin/STAR.git
+STAR/bin/Linux_x86_64_static/STAR -h
+
+### (7) Download diamond
+wget http://github.com/bbuchfink/diamond/releases/download/v2.0.7/diamond-linux64.tar.gz
+tar -xzf diamond-linux64.tar.gz
+mv diamond ProtHint/dependencies/ ### replace diamond with the new version in BRAKER
+rm diamond-linux64.tar.gz
+
+### (7) Clone BRAKER2
+git clone https://github.com/Gaius-Augustus/BRAKER.git
+
+### Download viridiplatae OrthoDB
+wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
+tar -xvzf odb10_plants_fasta.tar.gz
+
+### step 0: STAR RNAseq alignment
+
+
+### step 1: ProtHint
+cd /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
+PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
+${PROTHINT} --threads 10 Lori_hh.fasta odb10_plants_fasta.tar.gz
+
+### step 2: GeneMark
