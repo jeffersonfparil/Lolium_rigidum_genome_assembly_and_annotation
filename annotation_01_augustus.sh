@@ -225,14 +225,16 @@ cd /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASS
 
 ###step 1: Download viridiplatae OrthoDB
 wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
-# tar -xvzf odb10_plants_fasta.tar.gz
+tar -xvzf odb10_plants_fasta.tar.gz
+cat plants/Rawdata/*.fs > odb10_plants.fasta
+rm -R plants/ odb10_plants_fasta.tar.gz
 
 ### step 2: STAR RNAseq alignment
 
 
 ### step 3: ProtHint
 PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
-time ${PROTHINT} Lori_hh.fasta odb10_plants_fasta.tar.gz --threads 10
+time ${PROTHINT} Lori_hh.fasta odb10_plants.fasta
 
 ### diamond not working
 

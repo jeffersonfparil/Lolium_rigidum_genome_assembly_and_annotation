@@ -9,7 +9,7 @@ ASSEMBLY_FASTA=$1
 ### OUTPUTS:
 ### (1) ${ASSEMBLY_FASTA}.base.count - total number of bases and excluding Ns
 ### (2) ${ASSEMBLY_FASTA}.scaffold_stats.csv - lengths per scaffold
-### (2) ${ASSEMBLY_FASTA}.draft_genome_distribution_N50_L50.svg - svg image of scaffold distribution and and assembly statistics
+### (3) ${ASSEMBLY_FASTA}.draft_genome_distribution_N50_L50.svg - svg image of scaffold distribution and and assembly statistics
 
 ### (1) count the total number of bases (line1: total; line2: excluding Ns)
 grep -v ">" ${ASSEMBLY_FASTA} | sed ':a;N;$!ba;s/\n//g' | wc -c > ${ASSEMBLY_FASTA}.base.count

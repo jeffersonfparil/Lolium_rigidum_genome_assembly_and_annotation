@@ -15,6 +15,7 @@
 INPUT_FASTQ_GZ=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/minion-filtered-trimmed.fastq.gz
 OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
 WTDBG2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/wtdbg2/wtdbg2
+WTPOA_CNS=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/wtdbg2/wtpoa-cns
 
 ### Prepare output directory
 cd ${OUTPUT_DIR}/
@@ -29,18 +30,13 @@ ${WTDBG2} \
 
 ### Derive the consensus assembly in fasta format ###~3.5minutes:::12cores:::47Gb:::20210104
 time \
-wtdbg2/wtpoa-cns -t 32 \
-                 -i ${OUTPUT_DIR}/Lori_mw/Lori_mw.ctg.lay.gz \
-                 -fo ${OUTPUT_DIR}/Lori_mw/Lori_mw.raw.fa
+${WTPOA_CNS} -t 32 \
+             -i ${OUTPUT_DIR}/Lori_mw/Lori_mw.ctg.lay.gz \
+             -fo ${OUTPUT_DIR}/Lori_mw/Lori_mw.raw.fa
 
 ### Assembly statistics
 ### FIX ME WITH SRC PATH??!?!?!? 
 ### ${path_to_src}/assembly_stats.sh ${OUTPUT_BASENAME}.raw.fa
-
-### Clean-up
-mkdir Lori_m1/
-mv Lori_m1.* Lori_m1/
-mv Lori_m1-* Lori_m1/
 
 ### Miscellaneous
 ### polish consensus, not necessary if you want to polish the assemblies using other tools
