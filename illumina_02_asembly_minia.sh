@@ -19,13 +19,13 @@ OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_2021
 cd ${OUTPUT_DIR}
 mkdir Lori_im/
 
-### Execute (May need to spcify the full path to work; also reduce the number of cores from 32 to 16)
+### Execute (Use 75% of the RAM, e.g. from 280Gb to 210Gb; and 80% of the cores, e.g. from 32 cores to 25 cores)
 time \
 ${MINIA} \
     -1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz \
     -2 ${INPUT_DIR}/Lrigidum_illumina_150bp_R2.fastq.gz \
-    --max-memory 280000 \
-    --nb-cores 16 \
+    --max-memory 210000 \
+    --nb-cores 25 \
     -o ${OUTPUT_DIR}/Lori_im/Lori_im
 
 ### Assess assembly

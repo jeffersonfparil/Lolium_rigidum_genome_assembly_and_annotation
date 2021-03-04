@@ -106,8 +106,11 @@ cd $OUTPUT_DIR
 # rm merge_gff_parallel.sh
 
 
-
-### TESTING BRAKER2
+#######################
+###                 ###
+### TESTING BRAKER2 ###
+###                 ###
+#######################
 
 ### install dependencies
 DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104
@@ -174,11 +177,10 @@ sudo apt install -y bamtools
 ### (4) ncbi-blast+
 sudo apt install -y ncbi-blast+
 
-### (5) ProtHint
+### (5) Download/install ProtHint
 sudo cpanm threads ### install threads perl module
 sudo cpanm YAML ### install YAML perl module
 sudo cpanm Thread::Queue ### install Thread::Queue perl module
-
 git clone https://github.com/gatech-genemark/ProtHint.git
 cd ProtHint/
 ### add ProtHint to path
@@ -192,29 +194,47 @@ echo "export PROTHINT_PATH=${DIR}/ProtHint/bin/"  >> ~/.bashrc
 # ${PROTHINT} Lori_hh.fasta odb10_plants_fasta.tar.gz
 cd -
 
-### (6) Download STAR executable
+### (6) Download/install STAR executable
 git clone https://github.com/alexdobin/STAR.git
 STAR/bin/Linux_x86_64_static/STAR -h
 
-### (7) Download diamond
-wget http://github.com/bbuchfink/diamond/releases/download/v2.0.7/diamond-linux64.tar.gz
-tar -xzf diamond-linux64.tar.gz
-mv diamond ProtHint/dependencies/ ### replace diamond with the new version in BRAKER
-rm diamond-linux64.tar.gz
+### (7) Download/install GeneMark
+wget http://topaz.gatech.edu/GeneMark/tmp/GMtool_mNfY6/gmes_linux_64.tar.gz ### dowload GeneMar-EX
+tar -xvzf gmes_linux_64.tar.gz; rm gmes_linux_64.tar.gz ### decompress the software
+cd gmes_linux_64/
+wget http://topaz.gatech.edu/GeneMark/tmp/GMtool_AWk_2/gm_key_64.gz ### Download key
+gunzip -d gm_key_64.gz; mv gm_key_64 .gm_key ### decompress and rename the key
+sudo apt install -y cpanminus ### install perl module installer cpanm
+sudo cpanm Hash::Merge ### install Hash::Merge perl module
+sudo cpanm MCE::Mutex ### install MCE::Mutex perl module
+sudo cpanm Math::Utils ### install MCE::Mutex perl module
+./check_install.bash ### check installation of GeneMark-EX
+cp -R * /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/dependencies/GeneMarkES/
+cp .gm_key /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/dependencies/GeneMarkES/
+cd -
 
-### (7) Clone BRAKER2
+### (8) Download/install BRAKER2
 git clone https://github.com/Gaius-Augustus/BRAKER.git
 
-### Download viridiplatae OrthoDB
-wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
-tar -xvzf odb10_plants_fasta.tar.gz
+###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-### step 0: STAR RNAseq alignment
-
-
-### step 1: ProtHint
+### step 0: navigate to working directory
 cd /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
+
+###step 1: Download viridiplatae OrthoDB
+wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
+# tar -xvzf odb10_plants_fasta.tar.gz
+
+### step 2: STAR RNAseq alignment
+
+
+### step 3: ProtHint
 PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
-${PROTHINT} --threads 10 Lori_hh.fasta odb10_plants_fasta.tar.gz
+time ${PROTHINT} Lori_hh.fasta odb10_plants_fasta.tar.gz --threads 10
+
+### diamond not working
+
 
 ### step 2: GeneMark

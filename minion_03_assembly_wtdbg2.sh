@@ -7,31 +7,31 @@
 ### (1) Filtered and trimmed MinION reads in compressed fastq format (minion-filtered-trimmed.fastq.gz)
 
 ### Outputs:
-### (1) Assembly using wtdbg2 assembler in fasta format (Lori_m1.raw.fa)
+### (1) Assembly using wtdbg2 assembler in fasta format (Lori_mw.raw.fa)
 ### (2) Scaffold lengths in comma-separated format (Lori_m1-scaffold_stats.csv)
 ### (3) Assembly statistics in scalabel vector graphic format (Lori_m1-draft_genome_distribution_N50_L50.svg)
 
 ### Parameters:
 INPUT_FASTQ_GZ=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/MINION/minion-filtered-trimmed.fastq.gz
-OUTPUT_BASENAME=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_m1
+OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
 WTDBG2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/wtdbg2/wtdbg2
+
+### Prepare output directory
+cd ${OUTPUT_DIR}/
+mkdir Lori_mw/
 
 ### De novo assembly with wtdbg2 (assemble ont read >=1G or preset3) ###~40minutes:::12cores:::47Gb:::20210104
 time \
 ${WTDBG2} \
-    -p 19 \
-    -AS 2 \
-    -s 0.05 \
-    -L 5000 \
     -i ${INPUT_FASTQ_GZ} \
-    -t 32 \
-    -fo ${OUTPUT_BASENAME}
+    -t 12 \
+    -fo ${OUTPUT_DIR}/Lori_mw/Lori_mw
 
 ### Derive the consensus assembly in fasta format ###~3.5minutes:::12cores:::47Gb:::20210104
 time \
 wtdbg2/wtpoa-cns -t 32 \
-                 -i ${OUTPUT_BASENAME}.ctg.lay.gz \
-                 -fo ${OUTPUT_BASENAME}.raw.fa
+                 -i ${OUTPUT_DIR}/Lori_mw/Lori_mw.ctg.lay.gz \
+                 -fo ${OUTPUT_DIR}/Lori_mw/Lori_mw.raw.fa
 
 ### Assembly statistics
 ### FIX ME WITH SRC PATH??!?!?!? 
