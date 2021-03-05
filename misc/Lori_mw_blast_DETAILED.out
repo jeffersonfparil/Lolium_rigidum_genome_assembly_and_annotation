@@ -1,0 +1,723 @@
+BLASTN 2.9.0+
+
+
+Reference: Zheng Zhang, Scott Schwartz, Lukas Wagner, and Webb
+Miller (2000), "A greedy algorithm for aligning DNA sequences", J
+Comput Biol 2000; 7(1-2):203-14.
+
+
+
+Database: Lori_mw.raw.fa
+           43,833 sequences; 906,316,982 total letters
+
+
+
+Query= ACCase: DQ184646.1 Lolium rigidum isolate WLR96-41 acetyl-coenzyme A
+carboxylase (acc) gene, partial cds; nuclear gene for chloroplast
+product
+
+Length=1563
+                                                                      Score        E
+Sequences producing significant alignments:                          (Bits)     Value
+
+ctg7640 len=27731                                                     2760       0.0  
+
+
+>ctg7640 len=27731
+Length=27731
+
+ Score = 2760 bits (1494),  Expect = 0.0
+ Identities = 1540/1562 (99%), Gaps = 3/1562 (0%)
+ Strand=Plus/Minus
+
+Query  1      GAATTTCCCAGTGGCAGACAGATTATTGTTGTCGCAAATGATATTACTTTTAGAGCTGGA  60
+              |||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||
+Sbjct  13607  GAATTTCCCAGTGGCAGACAGATTATTGTTGTCGCAAATGATATTACTTT-AGAGCTGGA  13549
+
+Query  61     TCATTTGGCCCAAGGGAAGATGCATTTTTTGAAGCTGTTACCAACCTGGCTTGTGAGAGA  120
+              ||||||||||||||||||||||||||||| ||||||||||||||||||||||||||||||
+Sbjct  13548  TCATTTGGCCCAAGGGAAGATGCATTTTT-GAAGCTGTTACCAACCTGGCTTGTGAGAGA  13490
+
+Query  121    AAGCTTCCTCTTATCTATATGGCTGCAAACTCTGGTGCTCGGATTGGCATTGCTGATGAA  180
+              |||||||||||||||||| |||||||||||||||||||||||||||||||||| ||||||
+Sbjct  13489  AAGCTTCCTCTTATCTATTTGGCTGCAAACTCTGGTGCTCGGATTGGCATTGCCGATGAA  13430
+
+Query  181    GTTAAATCTATCTTCCGTGTTAAATGGATTGATGATAGCAACCCTGAACGTGGATTTGAT  240
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  13429  GTTAAATCTATCTTCCGTGTTAAATGGATTGATGATAGCAACCCTGAACGTGGATTTGAT  13370
+
+Query  241    TACGTTTATCTGTCTGAAGAAGACTATGGCCGTATTAGCTCTTCTGTTATAGCGCACAAG  300
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  13369  TACGTTTATCTGTCTGAAGAAGACTATGGCCGTATTAGCTCTTCTGTTATAGCGCACAAG  13310
+
+Query  301    ACACAGCTAGATAGTGGCGAAATAAGGTGGGTTATCGATTCTGTTGTGGGCAAGGAGGAT  360
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  13309  ACACAGCTAGATAGTGGCGAAATAAGGTGGGTTATCGATTCTGTTGTGGGCAAGGAGGAT  13250
+
+Query  361    GGACTAGGTGTGGAGAACATACATGGAAGTGCTGCTATTGCCAGTGCGTATTCTAGGGCA  420
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  13249  GGACTAGGTGTGGAGAACATACATGGAAGTGCTGCTATTGCCAGTGCGTATTCTAGGGCA  13190
+
+Query  421    TACGAGGAGACATTTACACTTACATTTGTGACTGGACGAACTGTTGGAATAGGAGCCTAT  480
+              || |||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  13189  TATGAGGAGACATTTACACTTACATTTGTGACTGGACGAACTGTTGGAATAGGAGCCTAT  13130
+
+Query  481    CTTGCTCGACTTGGCATACGGTGCATACAGCGTGAAGATCAGCCCATTATCTTAACTGGG  540
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  13129  CTTGCTCGACTTGGCATACGGTGCATACAGCGTGAAGATCAGCCCATTATCTTAACTGGG  13070
+
+Query  541    TATTCTGCCCTGAACAAGCTTCTCGGACGGGAAGTGTACAGCTCTCACATGCAGTTGGGT  600
+              |||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||
+Sbjct  13069  TATTCTGCCCTGAACAAGCTTCTCGGGCGGGAAGTGTACAGCTCTCACATGCAGTTGGGT  13010
+
+Query  601    GGTCCCAAAATCATGGCAACTAATGGTATTGACCATCTGACTGTTCCAGATGACCTTGCA  660
+              ||||||||||||||||| |||||||||||||||||||||||||||| ||||||||||| |
+Sbjct  13009  GGTCCCAAAATCATGGCGACTAATGGTATTGACCATCTGACTGTTCGAGATGACCTTGAA  12950
+
+Query  661    GGTGTTTCTCATATATTGAGGTGGCTCAGCTATGTTCCTGCTAACATTGGTGGACCTCTT  720
+              ||||||||| ||||||||||||||||||||||||||||||||||||| ||||||||||||
+Sbjct  12949  GGTGTTTCTAATATATTGAGGTGGCTCAGCTATGTTCCTGCTAACATCGGTGGACCTCTT  12890
+
+Query  721    CCTATTACAAAACCTTTGGATCCAATAGACAGACCTGTTGCATACATTCCTGAGAATACA  780
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  12889  CCTATTACAAAACCTTTGGATCCAATAGACAGACCTGTTGCATACATTCCTGAGAATACA  12830
+
+Query  781    TGTGATCCTCGTGCAGCCATAAGTGGCATTGATGACAGCCAAGGGAAATGGCTGGGTGGT  840
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  12829  TGTGATCCTCGTGCAGCCATAAGTGGCATTGATGACAGCCAAGGGAAATGGCTGGGTGGT  12770
+
+Query  841    ATGTTTGACAAAGACAGTTTTGTGGAGACATTTGAAGGATGGGCGAAGACAGTAGTTACT  900
+              |||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||
+Sbjct  12769  ATGTTTGACAAAGACAGTTTTGTGGAGACATTTGGAGGATGGGCGAAGACAGTAGTTACT  12710
+
+Query  901    GGCAGAGCAAAACTTGGAGGGATTCCTGTGGGTGTTATAGCTGTGGAGACACAGACCATG  960
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  12709  GGCAGAGCAAAACTTGGAGGGATTCCTGTGGGTGTTATAGCTGTGGAGACACAGACCATG  12650
+
+Query  961    ATGCAGCTCGTCCCAGCTGATCCAGGACAGCCTGATTCCCATGAGCGGTCCGTTCCTCGT  1020
+              |||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||
+Sbjct  12649  ATGCAGCTCGTCCCAGCTGATCCAGGACAGCCTGATTCCCATGAGCGGTCTGTTCCTCGT  12590
+
+Query  1021   GCTGGGCAAGTCTGGTTTCCAGATTCTGCTACCAAGACAGCGCAGGCAATGATGGACTTC  1080
+              ||||||||||||||||||||||||||||||||||||||||||||||||||| ||||||||
+Sbjct  12589  GCTGGGCAAGTCTGGTTTCCAGATTCTGCTACCAAGACAGCGCAGGCAATGTTGGACTTC  12530
+
+Query  1081   AACCGTGAAGGGTTACCTCTGTTCATCCTTGCTAACTGGAGAGGCTTCTCTGGTGGGCAA  1140
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  12529  AACCGTGAAGGGTTACCTCTGTTCATCCTTGCTAACTGGAGAGGCTTCTCTGGTGGGCAA  12470
+
+Query  1141   AGAGACCTTTTTGAAGGAATTCTGCAGGCTGGATCAACAATTGTTGAGAACCTTAGGATA  1200
+              ||||||||||| |||||||||||||||||||||||||||||||||||||||||||||| |
+Sbjct  12469  AGAGACCTTTT-GAAGGAATTCTGCAGGCTGGATCAACAATTGTTGAGAACCTTAGGACA  12411
+
+Query  1201   TATAATCAGCCTGCCTTTGTATATATCCCCAAGGCTGCAGAGCTACGTGGAGGGGCTTGG  1260
+              |||||||||||||||||||||||||||||||||||||||||||| |||||||| ||||||
+Sbjct  12410  TATAATCAGCCTGCCTTTGTATATATCCCCAAGGCTGCAGAGCTTCGTGGAGGTGCTTGG  12351
+
+Query  1261   GTCGTGATTGATAGCAAGATAAATCCAGATCGCATTGAGTGCTATGCTGAGACAACTGCA  1320
+              || |||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  12350  GTTGTGATTGATAGCAAGATAAATCCAGATCGCATTGAGTGCTATGCTGAGACAACTGCA  12291
+
+Query  1321   AAAGGGAATGTTCTCGAGCCTCAAGGGTTGATTGAGATCAAGTTCAGGTCAGAGGAACTC  1380
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| 
+Sbjct  12290  AAAGGGAATGTTCTCGAGCCTCAAGGGTTGATTGAGATCAAGTTCAGGTCAGAGGAACTT  12231
+
+Query  1381   CAAGAATGCATGGGTAGGCTTGATCCAGAATTGATAAATCTGAAAGCACAACTCCAGGGA  1440
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  12230  CAAGAATGCATGGGTAGGCTTGATCCAGAATTGATAAATCTGAAAGCACAACTCCAGGGA  12171
+
+Query  1441   GCAAAGCATGAAAATGGAAGTCTATCTGATGGAGAATCCATTCAGAAGAGCATCGAAGCT  1500
+              ||||||||||||||||||||||||||||| ||||||||||||||||||||||| ||||||
+Sbjct  12170  GCAAAGCATGAAAATGGAAGTCTATCTGACGGAGAATCCATTCAGAAGAGCATAGAAGCT  12111
+
+Query  1501   CGAAAGAAACAGTTGCTGCCTTTGTACACTCAAATCGCGATACGGTTTGCTGAATTGCAT  1560
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  12110  CGAAAGAAACAGTTGCTGCCTTTGTACACTCAAATCGCGATACGGTTTGCTGAATTGCAT  12051
+
+Query  1561   GA  1562
+              ||
+Sbjct  12050  GA  12049
+
+
+
+Lambda      K        H
+    1.33    0.621     1.12 
+
+Gapped
+Lambda      K        H
+    1.28    0.460    0.850 
+
+Effective search space used: 1388340295550
+
+
+Query= ALS: EF411171.1 Lolium rigidum biotype 3105-1 acetolactate synthase
+(ALS) gene, partial cds
+
+Length=1549
+                                                                      Score        E
+Sequences producing significant alignments:                          (Bits)     Value
+
+CTG38602 len=6274                                                     2542       0.0  
+
+
+>CTG38602 len=6274
+Length=6274
+
+ Score = 2542 bits (1376),  Expect = 0.0
+ Identities = 1499/1553 (97%), Gaps = 30/1553 (2%)
+ Strand=Plus/Minus
+
+Query  1     ATCACCAACCACCTCTTCCGCCACGAGCAGGGGGAGGCCTTCGCGGCGTCCGGGTACGCC  60
+             ||||||||||||||||||||||||||||||||| ||||||||||||||||||||  ||||
+Sbjct  6151  ATCACCAACCACCTCTTCCGCCACGAGCAGGGG-AGGCCTTCGCGGCGTCCGGG--CGCC  6095
+
+Query  61    CGCGCGTCCGGGCGCGTCGGGGTCTGCGTCGCCACCTCCGGCCCGGGGGCCACCAACCTC  120
+             ||||||||||| ||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  6094  CGCGCGTCCGGCCGCGTCGGGGTCTGCGTCGCCACCTCCGGCCCGGGGGCCACCAACCTC  6035
+
+Query  121   GTCTCCGCGCTCGCCGACGCCCTCCTCGACTCCATCCCCATGGTGGCCATCACGGGGCAG  180
+             |||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||
+Sbjct  6034  GTCTCCGCGCTCGCCGACGCCCTCCTCGACTCCATCCCCATGGTGGCCATCACGGG-CAG  5976
+
+Query  181   GTCCCGCGCCGCATGATCGGCACGGACGCCTTCCAGGAGACGCCCATCGTCGAGGTCACC  240
+             || |||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  5975  GT-CCGCGCCGCATGATCGGCACGGACGCCTTCCAGGAGACGCCCATCGTCGAGGTCACC  5917
+
+Query  241   CGCTCCATCACCAAGCACAACTACCTCGTCCTCGACGTCGAGGACATCCCCCGCGTCATC  300
+             ||||||||||||  ||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  5916  CGCTCCATCACC--GCACAACTACCTCGTCCTCGACGTCGAGGACATCCCCCGCGTCATC  5859
+
+Query  301   CAGGAAGCCTTCTTCCTCGCCTCCTCTGGCCGCCCGGGCCCGGTGCTCGTCGACATCCCC  360
+             ||||| |||||||||||||||||||||||||||||||||| |||||||||||||||||||
+Sbjct  5858  CAGGAGGCCTTCTTCCTCGCCTCCTCTGGCCGCCCGGGCC-GGTGCTCGTCGACATCCCC  5800
+
+Query  361   AAGGACATCCAGCAGCAGATGGCTGTGCCCGTCTGGGACGCGCCCATGAGTCTGCCAGGC  420
+             ||||||||||||||||||||||||||||| ||||||||||||||||||||||||||||||
+Sbjct  5799  AAGGACATCCAGCAGCAGATGGCTGTGCCTGTCTGGGACGCGCCCATGAGTCTGCCAGGC  5740
+
+Query  421   TACATTGCCCGCCTGCCTAA-GCCGCCGGCTACTGAATTGCTTGAGCAGGTCCTGCGTTT  479
+             |||||||||||||||||||| ||||||||||||||||||||||||||||||||||||| |
+Sbjct  5739  TACATTGCCCGCCTGCCTAAAGCCGCCGGCTACTGAATTGCTTGAGCAGGTCCTGCGTCT  5680
+
+Query  480   GGTTGGTGAGGC-GAGACGCCCAATTCTCTATGTTGGCGGTGGCTGCTCTGCGTCCGGAG  538
+             |||||| ||||| ||||||||| |||||||||||||||||||||||||||||||||||||
+Sbjct  5679  GGTTGG-GAGGCAGAGACGCCCGATTCTCTATGTTGGCGGTGGCTGCTCTGCGTCCGGAG  5621
+
+Query  539   AGGAGCTGCGCCGCTTTGTTGAGCTCACTGGGATCCCAGTTACAACTACCCTCATGGGTC  598
+             |||||||||||||||| ||||||||||| ||||||||||||||| |||||||||||||||
+Sbjct  5620  AGGAGCTGCGCCGCTT-GTTGAGCTCAC-GGGATCCCAGTTACA-CTACCCTCATGGGTC  5564
+
+Query  599   TTGGCAACTTCCCCAGCGATGACCCGCTGTCTCTGCGTATGCTTGGGATGCATGGCACTG  658
+             ||||||||||||||||||| ||||||||||||||||||||||||||||||||||||||||
+Sbjct  5563  TTGGCAACTTCCCCAGCGA-GACCCGCTGTCTCTGCGTATGCTTGGGATGCATGGCACTG  5505
+
+Query  659   TCTACGCAAACTACGCTGTTGATAAGGCTGACCTCTTGCTTGCATTTGGCGTGAGGTTTG  718
+             | |||||||||||||| || |||||||||||||| |||||||| ||||| ||||||||||
+Sbjct  5504  TGTACGCAAACTACGCCGTAGATAAGGCTGACCTGTTGCTTGCGTTTGGTGTGAGGTTTG  5445
+
+Query  719   ATGATCGCGTCACTGGGAAAATCGAGGCTTTTGCGAGCAGGTCCAAGATTGTGCACATTG  778
+             |||||||||| ||||||||||||||||||||||| |||||||||||||||||||||||||
+Sbjct  5444  ATGATCGCGTGACTGGGAAAATCGAGGCTTTTGCAAGCAGGTCCAAGATTGTGCACATTG  5385
+
+Query  779   ACATTGATCCAGCTGAGATTGGCAAGAACAAGCAGCCGCATGTCTCCATTTGTGCAGATG  838
+             ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  5384  ACATTGATCCAGCTGAGATTGGCAAGAACAAGCAGCCGCATGTCTCCATTTGTGCAGATG  5325
+
+Query  839   TCAAGCTCGCTTTGCAGGGCCTGAATGCTCTGCTAACTGGGACCAAAGCACACAAGAGTT  898
+             |||||||||||||||||||| ||||||||||||||||||||| |||||||||||||||||
+Sbjct  5324  TCAAGCTCGCTTTGCAGGGCATGAATGCTCTGCTAACTGGGAGCAAAGCACACAAGAGTT  5265
+
+Query  899   TCGATTTCGGTTCGTGGCATGAGGAGTTGGAGCAGCAGAAAAGGGAGTTTCCTCTGGGAT  958
+             ||||||| ||||| |||||||||||||||||||||||||||||||  |||||||||||||
+Sbjct  5264  TCGATTT-GGTTC-TGGCATGAGGAGTTGGAGCAGCAGAAAAGGG--TTTCCTCTGGGAT  5209
+
+Query  959   ACAAAACTTTCGGGGAGGCCATCCCACCGCAGTATGCTATCCAGGTACTGGATGAGCTCA  1018
+             ||||| | ||| ||||||||||||||||||| |||||||||||||| |||||||||||||
+Sbjct  5208  ACAAA-C-TTC-GGGAGGCCATCCCACCGCAATATGCTATCCAGGTGCTGGATGAGCTCA  5152
+
+Query  1019  CCAAAGGCGAGGCCATCATTGCCACTGGTGTTGGGCAGCACCAGATGTGGGCGGCTCAGT  1078
+             | ||||| |||||||||||| |||||||||||||||||||||||||||||||||||||||
+Sbjct  5151  C-AAAGG-GAGGCCATCATT-CCACTGGTGTTGGGCAGCACCAGATGTGGGCGGCTCAGT  5095
+
+Query  1079  ATTACACCTACAAGCGCCCACGGCAGTGGCTCTCTTCGGCCGGTCTGGGGGCAATGGGGT  1138
+             ||||||| |||| |||||||||||||||||| |||||||| |||||||||||||||||||
+Sbjct  5094  ATTACACTTACA-GCGCCCACGGCAGTGGCTGTCTTCGGC-GGTCTGGGGGCAATGGGGT  5037
+
+Query  1139  TTGGGTTGCCAGCTGCAGCTGGCGCCGCTG-TGGCTAACCCAGGCGTCACAGTTGTTGAC  1197
+             ||||| |||||||||||||||||||||||| ||||||||||||| |||||||||||||||
+Sbjct  5036  TTGGGCTGCCAGCTGCAGCTGGCGCCGCTGGTGGCTAACCCAGGGGTCACAGTTGTTGAC  4977
+
+Query  1198  ATTGATGGGGATGGTAGCTTCCTCATGAACATTCAGGAGTTGGCGCTGATTCGCATTGAG  1257
+             |||||||||||||||||||||||||||||||||||| |||||||||||||||| ||||||
+Sbjct  4976  ATTGATGGGGATGGTAGCTTCCTCATGAACATTCAG-AGTTGGCGCTGATTCGTATTGAG  4918
+
+Query  1258  AACCTCCCAGTTAAGGTGATGATATTGAACAACCAGCATCTTGGAATGGTGGTGCAGTGG  1317
+             ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  4917  AACCTCCCAGTTAAGGTGATGATATTGAACAACCAGCATCTTGGAATGGTGGTGCAGTGG  4858
+
+Query  1318  GAGGACAGGTTTTACAAGGCCAATCGGGCGCATACATACCTTGGGAACCCAGAAAATGAG  1377
+             ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  4857  GAGGACAGGTTTTACAAGGCCAATCGGGCGCATACATACCTTGGGAACCCAGAAAATGAG  4798
+
+Query  1378  AGTGAGATATATCCAGATTTTGTGACCATTGCTAAAGGCT-TCAATGTTCCTGCAGTTCG  1436
+             |||||||||||||||||||||||||||||||||||||| | |||||||||||||||||||
+Sbjct  4797  AGTGAGATATATCCAGATTTTGTGACCATTGCTAAAGGGTCTCAATGTTCCTGCAGTTCG  4738
+
+Query  1437  GGTGACAAAGAGGAGTGAAGTCCGTGCAGCAATCAAGAAGATGCTTGAGACTCCTGGGCC  1496
+             |||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||
+Sbjct  4737  GGTGACAAAGAGGAGTGAAGTCCGTGCAGCCATCAAGAAGATGCTTGAGACTCCTGGGCC  4678
+
+Query  1497  ATACTTGTTGGATATCATCGTCCCTCACCAGGAGCATGTGCTGCCTATGATCC  1549
+             |||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  4677  ATACTTGTTGGATATCATCGTCCCTCACCAGGAGCATGTGCTGCCTATGATCC  4625
+
+
+
+Lambda      K        H
+    1.33    0.621     1.12 
+
+Gapped
+Lambda      K        H
+    1.28    0.460    0.850 
+
+Effective search space used: 1375669654000
+
+
+Query= psbA: KT439022.1 Lolium rigidum voucher PI 516608 PsbA (psbA) gene,
+partial cds; and psbA-trnH intergenic spacer, partial sequence;
+chloroplast
+
+Length=556
+                                                                      Score        E
+Sequences producing significant alignments:                          (Bits)     Value
+
+ctg5750 len=31906                                                     390        1e-106
+CTG20918 len=14222                                                    315        7e-84 
+CTG12343 len=20175                                                    289        4e-76 
+CTG17322 len=28511                                                    132        7e-29 
+CTG12315 len=75631                                                    121        2e-25 
+CTG13565 len=35473                                                    119        6e-25 
+CTG30760 len=9191                                                     104        2e-20 
+CTG32148 len=7997                                                     95.3       1e-17 
+ctg6029 len=30955                                                     78.7       1e-12 
+ctg5279 len=32162                                                     75.0       1e-11 
+ctg2097 len=46675                                                     71.3       2e-10 
+CTG18570 len=14409                                                    52.8       6e-05 
+
+
+>ctg5750 len=31906
+Length=31906
+
+ Score = 390 bits (211),  Expect = 1e-106
+ Identities = 228/235 (97%), Gaps = 5/235 (2%)
+ Strand=Plus/Minus
+
+Query  1      CATCTCTTAATGGATAAGGTTTTTCTGCTAACATATAGGAATTTTTGAAGAAATAAAAGC  60
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  14269  CATCTCTTAATGGATAAGGTTTTTCTGCTAACATATAGGAATTTTTGAAGAAATAAAAGC  14210
+
+Query  61     TAGAAATACCCAATATCTTG-CTAGAACAAGATATTGGGTATTTCTTTGTTTATTCATAA  119
+              |||||||||||||||||||| ||||  |||||||||||||||||||| ||||||||||||
+Sbjct  14209  TAGAAATACCCAATATCTTGTCTAG--CAAGATATTGGGTATTTCTT-GTTTATTCATAA  14153
+
+Query  120    TCTTTCTATTCTGAATTCAGTTAACGGCGAGATTTAGTATCCTTTCTTGCATTTTCATAA  179
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  14152  TCTTTCTATTCTGAATTCAGTTAACGGCGAGATTTAGTATCCTTTCTTGCATTTTCATAA  14093
+
+Query  180    CTCGTGAAATGCCGAGTAGGCACGAATTCCCCCAATTTGCGACCTACC-ATCGGA  233
+              ||||||||||||||||||||||||||||||||||||||||||||| || ||| ||
+Sbjct  14092  CTCGTGAAATGCCGAGTAGGCACGAATTCCCCCAATTTGCGACCTCCCCATCAGA  14038
+
+
+>CTG20918 len=14222
+Length=14222
+
+ Score = 315 bits (170),  Expect = 7e-84
+ Identities = 186/193 (96%), Gaps = 3/193 (2%)
+ Strand=Plus/Plus
+
+Query  1     CATCTCTTAATGGATAAGGTTTTTCTGCTAACATATAGGAATTTTTGAAGAAATAAAAGC  60
+             ||||||||||||||||||||||||  ||||||||||||||||||| |||||||| |||||
+Sbjct  2249  CATCTCTTAATGGATAAGGTTTTTACGCTAACATATAGGAATTTT-GAAGAAAT-AAAGC  2306
+
+Query  61    TAGAAATACCCAATATCTTGCTAGAACAAGATATTGGGTATTTCTTTGTTTATTCATAAT  120
+             ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  2307  TAGAAATACCCAATATCTTGCTAGAACAAGATATTGGGTATTTCTTTGTTTATTCATAAT  2366
+
+Query  121   CTTTCTATTCTGAATTCAGTTAACGGCGAGATTTAGTATCCTTTCTTGCATTTTCATAAC  180
+             |||||||||| |||||| ||||||| ||||||||||||||||||||||||||||||||||
+Sbjct  2367  CTTTCTATTC-GAATTCGGTTAACGACGAGATTTAGTATCCTTTCTTGCATTTTCATAAC  2425
+
+Query  181   TCGTGAAATGCCG  193
+             |||||||||||||
+Sbjct  2426  TCGTGAAATGCCG  2438
+
+
+>CTG12343 len=20175
+Length=20175
+
+ Score = 289 bits (156),  Expect = 4e-76
+ Identities = 176/184 (96%), Gaps = 8/184 (4%)
+ Strand=Plus/Plus
+
+Query  373   TTGCCAATAAATGATGAGCTACAAAAGGATTCAttttttttCGTGTCACAGCTGATTACT  432
+             |||||||||||||||||||||||||||||||||||||||| ||||||| | |||||||||
+Sbjct  5142  TTGCCAATAAATGATGAGCTACAAAAGGATTCATTTTTTT-CGTGTCA-A-CTGATTACT  5198
+
+Query  433   CCtttttttttttctttttAAAGAGTGGCATTCTATGTCCAATATCTCGATCGAAGTATG  492
+             ||    ||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  5199  CC----TTTTTTTCTTTTTAAAGAGTGGCATTCTATGTCCAATATCTCGATCGAAGTATG  5254
+
+Query  493   GAGGTCAAAATAAATAGAATAATGATGAATGaaaaaaaGAGAAAAATCCTTTAGCTGGAT  552
+             ||||||||||||||||||||||||||||||| ||||||||||||||||||||||||||||
+Sbjct  5255  GAGGTCAAAATAAATAGAATAATGATGAATG-AAAAAAGAGAAAAATCCTTTAGCTGGAT  5313
+
+Query  553   AAGG  556
+             ||||
+Sbjct  5314  AAGG  5317
+
+
+>CTG17322 len=28511
+Length=28511
+
+ Score = 132 bits (71),  Expect = 7e-29
+ Identities = 78/81 (96%), Gaps = 1/81 (1%)
+ Strand=Plus/Plus
+
+Query  476    ATCTCGATCGAAGTATGGAGGTCAAAATAAATAGAATAATGATGAATGaaaaaaaGAGAA  535
+              |||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||
+Sbjct  15668  ATCTCGATCGAAGTATGGAGGTCAAAATAAATAGAATAATGATGAATG-AAAAAAGAGAA  15726
+
+Query  536    AAATCCTTTAGCTGGATAAGG  556
+              |||||||||||  ||||||||
+Sbjct  15727  AAATCCTTTAGTCGGATAAGG  15747
+
+
+>CTG12315 len=75631
+Length=75631
+
+ Score = 121 bits (65),  Expect = 2e-25
+ Identities = 69/71 (97%), Gaps = 0/71 (0%)
+ Strand=Plus/Plus
+
+Query  486    AAGTATGGAGGTCAAAATAAATAGAATAATGATGAATGaaaaaaaGAGAAAAATCCTTTA  545
+              || ||||||||||||||||||||||||||||||||||||||||||||||||||| |||||
+Sbjct  48519  AAATATGGAGGTCAAAATAAATAGAATAATGATGAATGAAAAAAAGAGAAAAATTCTTTA  48578
+
+Query  546    GCTGGATAAGG  556
+              |||||||||||
+Sbjct  48579  GCTGGATAAGG  48589
+
+
+ Score = 71.3 bits (38),  Expect = 2e-10
+ Identities = 40/41 (98%), Gaps = 0/41 (0%)
+ Strand=Plus/Plus
+
+Query  339    TCTTTCTCCTCCTTCATATTTACCTTTTCTATTTTTGCCAA  379
+              |||||||||||||||||||||||||||| ||||||||||||
+Sbjct  48479  TCTTTCTCCTCCTTCATATTTACCTTTTGTATTTTTGCCAA  48519
+
+
+>CTG13565 len=35473
+Length=35473
+
+ Score = 119 bits (64),  Expect = 6e-25
+ Identities = 67/68 (99%), Gaps = 1/68 (1%)
+ Strand=Plus/Plus
+
+Query  477    TCTCGATCGAAGTATGGAGGTCAAAATAAATAGAATAATGATGAATGaaaaaaaGAGAAA  536
+              ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  30650  TCTCGATCGAAGTATGGAGGTCAAAATAAATAGAATAATGATGAATGAAAAAAAGAGAAA  30709
+
+Query  537    AATCCTTT  544
+              || |||||
+Sbjct  30710  AA-CCTTT  30716
+
+
+>CTG30760 len=9191
+Length=9191
+
+ Score = 104 bits (56),  Expect = 2e-20
+ Identities = 56/56 (100%), Gaps = 0/56 (0%)
+ Strand=Plus/Plus
+
+Query  225   ACCATCGGATTTGTTATGTAAATAGGTATATGTTCCTTTCCATTATGAATCGCGAT  280
+             ||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  6396  ACCATCGGATTTGTTATGTAAATAGGTATATGTTCCTTTCCATTATGAATCGCGAT  6451
+
+
+>CTG32148 len=7997
+Length=7997
+
+ Score = 95.3 bits (51),  Expect = 1e-17
+ Identities = 56/58 (97%), Gaps = 1/58 (2%)
+ Strand=Plus/Plus
+
+Query  360  ACCTTTTCTATTTTTGCCAATAAATGATGAGCTACAAAAGGATTCAttttttttCGTG  417
+            |||||||||||||||||||||||||||||||||| |||||||||| ||||||||||||
+Sbjct  409  ACCTTTTCTATTTTTGCCAATAAATGATGAGCTAAAAAAGGATTC-TTTTTTTTCGTG  465
+
+
+>ctg6029 len=30955
+Length=30955
+
+ Score = 78.7 bits (42),  Expect = 1e-12
+ Identities = 42/42 (100%), Gaps = 0/42 (0%)
+ Strand=Plus/Minus
+
+Query  456   AGTGGCATTCTATGTCCAATATCTCGATCGAAGTATGGAGGT  497
+             ||||||||||||||||||||||||||||||||||||||||||
+Sbjct  9753  AGTGGCATTCTATGTCCAATATCTCGATCGAAGTATGGAGGT  9712
+
+
+>ctg5279 len=32162
+Length=32162
+
+ Score = 75.0 bits (40),  Expect = 1e-11
+ Identities = 40/40 (100%), Gaps = 0/40 (0%)
+ Strand=Plus/Plus
+
+Query  491    TGGAGGTCAAAATAAATAGAATAATGATGAATGaaaaaaa  530
+              ||||||||||||||||||||||||||||||||||||||||
+Sbjct  31872  TGGAGGTCAAAATAAATAGAATAATGATGAATGAAAAAAA  31911
+
+
+>ctg2097 len=46675
+Length=46675
+
+ Score = 71.3 bits (38),  Expect = 2e-10
+ Identities = 41/42 (98%), Gaps = 1/42 (2%)
+ Strand=Plus/Minus
+
+Query  64     AAATACCCAATATCTTGCTAGAACAAGATATTGGGTATTTCT  105
+              ||||||||||||||||||||||||||||||||||| ||||||
+Sbjct  40708  AAATACCCAATATCTTGCTAGAACAAGATATTGGG-ATTTCT  40668
+
+
+>CTG18570 len=14409
+Length=14409
+
+ Score = 52.8 bits (28),  Expect = 6e-05
+ Identities = 28/28 (100%), Gaps = 0/28 (0%)
+ Strand=Plus/Minus
+
+Query  361   CCTTTTCTATTTTTGCCAATAAATGATG  388
+             ||||||||||||||||||||||||||||
+Sbjct  7421  CCTTTTCTATTTTTGCCAATAAATGATG  7394
+
+
+
+Lambda      K        H
+    1.33    0.621     1.12 
+
+Gapped
+Lambda      K        H
+    1.28    0.460    0.850 
+
+Effective search space used: 477887339424
+
+
+Query= EPSPS_1: MF163393.1 Lolium multiflorum isolate rp2
+5-enolpyruvylshikimate-3-phosphate (EPSPS) mRNA, partial cds
+
+Length=506
+                                                                      Score        E
+Sequences producing significant alignments:                          (Bits)     Value
+
+ctg459 len=174893                                                     331        6e-89
+
+
+>ctg459 len=174893
+Length=174893
+
+ Score = 331 bits (179),  Expect = 6e-89
+ Identities = 199/208 (96%), Gaps = 3/208 (1%)
+ Strand=Plus/Minus
+
+Query  5       CATGCTCGAGGCCCTGGACGCGCTCGGGCTCTCCGTGGAAGCAGACAAAGTTGCAAAAAG  64
+               ||||||||||||||||||||||||  ||||||||||||||||||||||||||||||||||
+Sbjct  129959  CATGCTCGAGGCCCTGGACGCGCT--GGCTCTCCGTGGAAGCAGACAAAGTTGCAAAAAG  129902
+
+Query  65      AGCTGTAGTCGTCGGCTGCGGCGGCAGGTTCCCGATTGAAAAGGATGCCAAGGAGGAAGT  124
+               ||||||||||||||||||||||||||||||||| ||||||||||||||||||||||||||
+Sbjct  129901  AGCTGTAGTCGTCGGCTGCGGCGGCAGGTTCCCCATTGAAAAGGATGCCAAGGAGGAAGT  129842
+
+Query  125     CAAGCTCTTCTTGGGGAACGCTGGAACTGCGATGCGGGCATTGACGGCGGCTGTAGTAGC  184
+                |||||||||||||||||||||||||||||||||||| ||||||||||||||||||||||
+Sbjct  129841  AAAGCTCTTCTTGGGGAACGCTGGAACTGCGATGCGGTCATTGACGGCGGCTGTAGTAGC  129782
+
+Query  185     TGCTGGTGGAAATGCAACTTATGTTCTT  212
+               ||||||||||||||| ||  ||||| ||
+Sbjct  129781  TGCTGGTGGAAATGCGACG-ATGTTTTT  129755
+
+
+ Score = 292 bits (158),  Expect = 3e-77
+ Identities = 158/158 (100%), Gaps = 0/158 (0%)
+ Strand=Plus/Minus
+
+Query  203     TTATGTTCTTGATGGAGTACCAAGAATGAGGGAGCGACCTATCGGTGACTTAGTTGTCGG  262
+               ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  129678  TTATGTTCTTGATGGAGTACCAAGAATGAGGGAGCGACCTATCGGTGACTTAGTTGTCGG  129619
+
+Query  263     TTTGAAACAACTAGGTGCCAATGTTGATTGTTTCCTCGGCACTGACTGCCCACCTGTTCG  322
+               ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  129618  TTTGAAACAACTAGGTGCCAATGTTGATTGTTTCCTCGGCACTGACTGCCCACCTGTTCG  129559
+
+Query  323     TATCAATGGCATTGGAGGGCTACCTGGTGGCAAGGTTA  360
+               ||||||||||||||||||||||||||||||||||||||
+Sbjct  129558  TATCAATGGCATTGGAGGGCTACCTGGTGGCAAGGTTA  129521
+
+
+ Score = 270 bits (146),  Expect = 1e-70
+ Identities = 150/152 (99%), Gaps = 0/152 (0%)
+ Strand=Plus/Minus
+
+Query  355     AGGTTAAGCTGTCTGGTTCCATCAGCAGCCAATACTTGAGTTCCTTGCTGATGGCTGCTC  414
+               ||||||||||||||||||||||||||||||| ||||||||||||||||||||||||||||
+Sbjct  129320  AGGTTAAGCTGTCTGGTTCCATCAGCAGCCAGTACTTGAGTTCCTTGCTGATGGCTGCTC  129261
+
+Query  415     CTTTGGCTCTTGGGGATGTCGAGATTGAAATCATTGATAAACTAATCTCTGTTCCTTACG  474
+               |||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |
+Sbjct  129260  CTTTGGCTCTTGGGGATGTCGAGATTGAAATCATTGATAAACTAATCTCTGTTCCTTATG  129201
+
+Query  475     TTGAAATGACATTGAGATTGATGGAGCGTTTT  506
+               ||||||||||||||||||||||||||||||||
+Sbjct  129200  TTGAAATGACATTGAGATTGATGGAGCGTTTT  129169
+
+
+
+Lambda      K        H
+    1.33    0.621     1.12 
+
+Gapped
+Lambda      K        H
+    1.28    0.460    0.850 
+
+Effective search space used: 432632856524
+
+
+Query= EPSPS_2: AF349754.1 Lolium rigidum 5-enolpyruvylshikimate
+3-phosphate synthase (epsp-s) mRNA, epsp-s-S allele, partial cds
+
+Length=1041
+                                                                      Score        E
+Sequences producing significant alignments:                          (Bits)     Value
+
+ctg459 len=174893                                                     374        2e-101
+
+
+>ctg459 len=174893
+Length=174893
+
+ Score = 374 bits (202),  Expect = 2e-101
+ Identities = 212/219 (97%), Gaps = 0/219 (0%)
+ Strand=Plus/Minus
+
+Query  326     AGGTTAAGCTGTCTGGTTCCATCAGCAGCCAATACTTGAGTTCCTTGCTGATGGCTGCTC  385
+               ||||||||||||||||||||||||||||||| ||||||||||||||||||||||||||||
+Sbjct  129320  AGGTTAAGCTGTCTGGTTCCATCAGCAGCCAGTACTTGAGTTCCTTGCTGATGGCTGCTC  129261
+
+Query  386     CTTTGGCTCTTGGGGATGTCGAGATTGAAATCATTGATAAACTRATCTCTGTTCCTTACG  445
+               ||||||||||||||||||||||||||||||||||||||||||| |||||||||||||| |
+Sbjct  129260  CTTTGGCTCTTGGGGATGTCGAGATTGAAATCATTGATAAACTAATCTCTGTTCCTTATG  129201
+
+Query  446     TTGAAATGACATTGAGATTGATGGAGCGTTTTGGCGTGACAGCAGARCATTCTGATAGCT  505
+               |||||||||||||||||||||||||||||||||||||||| ||||| |||||||||||||
+Sbjct  129200  TTGAAATGACATTGAGATTGATGGAGCGTTTTGGCGTGACGGCAGAGCATTCTGATAGCT  129141
+
+Query  506     GGGAYAGATTCTACATTAAAGGAGGACAGAAGTMCAAGT  544
+               |||| |||||||||||||||||||||||||||| |||||
+Sbjct  129140  GGGACAGATTCTACATTAAAGGAGGACAGAAGTACAAGT  129102
+
+
+ Score = 359 bits (194),  Expect = 6e-97
+ Identities = 208/217 (96%), Gaps = 1/217 (0%)
+ Strand=Plus/Minus
+
+Query  655     TTGCAGGGTGATGTGAAATTTGCTGAGGTACTAGAAATGATGGGAGCGAARGTTACATGG  714
+               |||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||
+Sbjct  128158  TTGCAGGGTGATGTGAAATTTGCTGAGGTACTAGAAATGATGGGAGCGAAGGTTACATGG  128099
+
+Query  715     ACCGACACTAGTGTAACTGTTACTGGTCCACCKCGTCAGCCCTTTGGAAGGAAACACCTW  774
+               || |||||||||||||||||||||||||||||  ||||||||||||||||||||||||| 
+Sbjct  128098  ACAGACACTAGTGTAACTGTTACTGGTCCACCG-GTCAGCCCTTTGGAAGGAAACACCTA  128040
+
+Query  775     AARGCTGTTGATGTCAACATGAACAAAATGCCTGATGTTGCCATGACTCTWGCCGTTGTT  834
+               || ||||||||||| ||||||||||||||||||||||||||||||||||| || ||||||
+Sbjct  128039  AAAGCTGTTGATGTTAACATGAACAAAATGCCTGATGTTGCCATGACTCTAGCTGTTGTT  127980
+
+Query  835     GCCCTTTTTGCCGATGGTCCAACTGCTATCAGAGATG  871
+               |||||||||||||||||||||||||||||||||||||
+Sbjct  127979  GCCCTTTTTGCCGATGGTCCAACTGCTATCAGAGATG  127943
+
+
+ Score = 272 bits (147),  Expect = 8e-71
+ Identities = 154/158 (97%), Gaps = 0/158 (0%)
+ Strand=Plus/Minus
+
+Query  174     TTATGTTCTTGATGGAGTACCAAGAATGAGGGAGCGACCTATCGGTGACTTAGTTGTCGG  233
+               ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  129678  TTATGTTCTTGATGGAGTACCAAGAATGAGGGAGCGACCTATCGGTGACTTAGTTGTCGG  129619
+
+Query  234     TTTGAAACAACTAGGTGCGAATGTTGATTGTTTCCTTGGCACTGACTGCCCACCTGTTCG  293
+               |||||||||||||||||| ||||||||||||||||| |||||||||||||||||||||||
+Sbjct  129618  TTTGAAACAACTAGGTGCCAATGTTGATTGTTTCCTCGGCACTGACTGCCCACCTGTTCG  129559
+
+Query  294     KATCAACGGCATTGGAGGGCTACCTGGTGGCAAGGTTA  331
+                ||||| |||||||||||||||||||||||||||||||
+Sbjct  129558  TATCAATGGCATTGGAGGGCTACCTGGTGGCAAGGTTA  129521
+
+
+ Score = 204 bits (110),  Expect = 3e-50
+ Identities = 116/119 (97%), Gaps = 1/119 (1%)
+ Strand=Plus/Minus
+
+Query  543     GTCCCCTGGAAATGCCTATGTCGAAGGTGATGCCTCAAGTGCGAGCTATTTCTTGGCTGG  602
+               ||||||||||||||||||||||||||||||||||||| |||| |||||||||||||||||
+Sbjct  128451  GTCCCCTGGAAATGCCTATGTCGAAGGTGATGCCTCA-GTGCAAGCTATTTCTTGGCTGG  128393
+
+Query  603     KGCTGCAATCACTGGAGGAACTGTGACTGTCCAAGGTTGCGGCACCACCAGTTTGCAGG  661
+                ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+Sbjct  128392  TGCTGCAATCACTGGAGGAACTGTGACTGTCCAAGGTTGCGGCACCACCAGTTTGCAGG  128334
+
+
+
+Lambda      K        H
+    1.35    0.626     1.14 
+
+Gapped
+Lambda      K        H
+    1.28    0.460    0.850 
+
+Effective search space used: 915906374900
+
+
+Query= Tubulin: AY742902.1 Lolium perenne strain Nui beta-tubulin (tub1)
+gene, partial cds
+
+Length=1759
+
+
+***** No hits found *****
+
+
+
+Lambda      K        H
+    1.33    0.621     1.12 
+
+Gapped
+Lambda      K        H
+    1.28    0.460    0.850 
+
+Effective search space used: 1565729277250
+
+
+  Database: Lori_mw.raw.fa
+    Posted date:  Mar 5, 2021  10:27 AM
+  Number of letters in database: 906,316,982
+  Number of sequences in database:  43,833
+
+
+
+Matrix: blastn matrix 1 -2
+Gap Penalties: Existence: 0, Extension: 2.5

@@ -215,6 +215,9 @@ cd -
 
 ### (8) Download/install BRAKER2
 git clone https://github.com/Gaius-Augustus/BRAKER.git
+sudo cpanm File::HomeDir
+sudo cpanm Scalar::Util::Numeric
+
 
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -223,20 +226,73 @@ git clone https://github.com/Gaius-Augustus/BRAKER.git
 ### step 0: navigate to working directory
 cd /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
 
-###step 1: Download viridiplatae OrthoDB
-wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
-tar -xvzf odb10_plants_fasta.tar.gz
-cat plants/Rawdata/*.fs > odb10_plants.fasta
-rm -R plants/ odb10_plants_fasta.tar.gz
+###step 1: Download OrthoDB protein sequencies and gene list (to identify the proteins) and concatenate the individual protein fastas into a single fasta file
+# wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
+# tar -xvzf odb10_plants_fasta.tar.gz
+# cat plants/Rawdata/*.fs > odb10_plants.fasta
+# rm -R plants/ odb10_plants_fasta.tar.gz
+### or use all proteins
+wget https://v101.orthodb.org/download/odb10v1_all_fasta.tab.gz
+gunzip -d odb10v1_all_fasta.tab.gz
+mv odb10v1_all_fasta.tab odb10v1_all.fasta
 
-### step 2: STAR RNAseq alignment
-
-
-### step 3: ProtHint
-PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
-time ${PROTHINT} Lori_hh.fasta odb10_plants.fasta
-
-### diamond not working
+wget https://v101.orthodb.org/download/odb10v1_genes.tab.gz
+gunzip -d odb10v1_genes.tab.gz
 
 
-### step 2: GeneMark
+# ### step 2: ProtHint (generate gff annotations using Viridiplantae protein sequences from OrthoDB: )
+# PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
+# time ${PROTHINT} Lori_hh.fasta odb10_plants.fasta
+# ### outputs:
+# ### (1) prothint.gff - all hints including introns, starts and stops
+# ### (2) evidence.gff  high-confidence subset of prothint.gff suitable for GeneMark-EP
+# ### (3) prothint-augustus.gff - BRAKER- and AUGUSTUS-compatible format
+
+# ### step 3: GeneMark-EP+ (generate gtf annotations)
+# GENEMARK_EPP=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/gmes_linux_64/gmes_petap.pl
+# time \
+# ${GENEMARK_EPP} \
+#     --EP prothint.gff \
+#     --evidence evidence.gff \
+#     --seq Lori_hh.fasta \
+#     --soft_mask 1000 \
+#     --cores 12 \
+#     --verbose
+# ### output:
+# ### (1) genemark.gtf
+# sed 's/ from/_from/g' genemark.gtf | sed 's/ to/_to/g' > genemark_col1_fixed.gtf
+
+### step 4: STAR RNAseq alignment (generate transcript alignment bam files)
+STAR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/STAR/bin/Linux_x86_64_static/STAR
+### prepare reference genome indices
+time \
+${STAR} --runMode genomeGenerate \
+        --genomeDir /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/ \
+        --genomeFastaFiles /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_hh.fasta \
+        --genomeSAindexNbases 13 \
+        --runThreadN 12
+### align
+time \
+${STAR} --genomeDir /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/ \
+        --readFilesIn \
+            /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/RNAseq/INFLO-1_combined_R1.fastq.gz \
+            /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/RNAseq/INFLO-1_combined_R2.fastq.gz \
+        --readFilesCommand zcat \
+        --runThreadN 12 \
+        --outFileNamePrefix /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_hh_RNAseq
+### samtools sort and compression
+MAPQ=20
+time \
+samtools view -q ${MAPQ} -b Lori_hh_RNAseqAligned.out.sam | samtools sort > Lori_hh_RNAseq.bam
+
+### step 5: BRAKER pipeline D
+BRAKER2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/BRAKER/scripts/braker.pl
+time \
+${BRAKER2} --genome Lori_hh.fasta \
+           --prot_seq odb10v1_all.fasta \
+           --bam Lori_hh_RNAseq.bam \
+           --etpmode \
+           --softmasking \
+           --cores 12
+
+
