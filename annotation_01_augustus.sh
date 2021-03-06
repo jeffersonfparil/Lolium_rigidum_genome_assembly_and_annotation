@@ -194,11 +194,18 @@ echo "export PROTHINT_PATH=${DIR}/ProtHint/bin/"  >> ~/.bashrc
 # ${PROTHINT} Lori_hh.fasta odb10_plants_fasta.tar.gz
 cd -
 
-### (6) Download/install STAR executable
+###m (6) Download/install diamond
+wget http://github.com/bbuchfink/diamond/releases/download/v0.9.24/diamond-linux64.tar.gz
+tar -xzf diamond-linux64.tar.gz
+mkdir Diamond/
+mv diamond Diamond/; mv diamond_manual.pdf Diamond/; rm diamond-linux64.tar.gz
+
+echo "export DIAMOND_PATH=${DIR}/Diamond/" >> ~/.bashrc
+### (7) Download/install STAR executable
 git clone https://github.com/alexdobin/STAR.git
 STAR/bin/Linux_x86_64_static/STAR -h
 
-### (7) Download/install GeneMark
+### (8) Download/install GeneMark
 wget http://topaz.gatech.edu/GeneMark/tmp/GMtool_mNfY6/gmes_linux_64.tar.gz ### dowload GeneMar-EX
 tar -xvzf gmes_linux_64.tar.gz; rm gmes_linux_64.tar.gz ### decompress the software
 cd gmes_linux_64/
@@ -213,7 +220,7 @@ cp -R * /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_2021010
 cp .gm_key /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/dependencies/GeneMarkES/
 cd -
 
-### (8) Download/install BRAKER2
+### (9) Download/install BRAKER2
 git clone https://github.com/Gaius-Augustus/BRAKER.git
 sudo cpanm File::HomeDir
 sudo cpanm Scalar::Util::Numeric
