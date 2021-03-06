@@ -223,6 +223,7 @@ sudo cpanm Scalar::Util::Numeric
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+
 ### step 0: navigate to working directory
 cd /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
 
@@ -240,9 +241,11 @@ wget https://v101.orthodb.org/download/odb10v1_genes.tab.gz
 gunzip -d odb10v1_genes.tab.gz
 
 
-# ### step 2: ProtHint (generate gff annotations using Viridiplantae protein sequences from OrthoDB: )
+# ### step 2: ProtHint (generate gff annotations using protein sequences from OrthoDB)
+# ### (uses DIAMOND for protein sequence alignment: https://github.com/bbuchfink/diamond)
+# ### (uses SPALN for spliced alignment: https://github.com/ogotoh/spaln)
 # PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
-# time ${PROTHINT} Lori_hh.fasta odb10_plants.fasta
+# time ${PROTHINT} Lori_hh.fasta odb10v1_all.fasta
 # ### outputs:
 # ### (1) prothint.gff - all hints including introns, starts and stops
 # ### (2) evidence.gff  high-confidence subset of prothint.gff suitable for GeneMark-EP
@@ -270,7 +273,14 @@ ${STAR} --runMode genomeGenerate \
         --genomeDir /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/ \
         --genomeFastaFiles /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_hh.fasta \
         --genomeSAindexNbases 13 \
-        --runThreadN 12
+        --runThreadN 12\
+### output:
+### (1) chr{Length, NameLength, Name, Start}.txt
+### (2) Genome
+### (3) genomeParameters.txt
+### (4) Log.out
+### (5) SA
+### (6) SAindex
 ### align
 time \
 ${STAR} --genomeDir /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/ \
@@ -280,10 +290,17 @@ ${STAR} --genomeDir /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_t
         --readFilesCommand zcat \
         --runThreadN 12 \
         --outFileNamePrefix /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_hh_RNAseq
-### samtools sort and compression
+### output
+### (1) Lori_hh_RNAseqAligned.out.sam
+### (2) Lori_hh_RNAseqLog.out
+### (3) Lori_hh_RNAseqLog.progress.out
+### (4) Lori_hh_RNAseqSJ.out.tab
+### samtools sort, filter, and compress
 MAPQ=20
 time \
 samtools view -q ${MAPQ} -b Lori_hh_RNAseqAligned.out.sam | samtools sort > Lori_hh_RNAseq.bam
+### output
+### (1) Lori_hh_RNAseq.bam
 
 ### step 5: BRAKER pipeline D
 BRAKER2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/BRAKER/scripts/braker.pl
@@ -294,5 +311,6 @@ ${BRAKER2} --genome Lori_hh.fasta \
            --etpmode \
            --softmasking \
            --cores 12
+
 
 
