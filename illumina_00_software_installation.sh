@@ -37,5 +37,9 @@ source /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104
 conda install -c bioconda besst 
 runBESST -h
 
+### clone BESST repo
+rm -R BESST/
+git clone https://github.com/ksahlin/BESST.git
+
 ### Clean-up
 rm fastqc_v0.11.7.zip

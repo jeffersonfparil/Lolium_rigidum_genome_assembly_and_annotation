@@ -247,30 +247,30 @@ mv odb10v1_all_fasta.tab odb10v1_all.fasta
 wget https://v101.orthodb.org/download/odb10v1_genes.tab.gz
 gunzip -d odb10v1_genes.tab.gz
 
+### step 2: ProtHint (generate gff annotations using protein sequences from OrthoDB)
+### (uses DIAMOND for protein sequence alignment: https://github.com/bbuchfink/diamond)
+### (uses SPALN for spliced alignment: https://github.com/ogotoh/spaln)
+PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
+time ${PROTHINT} Lori_hh.fasta odb10v1_all.fasta
+### outputs:
+### (1) evidence.gff  high-confidence subset of prothint.gff suitable for GeneMark-EP
+### (2) prothint.gff - all hints including introns, starts and stops
+### (3) prothint-augustus.gff - BRAKER- and AUGUSTUS-compatible format
+### (3) top_chains.gff - ??? no description from prothint repo ???
 
-# ### step 2: ProtHint (generate gff annotations using protein sequences from OrthoDB)
-# ### (uses DIAMOND for protein sequence alignment: https://github.com/bbuchfink/diamond)
-# ### (uses SPALN for spliced alignment: https://github.com/ogotoh/spaln)
-# PROTHINT=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ProtHint/bin/prothint.py
-# time ${PROTHINT} Lori_hh.fasta odb10v1_all.fasta
-# ### outputs:
-# ### (1) prothint.gff - all hints including introns, starts and stops
-# ### (2) evidence.gff  high-confidence subset of prothint.gff suitable for GeneMark-EP
-# ### (3) prothint-augustus.gff - BRAKER- and AUGUSTUS-compatible format
-
-# ### step 3: GeneMark-EP+ (generate gtf annotations)
-# GENEMARK_EPP=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/gmes_linux_64/gmes_petap.pl
-# time \
-# ${GENEMARK_EPP} \
-#     --EP prothint.gff \
-#     --evidence evidence.gff \
-#     --seq Lori_hh.fasta \
-#     --soft_mask 1000 \
-#     --cores 12 \
-#     --verbose
-# ### output:
-# ### (1) genemark.gtf
-# sed 's/ from/_from/g' genemark.gtf | sed 's/ to/_to/g' > genemark_col1_fixed.gtf
+### step 3: GeneMark-EP+ (generate gtf annotations)
+GENEMARK_EPP=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/gmes_linux_64/gmes_petap.pl
+time \
+${GENEMARK_EPP} \
+    --EP prothint.gff \
+    --evidence evidence.gff \
+    --seq Lori_hh.fasta \
+    --soft_mask 1000 \
+    --cores 12 \
+    --verbose
+### output:
+### (1) genemark.gtf
+sed 's/ from/_from/g' genemark.gtf | sed 's/ to/_to/g' > genemark_col1_fixed.gtf
 
 ### step 4: STAR RNAseq alignment (generate transcript alignment bam files)
 STAR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/STAR/bin/Linux_x86_64_static/STAR
@@ -309,15 +309,15 @@ samtools view -q ${MAPQ} -b Lori_hh_RNAseqAligned.out.sam | samtools sort > Lori
 ### output
 ### (1) Lori_hh_RNAseq.bam
 
-### step 5: BRAKER pipeline D
-BRAKER2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/BRAKER/scripts/braker.pl
-time \
-${BRAKER2} --genome Lori_hh.fasta \
-           --prot_seq odb10v1_all.fasta \
-           --bam Lori_hh_RNAseq.bam \
-           --etpmode \
-           --softmasking \
-           --cores 12
+# ### step 5: BRAKER pipeline D
+# BRAKER2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/BRAKER/scripts/braker.pl
+# time \
+# ${BRAKER2} --genome Lori_hh.fasta \
+#            --prot_seq odb10v1_all.fasta \
+#            --bam Lori_hh_RNAseq.bam \
+#            --etpmode \
+#            --softmasking \
+#            --cores 12
 
 
 
