@@ -36,5 +36,14 @@ cd wtdbg2 && make
 ./wtdbg2.pl -h
 cd -
 
+### Install minimap2
+git clone https://github.com/lh3/minimap2
+cd minimap2 && make
+cd -
+
+### Download pilon
+wget https://github.com/broadinstitute/pilon/releases/download/v1.24/pilon-1.24.jar
+java -jar pilon-1.24.jar --help
+
 ### Clean-up
 rm canu-1.9.Linux-amd64.tar.xz

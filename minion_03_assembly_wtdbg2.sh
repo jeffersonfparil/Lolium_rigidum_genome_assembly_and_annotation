@@ -16,6 +16,8 @@ INPUT_FASTQ_GZ=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_
 OUTPUT_DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
 WTDBG2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/wtdbg2/wtdbg2
 WTPOA_CNS=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/wtdbg2/wtpoa-cns
+MINIMAP=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/minimap2/minimap2
+PILON=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/pilon-1.24.jar
 
 ### Prepare output directory
 cd ${OUTPUT_DIR}/
@@ -34,30 +36,27 @@ ${WTPOA_CNS} -t 32 \
              -i ${OUTPUT_DIR}/Lori_mw/Lori_mw.ctg.lay.gz \
              -fo ${OUTPUT_DIR}/Lori_mw/Lori_mw.raw.fa
 
-### Assembly statistics
-### FIX ME WITH SRC PATH??!?!?!? 
-### ${path_to_src}/assembly_stats.sh ${OUTPUT_BASENAME}.raw.fa
+### Improve the assembly with Pilon
+### (1) map reads to the assembly
+time \
+${MINIMAP} -ax map-ont \
+            ${OUTPUT_DIR}/Lori_mw/Lori_mw.raw.fa \
+            ${INPUT_FASTQ_GZ} \
+            -t 32 \
+            > ${OUTPUT_DIR}/Lori_mw/Lori_mw.alignments.sam
+### (2) filter, sort, compress, and index the alignments with samtools
+time \
+samtools view -q 20 -b ${OUTPUT_DIR}/Lori_mw/Lori_mw.alignments.sam | \
+    samtools sort > ${OUTPUT_DIR}/Lori_mw/Lori_mw.alignments.bam
+time \
+samtools index ${OUTPUT_DIR}/Lori_mw/Lori_mw.alignments.bam
+### (3) pilon error-correction
+time \
+java -Xmx100G -jar ${PILON} \
+    --genome ${OUTPUT_DIR}/Lori_mw/Lori_mw.raw.fa \
+    --unpaired ${OUTPUT_DIR}/Lori_mw/Lori_mw.alignments.bam \
+    --outdir ${OUTPUT_DIR}/Lori_mw/ \
+    --output Lori_mw.pilon \
+    --tracks \
+    --threads 32
 
-### Miscellaneous
-### polish consensus, not necessary if you want to polish the assemblies using other tools
-# minimap2 -t16 \
-#          -ax map-pb \
-#          -r2k lolium5.raw.fa FASTQ/lolium5-porechoped-nanofilted.fastq | \
-#          samtools sort -@4 > lolium5.bam
-# samtools view -F0x900 lolium5.bam | \
-#          wtdbg2/wtpoa-cns -t 16 \
-#                           -d lolium5.raw.fa \
-#                           -i - \
-#                           -fo lolium5.cns.fa
-# # Addtional polishment using short reads
-# bwa index lolium5.cns.fa
-# bwa mem -t 16 \
-#         lolium5.cns.fa \
-#         sr.1.fa \
-#         sr.2.fa | \
-#         samtools sort -O SAM | \
-#         wtdbg2/wtpoa-cns -t 16 \
-#                          -x sam-sr \
-#                          -d lolium5.cns.fa \
-#                          -i - \
-#                          -fo lolium5.srp.fa

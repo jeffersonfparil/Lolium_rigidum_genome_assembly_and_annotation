@@ -231,8 +231,9 @@ sudo cpanm Scalar::Util::Numeric
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
-### step 0: navigate to working directory
+### step 0: navigate to working directory and source ~/.bashrc
 cd /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY
+source ~/.bashrc
 
 ###step 1: Download OrthoDB protein sequencies and gene list (to identify the proteins) and concatenate the individual protein fastas into a single fasta file
 # wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
@@ -255,7 +256,7 @@ time ${PROTHINT} Lori_hh.fasta odb10v1_all.fasta
 ### outputs:
 ### (1) evidence.gff  high-confidence subset of prothint.gff suitable for GeneMark-EP
 ### (2) prothint.gff - all hints including introns, starts and stops
-### (3) prothint-augustus.gff - BRAKER- and AUGUSTUS-compatible format
+### (3) prothint_augustus.gff - BRAKER- and AUGUSTUS-compatible format
 ### (3) top_chains.gff - ??? no description from prothint repo ???
 
 ### step 3: GeneMark-EP+ (generate gtf annotations)
@@ -271,6 +272,20 @@ ${GENEMARK_EPP} \
 ### output:
 ### (1) genemark.gtf
 sed 's/ from/_from/g' genemark.gtf | sed 's/ to/_to/g' > genemark_col1_fixed.gtf
+
+### step 4: Augustus
+AUGUSTUS=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/Augustus/bin/augustus
+cp $AUGUSTUS_CONFIG_PATH/extrinsic/extrinsic.cfg extrinsic.cfg
+
+time \
+${AUGUSTUS} \
+    --species=rice \
+    Lori_hh.fasta \
+    --extrinsicCfgFile=extrinsic.cfg \
+    --hintsfile=prothint_augustus.gff \
+    > augustus.hints.gff
+
+
 
 ### step 4: STAR RNAseq alignment (generate transcript alignment bam files)
 STAR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/STAR/bin/Linux_x86_64_static/STAR
