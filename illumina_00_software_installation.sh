@@ -24,6 +24,7 @@ sudo apt install -y bwa
 git clone https://github.com/GATB/gatb-minia-pipeline.git
 cd gatb-minia-pipeline/
 make test ### may get python2 errors just remove duplicate libraries and reinstall and/or install missing libraries with pip
+# pip2 install scipy mathstats pysam
 # pip3 install scipy mathstats pysam
 
 ### Install BESST for scaffolding via conda

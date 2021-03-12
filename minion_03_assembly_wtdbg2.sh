@@ -52,7 +52,7 @@ time \
 samtools index ${OUTPUT_DIR}/Lori_mw/Lori_mw.alignments.bam
 ### (3) pilon error-correction
 time \
-java -Xmx100G -jar ${PILON} \
+java -Xmx200G -jar ${PILON} \
     --genome ${OUTPUT_DIR}/Lori_mw/Lori_mw.raw.fa \
     --unpaired ${OUTPUT_DIR}/Lori_mw/Lori_mw.alignments.bam \
     --outdir ${OUTPUT_DIR}/Lori_mw/ \

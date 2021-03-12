@@ -259,35 +259,7 @@ time ${PROTHINT} Lori_hh.fasta odb10v1_all.fasta
 ### (3) prothint_augustus.gff - BRAKER- and AUGUSTUS-compatible format
 ### (3) top_chains.gff - ??? no description from prothint repo ???
 
-### step 3: GeneMark-EP+ (generate gtf annotations)
-GENEMARK_EPP=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/gmes_linux_64/gmes_petap.pl
-time \
-${GENEMARK_EPP} \
-    --EP prothint.gff \
-    --evidence evidence.gff \
-    --seq Lori_hh.fasta \
-    --soft_mask 1000 \
-    --cores 12 \
-    --verbose
-### output:
-### (1) genemark.gtf
-sed 's/ from/_from/g' genemark.gtf | sed 's/ to/_to/g' > genemark_col1_fixed.gtf
-
-### step 4: Augustus
-AUGUSTUS=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/Augustus/bin/augustus
-cp $AUGUSTUS_CONFIG_PATH/extrinsic/extrinsic.cfg extrinsic.cfg
-
-time \
-${AUGUSTUS} \
-    --species=rice \
-    Lori_hh.fasta \
-    --extrinsicCfgFile=extrinsic.cfg \
-    --hintsfile=prothint_augustus.gff \
-    > augustus.hints.gff
-
-
-
-### step 4: STAR RNAseq alignment (generate transcript alignment bam files)
+### step 3: STAR RNAseq alignment (generate transcript alignment bam files)
 STAR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/STAR/bin/Linux_x86_64_static/STAR
 ### prepare reference genome indices
 time \
@@ -323,6 +295,47 @@ time \
 samtools view -q ${MAPQ} -b Lori_hh_RNAseqAligned.out.sam | samtools sort > Lori_hh_RNAseq.bam
 ### output
 ### (1) Lori_hh_RNAseq.bam
+
+### step 4: bam to gff
+wget https://metacpan.org/raw/TJPARNELL/Bio-ToolBox-1.17/scripts/bam2gff_bed.pl?download=1
+mv 'bam2gff_bed.pl?download=1' bam2gff_bed.pl
+samtools index Lori_hh_RNAseq.bam
+sudo cpanm Bio::ToolBox
+time \
+perl bam2gff_bed.pl \
+    --in Lori_hh_RNAseq.bam \
+    --pe \
+    --gff \
+    --source RNAseq \
+    --out Lori_hh_RNAseq
+
+
+### step 5: GeneMark-EP+ (generate gtf annotations)
+GENEMARK_EPP=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/gmes_linux_64/gmes_petap.pl
+time \
+${GENEMARK_EPP} \
+    --EP prothint.gff \
+    --evidence evidence.gff \
+    --seq Lori_hh.fasta \
+    --soft_mask 1000 \
+    --cores 12 \
+    --verbose
+### output:
+### (1) genemark.gtf
+sed 's/ from/_from/g' genemark.gtf | sed 's/ to/_to/g' > genemark_col1_fixed.gtf
+
+### step 6: Augustus using Prothint hints (*.gff), and RNAseq hints (*.gff)
+AUGUSTUS=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/Augustus/bin/augustus
+cp $AUGUSTUS_CONFIG_PATH/extrinsic/extrinsic.M.RM.E.W.P.cfg extrinsic.cfg
+
+time \
+${AUGUSTUS} \
+    --species=rice \
+    --hintsfile=prothint_augustus.gff \
+    --extrinsicCfgFile=extrinsic.cfg \
+    Lori_hh.fasta \
+    > augustus.hints.gff
+
 
 # ### step 5: BRAKER pipeline D
 # BRAKER2=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/BRAKER/scripts/braker.pl
