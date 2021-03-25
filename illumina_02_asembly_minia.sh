@@ -21,6 +21,8 @@ mkdir Lori_im/
 
 ### Execute (Use 75% of the RAM, e.g. from 280Gb to 210Gb; and 80% of the cores, e.g. from 32 cores to 25 cores)
 ### (use `--continue-scaffolding` flag to continue interrupted scaffolding step)
+### IMPORTANT NOTE: CHANGE: `pysam.sort(bwa_output + ".bam", output_path)` into 
+###                         `pysam.sort("-o", output_path + ".bam", bwa_output + ".bam")`
 time \
 ${MINIA} \
     -1 ${INPUT_DIR}/Lrigidum_illumina_150bp_R1.fastq.gz \
