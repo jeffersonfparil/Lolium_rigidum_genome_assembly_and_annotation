@@ -43,9 +43,32 @@ ${MINIMAP} -ax map-ont \
     ${ASSEMBLY} \
     ${MINION_READS} \
     > ${ASSEMBLY_NAME}-MINION_READS.sam
+MAPQ=20
 time \
 samtools view -q ${MAPQ} -b ${ASSEMBLY_NAME}-MINION_READS.sam | \
     samtools sort > ${ASSEMBLY_NAME}-MINION_READS.bam
+time \
+samtools index ${ASSEMBLY_NAME}-MINION_READS.bam
+
+### Pilon error correction
+PILON=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/pilon-1.24.jar
+MEM=200G
+THREADS=30
+
+### using minion alignments
+time \
+java -Xmx${MEM} -jar ${PILON} \
+    --genome ${ASSEMBLY} \
+    --unpaired ${ASSEMBLY_NAME}-MINION_READS.bam \
+    --output ${ASSEMBLY_NAME}-pilon \
+    --outdir ${ASSEMBLY_DIR} \
+    --tracks \
+    --diploid \
+    --verbose \
+    --threads ${THREADS}
+
+
+
 
 # (2) illumina reads
 time \
@@ -53,13 +76,18 @@ bwa mem ${FNAME_REF} ${FNAME_READ1} ${FNAME_READ2} | \
     samtools view -q ${MAPQ} -b | \
     samtools sort > ${FNAME_OUT}.bam
 
-
-### Pilon error correction
-PILON=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/pilon-1.24.jar
+### using illumina alignments
 time \
-java -Xmx16G -jar ${PILON} \
+java -Xmx${MEM} -jar ${PILON} \
     --genome ${ASSEMBLY} \
-    --frags ${ASSEMBLY_NAME}-MINION_READS.bam
+    --frags ${ASSEMBLY_NAME}-ILLUMINA_READS.bam \
+    --output ${ASSEMBLY_NAME}-pilon \
+    --outdir ${ASSEMBLY_DIR} \
+    --tracks \
+    --diploid \
+    --verbose \
+    --threads 32
+
 
 
 
