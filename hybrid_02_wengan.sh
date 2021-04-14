@@ -30,6 +30,6 @@ ${WENGAN} \
     -a M \
     -s ${INPUT_DIR_ILLUMINA}/Lrigidum_illumina_150bp_R1.fastq.gz,${INPUT_DIR_ILLUMINA}/Lrigidum_illumina_150bp_R2.fastq.gz \
     -l ${INPUT_DIR_MINION}/minion-filtered-trimmed.fastq.gz \
-    -t 32 \
-    -g 2200 \
+    -t 30 \
+    -g 2000 \
     -p ${OUTPUT_DIR}/Lori_hw/Lori_hw

@@ -52,8 +52,8 @@ samtools index ${ASSEMBLY_NAME}-MINION_READS.bam
 
 ### Pilon error correction
 PILON=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/pilon-1.24.jar
-MEM=200G
-THREADS=30
+MEM=250G
+THREADS=20
 
 ### using minion alignments
 time \
