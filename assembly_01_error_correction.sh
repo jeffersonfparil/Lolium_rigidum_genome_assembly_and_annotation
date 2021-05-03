@@ -25,7 +25,8 @@ sudo apt install bwa
 
 
 ### Genome assembly
-ASSEMBLY=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_mw/Lori_mw.raw.fa
+# ASSEMBLY=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_mw/Lori_mw.raw.fa
+ASSEMBLY=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_im/Lori_im.fasta
 ### Navigate to working directory
 ASSEMBLY_DIR=$(dirname $ASSEMBLY)
 cd ${ASSEMBLY_DIR}
