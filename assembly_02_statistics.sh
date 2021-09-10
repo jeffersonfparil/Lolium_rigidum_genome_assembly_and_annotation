@@ -62,8 +62,8 @@ legend("right", legend=c(paste0("Total number of scaffolds = ", nrow(dat)),
 						 paste0("Maximum scaffold length = ", round(max_size/1000), " kb"),
 						 paste0("Average scaffold length = ", round(mean_size/1000), " kb")))
 plot(dat$LENGTH, dat$CUMM_COVER, xlab="Scaffold Size (bp)", ylab="Assembly Covered (%)", xlim=c(0, max_size), ylim=c(0, 100), type="l", lty=1, lwd=3, col="Gray1")
-N50 = min(dat$LENGTH[dat$CUMM_COVER>=50]) #contigs with size >= to this N50 value - cover 50% of the assembly
-L50 = min( c(nrow(subset(dat, CUMM_COVER<=50)), nrow(subset(dat, CUMM_COVER>=50))) ) #the minimum number of contigs that cover 50% of the assembly
+N50 = min(dat$LENGTH[(dat$CUMM_COVER>=50)& !is.na(dat$CUMM_COVER) & !is.infinite(dat$CUMM_OVER)]) #contigs with size >= to this N50 value - cover 50% of the assembly
+L50 = min( c(nrow(subset(dat, CUMM_COVER<=50), na.rm=TRUE), nrow(subset(dat, CUMM_COVER>=50))) ) #the minimum number of contigs that cover 50% of the assembly
 x1 = N50
 y1 = 50
 segments(x0=x1, x1=x1, y0=0, y1=y1, lty=2, lwd=2, col=set1_colours[1])
