@@ -130,46 +130,47 @@ echo "export GENEMARK_PATH=${DIR}/gmes_linux_64/" >> ~/.bashrc ### add to path
 cd -
 
 ### (2) Augustus
-git clone https://github.com/Gaius-Augustus/Augustus.git
-# install required packages
-sudo apt update
-sudo apt install -y build-essential wget git autoconf
-# install dependencies for AUGUSTUS comparative gene prediction mode (CGP)
-sudo apt install -y libgsl-dev libboost-all-dev libsuitesparse-dev liblpsolve55-dev
-sudo apt install -y libsqlite3-dev libmysql++-dev
-# install dependencies for the optional support of gzip compressed input files
-sudo apt install -y libboost-iostreams-dev zlib1g-dev
-# install dependencies for bam2hints and filterBam 
-sudo apt install -y libbamtools-dev
-# install additional dependencies for bam2wig
-sudo apt install -y samtools libhts-dev
-# install additional dependencies for homGeneMapping and utrrnaseq
-sudo apt install -y libboost-all-dev
-# install additional dependencies for scripts
-sudo apt install -y cdbfasta diamond-aligner libfile-which-perl libparallel-forkmanager-perl libyaml-perl libdbd-mysql-perl
-sudo apt install -y --no-install-recommends python3-biopython
-# # install HTSLib from source (even after install all of the above making Augustus still spit out error because HTSlib is not installed)
-# wget https://github.com/samtools/htslib/releases/download/1.3.2/htslib-1.3.2.tar.bz2 -O htslib.tar.bz2
-# tar -xjvf htslib.tar.bz2
-# cd htslib-*/
+# git clone https://github.com/Gaius-Augustus/Augustus.git
+# # install required packages
+# sudo apt update
+# sudo apt install -y build-essential wget git autoconf
+# # install dependencies for AUGUSTUS comparative gene prediction mode (CGP)
+# sudo apt install -y libgsl-dev libboost-all-dev libsuitesparse-dev liblpsolve55-dev
+# sudo apt install -y libsqlite3-dev libmysql++-dev
+# # install dependencies for the optional support of gzip compressed input files
+# sudo apt install -y libboost-iostreams-dev zlib1g-dev
+# # install dependencies for bam2hints and filterBam 
+# sudo apt install -y libbamtools-dev
+# # install additional dependencies for bam2wig
+# sudo apt install -y samtools libhts-dev
+# # install additional dependencies for homGeneMapping and utrrnaseq
+# sudo apt install -y libboost-all-dev
+# # install additional dependencies for scripts
+# sudo apt install -y cdbfasta diamond-aligner libfile-which-perl libparallel-forkmanager-perl libyaml-perl libdbd-mysql-perl
+# sudo apt install -y --no-install-recommends python3-biopython
+# # # install HTSLib from source (even after install all of the above making Augustus still spit out error because HTSlib is not installed)
+# # wget https://github.com/samtools/htslib/releases/download/1.3.2/htslib-1.3.2.tar.bz2 -O htslib.tar.bz2
+# # tar -xjvf htslib.tar.bz2
+# # cd htslib-*/
+# # make
+# # sudo make install
+# # cd -
+# # make install Augustus but first comment-out bam2wig make which causes problems with HTSlib not being located when it is actually installed
+# cd Augustus/
+# ### if you encounter any compilation errors at sudo make install then execute the commented-out script below:
+# # cp auxprogs/Makefile auxprogs/Makefile.bk
+# # sed -i 's/	cd bam2wig; make/	#cd bam2wig; make/g' auxprogs/Makefile
+# # make clean
 # make
 # sudo make install
+# # test
+# make unit_test
+# ### add Augustus to path
+# echo "export AUGUSTUS_CONFIG_PATH=${DIR}/Augustus/config/" >> ~/.bashrc
+# echo "export AUGUSTUS_BIN_PATH=${DIR}/Augustus/bin/" >> ~/.bashrc
+# echo "export AUGUSTUS_SCRIPTS_PATH=${DIR}/Augustus/scripts/" >> ~/.bashrc
 # cd -
-# make install Augustus but first comment-out bam2wig make which causes problems with HTSlib not being located when it is actually installed
-cd Augustus/
-### if you encounter any compilation errors at sudo make install then execute the commented-out script below:
-# cp auxprogs/Makefile auxprogs/Makefile.bk
-# sed -i 's/	cd bam2wig; make/	#cd bam2wig; make/g' auxprogs/Makefile
-# make clean
-make
-sudo make install
-# test
-make unit_test
-### add Augustus to path
-echo "export AUGUSTUS_CONFIG_PATH=${DIR}/Augustus/config/" >> ~/.bashrc
-echo "export AUGUSTUS_BIN_PATH=${DIR}/Augustus/bin/" >> ~/.bashrc
-echo "export AUGUSTUS_SCRIPTS_PATH=${DIR}/Augustus/scripts/" >> ~/.bashrc
-cd -
+sudo apt install augustus augustus-data augustus-doc
 
 ### (3) Bamtools
 sudo apt install -y bamtools
@@ -348,4 +349,18 @@ ${AUGUSTUS} \
 #            --cores 12
 
 
+########################################################################################################### 
+########################################################################################################### 
+########################################################################################################### 
+########################################################################################################### 
+
+### Testing Augustus
+# DIR=/data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ANNOTATION
+DIR=/data-weedomics-1/Lolium_genome_assembly/
+cd $DIR
+time \
+augustus \
+    --species=maize \
+    ${DIR}/TRANSCRIPTOME/trinity_output.Trinity.fasta \
+    > ${DIR}/ANNOTATION/trinity_output.Trinity.fasta.annotation
 
