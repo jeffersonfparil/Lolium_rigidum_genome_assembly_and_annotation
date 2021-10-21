@@ -84,7 +84,7 @@ image(mat_dG, main="Genetic distance\n(allele frequency-based Euclidean distance
 image(scale(mat_dL), main="Geographical distance\n(Haversine distances)")
 plot(vec_genetic_distances ~ vec_geographic_distances,
     pch=19, col=rgb(0.2, 0.2, 0.2, alpha=0.5),
-    xlab="Geographical distance (km)", ylab="Genetic distance (|allele frequency|))")
+    xlab="Geographical distance (km)", ylab="Genetic distance (|allele frequency|)")
 grid()
 mod = lm(vec_genetic_distances ~ vec_geographic_distances)
 R2adj = round(summary(mod)$adj.r.squared * 100, 2)
