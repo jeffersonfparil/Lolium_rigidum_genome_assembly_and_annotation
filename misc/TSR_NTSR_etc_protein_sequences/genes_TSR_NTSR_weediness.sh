@@ -134,7 +134,8 @@ echo 'Atrazine-target_psbA_UniProt_Mesangiospermae.fasta'
 ###                 5.) glutathione peroxidase | UNIPROT QUERY: 'taxonomy:"Mesangiospermae [1437183]" glutathione peroxidase' | 2,174 matches
 ###                 6.) L-type amino acid transporter (LAT) | UNIPROT QUERY: 'taxonomy:"Mesangiospermae [1437183]" polyamine transporter rmv1' | 1,658 matches
 ###                 7.) AtPDR11 (ATP-BINDING CASSETTE G39, ATPDR11, PDR11, PLEIOTROPIC DRUG RESISTANCE 11) | UNIPROT QUERY: 'taxonomy:"Mesangiospermae [1437183]" pdr abc' | 7,460 matches
-###                 8.) 
+###                 # 8.) Cytochrome P450 | UNIPROT QUERY: 'taxonomy:"Mesangiospermae [1437183]" cytochrome p450 monooxygenase' | 74,868 matches
+###                 9.) 
 echo 'Paraquat-target_NTSR_UniProt_Mesangiospermae.fasta'
 
 
