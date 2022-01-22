@@ -19,7 +19,7 @@ Our objective is to generate a better genome assembly and genome annotations tha
 - NCBI pipeline
 
 ## Assembly characterisation
-- I've had it with dependency hell and trying to do most of the simple characterisations in pure julia with as little package requirements as I can - ideal is zero!
+- Developing a CIRCOS-style visualisation tool in julia
 
 ## Assembly synteny with other species
 
