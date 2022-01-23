@@ -125,7 +125,7 @@ function fun_plot_chrom_length_layer!(plt, vec_str_chromosome_names, vec_int_chr
     vec_flt_arc_lengths_filled = n_flt_fraction_filled * (vec_int_chromosome_lengths ./ n_int_assembly_size)
     n_flt_arc_lengths_spacer = n_flt_fraction_spacer / (n-1)
     ### Tick arc length
-    n_flt_arch_length_per_tick = n_flt_fraction_filled * n_int_tick_length_bp / n_int_assembly_size
+    n_flt_arc_length_per_tick = n_flt_fraction_filled * n_int_tick_length_bp / n_int_assembly_size
     ### Intial position (unrotated)
     θ1 = 2π - (n_flt_empty_slice/2)
     ### plot per chromosome
@@ -147,9 +147,9 @@ function fun_plot_chrom_length_layer!(plt, vec_str_chromosome_names, vec_int_chr
             color=vec_colours_chrom[i],
             linecolor=vec_colours_chrom[i])
         ### print ticks and tick labels
-        for j in 0:floor(vec_flt_arc_lengths_filled[i] / n_flt_arch_length_per_tick)
+        for j in 0:floor(vec_flt_arc_lengths_filled[i] / n_flt_arc_length_per_tick)
             # j = 1
-            x = θ1-(n_flt_arch_length_per_tick*j)
+            x = θ1-(n_flt_arc_length_per_tick*j)
             plot!(plt, fun_arcshape(x,
                                     x,
                                     r=r+(w/4),
@@ -174,6 +174,9 @@ function fun_plot_chrom_length_layer!(plt, vec_str_chromosome_names, vec_int_chr
         ### update track head coordinate
         θ1 = θ2 - n_flt_arc_lengths_spacer
     end
+    ### add legend
+    annotate!(plt, -1.5, -1.5, (string("×", n_int_tick_length_bp, " bases"), n_int_chrom_name_size, :gray, :left))
+    ### return plot
     return(plt)
 end
 ### precompile
@@ -250,8 +253,8 @@ function fun_plot_GC_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_le
     n_int_remainder_max = round(n_flt_max_GC_perc_genomewide*100) % 5
     n_flt_max_GC_perc_genomewide = round(n_flt_max_GC_perc_genomewide + ((5 - n_int_remainder_max)/100), digits=2)
     ### plot legend
-    x0 = 0.75; y0 = -1.00
-    x1 = 1.50; y1 = -1.10
+    x0 = 0.75; y0 = -1.25
+    x1 = 1.50; y1 = -1.35
     n_int_colours = length(vec_colours_GC)
     ### heatmap
     for i in 1:n_int_colours
@@ -268,18 +271,18 @@ function fun_plot_GC_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_le
     for i in 1:5
         dx0 = x0+(x1-x0)*((i-1)/4)
         shp_tick = Shape(vcat((dx0, y1),
-                              (dx0, y1+(y1*0.05))))
+                              (dx0, y1+(y1*0.03))))
         plot!(plt, shp_tick, color=:gray, linecolor=:gray)
         annotate!(plt,
                   dx0,
-                  y1+(y1*0.10),
+                  y1+(y1*0.05),
                   (vec_flt_legend_ticks[i], n_int_tick_label_size, :gray, :center))
     end
     ### GC content label
     annotate!(plt,
               x0+((x1-x0)/2),
-              y1+(y1*0.15),
-              ("GC content", n_int_tick_label_size, :gray, :center))
+              -1.5,
+              ("GC content", n_int_tick_label_size, :gray, :bottom))
     #################################################################################
     ### Intial position (unrotated)
     θ1 = 2π - (n_flt_empty_slice/2)
@@ -432,7 +435,7 @@ n_int_chrom_name_size=7
 ### Base plot
 plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), size=(700,700), axis=([], false), title="Lolium rigidum genome")
 ### Layer 1: chromosome lengths
-r=1.00; w=0.20
+r=1.00; w=0.10
 annotate!(plt, 0.0, (r-w/2), ("a", 10, :gray, :center))
 fun_plot_chrom_length_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths;
                              r=r, w=w,
@@ -441,10 +444,10 @@ fun_plot_chrom_length_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_l
                              n_int_tick_label_size=n_int_tick_label_size,
                              n_int_chrom_name_size=n_int_chrom_name_size)
 ### Layer 2: GC content
-r=0.75; w=0.15
+r=0.80; w=0.10
 annotate!(plt, 0.0, (r-w/2), ("b", 10, :gray, :center))
 fun_plot_GC_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths;
-                   r=0.75, w=0.20,
+                   r=r, w=w,
                    n_int_total_chunks_across_genome=1000,
                    vec_colours_GC=palette(:thermometer, 25))
 
