@@ -2,7 +2,7 @@
 - **RepeatModeler** to generate de novo TE family identification, and
 - **RepeatMasker** to identify the coordinates of the identified TEs.
 
-## Download
+## Install software denpendencies
 1. Perl (should be installed by default on linux)
 2. Python 3 `sudo apt install python3 python3-pip;`
 3. h5py: `pip3 install h5py`
@@ -146,11 +146,12 @@
 ## Build the BLAST database using our genome sequence
 ```{sh}
 DIR=/data-weedomics-3
+REF=${DIR}/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta
 cd $DIR
 time \
 /usr/local/RepeatModeler-2.0.2a/BuildDatabase \
    -name Lolium_rigidum \
-   ${DIR}/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta
+   ${REF}
 ```
 
 ## Run RepeatModeler to identify and classify the repeats
@@ -162,13 +163,13 @@ time \
    -LTRStruct
 ```
 
-### Find the repeats by generating a masked genome
+## Find the repeats by generating a masked genome
 ```{sh}
 time \
 RepeatMasker/RepeatMasker \
-   -lib <???RepeatModeler output???>
+   -lib Lolium_rigidum-families.fa \
    -pa 14 \
-
+   ${REF}
 ```
 
 
