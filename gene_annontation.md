@@ -16,6 +16,7 @@ cd $DIR
 
 1. Perl modules for GeneMark-EX and ProtHint
     ```{sh}
+    ### NOTE: may require sudo
     cpan Hash::Merge MCE::Mutex Math::Utils Parallel:ForkManager ### GeneMark-EX dependencies
     cpan threads YAML Thread::Queue ### ProtHint dependencies
     ```
@@ -26,20 +27,18 @@ Download **GeneMark-ES/ET/EP** manually from (http://exon.gatech.edu/GeneMark/li
     gunzip -d gm_key_64.gz; mv gm_key_64 gmes_linux_64/.gm_key ### decompress, rename, set as hidden, and move to the GeneMark-EX directory
     cd gmes_linux_64/
     ./check_install.bash ### check installation of GeneMark-EX
-    # echo "export GENEMARK_PATH=${DIR}/gmes_linux_64/" >> ~/.bashrc ### add to path
-    # source ~/.bashrc
-    # cd -
-    cp -R * ../ProtHint/dependencies/GeneMarkES/
-    cp .gm_key ../ProtHint/dependencies/GeneMarkES/
     cd -
     ```
-3. Download/install ProtHint
+3. Download, install, and configure ProtHint
     ```{sh}
     git clone https://github.com/gatech-genemark/ProtHint.git
     cd ProtHint/
     echo "export PROTHINT_PATH=${DIR}/ProtHint/bin/"  >> ~/.bashrc ### add to path
     source ~/.bashrc
     bin/prothint.py -h
+    cd -
+    cp -R gmes_linux_64/* ProtHint/dependencies/GeneMarkES/
+    cp gmes_linux_64/.gm_key ProtHint/dependencies/GeneMarkES/
     cd -
     ```
 4. Install Star transcriptome aligner
@@ -73,15 +72,36 @@ ProtHint/bin/prothint.py \
         --genomeDir $(dirname ${REF}) \
         --genomeFastaFiles ${REF} \
         --genomeSAindexNbases 13 \
-        --runThreadN 12
+        --runThreadN 31
     ```
 2. Align
     ```{sh}
+    DIR_RAW_RNASEQ=/data/Lolium_rigidum_ASSEMBLY/TRANSCRIPTOME_ASSEMBLY/raw_reads
     time \
-    STAR --genomeDir $(basename ${REF}) \
-         --readFilesIn ${TRA} \
-         --runThreadN 12 \
-        --outFileNamePrefix Lolium_rigidum_transcriptome_all_tissues-UNSORTED
+    for tissue in INFLO LEAF MERI ROOT SEEDL STEM
+    do
+        for rep in 1 2
+        do
+            echo ${tissue}-${rep}
+            STAR --genomeDir $(dirname ${REF}) \
+                 --readFilesIn \
+                    ${DIR_RAW_RNASEQ}/${tissue}-${rep}_combined_R1.fastq \
+                    ${DIR_RAW_RNASEQ}/${tissue}-${rep}_combined_R2.fastq \
+                 --runThreadN 27 \
+                 --outFileNamePrefix Lolium_rigidum-transcriptome-${tissue}-${organ}-UNSORTED
+        done
+    done
+
+time \
+${STAR} --genomeDir /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/ \
+        --readFilesIn \
+            /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/RNAseq/INFLO-1_combined_R1.fastq.gz \
+            /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/FASTQ/ILLUMINA/RNAseq/INFLO-1_combined_R2.fastq.gz \
+        --readFilesCommand zcat \
+        --runThreadN 12 \
+        --outFileNamePrefix /data/Lolium_rigidum_ASSEMBLY/assembly_annotation_pipeline_tests_20210104/ASSEMBLY/Lori_hh_RNAseq
+
+
     ```
 
 3. Sort, compress, and index

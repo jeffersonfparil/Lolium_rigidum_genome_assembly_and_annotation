@@ -334,22 +334,47 @@ end
 fun_plot_GC_layer!(plt, temp_M, temp_L, n_int_total_chunks_across_genome=50, vec_colours_GC=palette(:thermometer, 256))
 
 ### Plot histogram layer
-function fun_plot_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths, vec_bool_hits;
+function fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths, str_filename_coor;
                                       r=0.60, w=0.10,
                                       n_int_window_size = 10,
                                       col=:black,
                                       col_background=:lightgray)
     ########################
     ### TEST
-    # vec_bool_hits = Bool.(round.(rand(n_int_chrom_size)))
+    # # vec_bool_hits = Bool.(round.(rand(n_int_chrom_size)))
+    # str_filename_coor = "Lolium_rigidum-families-LTR_coordinates-COPIA.csv"
     # r=0.50
     # w=0.15
-    # n_int_window_size = 10
+    # n_int_window_size = 10 # 1e6
     # col=:black
     # col_background=:lightgray
     ########################
     ### number of chromosomes
     n = length(vec_str_chromosome_names)
+    ### find the maximum hit count across the genome
+    n_int_max_hit_count = 0
+    for i in 1:n
+        ### extraction positions per chromosome
+        FILE = open(str_filename_coor, "r")
+        vec_int_position = []
+        while !eof(FILE)
+            str_chrom, str_pos = split(readline(FILE), ',')[[1,2]]
+            if str_chrom == vec_str_chromosome_names[i]
+                append!(vec_int_position, parse(Int, str_pos))
+            end
+        end
+        close(FILE)
+        ### measure frequencies per window per chromosome
+        n_int_chrom_size = vec_int_chromosome_lengths[i]
+        n_int_windows_count = Int(ceil(n_int_chrom_size/n_int_window_size))
+        for j in 1:n_int_windows_count
+            # j = 1
+            n_int_start = ((j-1)*n_int_window_size)+1
+            n_int_end = ((j-0)*n_int_window_size)+0
+            n_int_hit_count = sum((vec_int_position .>= n_int_start) .& (vec_int_position .<= n_int_end))
+            n_int_max_hit_count<n_int_hit_count ? n_int_max_hit_count=n_int_hit_count : nothing
+        end
+    end
     ### chromosome slice properties
     n_int_assembly_size = sum(vec_int_chromosome_lengths)
     n_flt_empty_slice = 0.05(2π)
@@ -370,18 +395,25 @@ function fun_plot_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromo
             θ1 = (θ1+π/2)-2π
             θ2 = (θ2+π/2)-2π
         end
-        ### PENDING: load "vec_bool_hits" per chromosome
-        ### Currently we're using just one randomly simulated "vec_bool_hits" 
-        vec_bool_hits = vec_bool_hits
+        ### Extract the end-position for the current chromosome
+        FILE = open(str_filename_coor, "r")
+        vec_int_position = []
+        while !eof(FILE)
+            str_chrom, str_pos = split(readline(FILE), ',')[[1,2]]
+            if str_chrom == vec_str_chromosome_names[i]
+                append!(vec_int_position, parse(Int, str_pos))
+            end
+        end
+        close(FILE)
         ### measure frequencies per window
-        n_int_chrom_size = temp_L[i]
-        n_int_windows_count = Int(round(n_int_chrom_size/n_int_window_size))
-        vec_flt_frequency = []
-        for i in 1:n_int_windows_count
-            n_int_start = ((i-1)*n_int_window_size)+1
-            n_int_end = ((i-0)*n_int_window_size)+0
-            n_int_end > n_int_chrom_size ? n_int_end = n_int_chrom_size : nothing
-            append!(vec_flt_frequency, sum(vec_bool_hits[n_int_start:n_int_end])/(n_int_end-n_int_start+1))
+        n_int_chrom_size = vec_int_chromosome_lengths[i]
+        n_int_windows_count = Int(ceil(n_int_chrom_size/n_int_window_size))
+        vec_flt_hits_freq = []
+        for j in 1:n_int_windows_count
+            # j = 1
+            n_int_start = ((j-1)*n_int_window_size)+1
+            n_int_end = ((j-0)*n_int_window_size)+0
+            append!(vec_flt_hits_freq, sum((vec_int_position .>= n_int_start) .& (vec_int_position .<= n_int_end)) / n_int_max_hit_count)
         end
         ### draw background as ink to the main histogram
         vec_flt_coor_background_slice = fun_arcshape(θ1, θ2, r=r, w=w)
@@ -392,8 +424,8 @@ function fun_plot_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromo
             x = θ1 - (abs(θ1-θ2)*i/n_int_windows_count)
             y = θ1 - (abs(θ1-θ2)*(i-1)/n_int_windows_count)
             vec_flt_coor_hist_inverse_slice = fun_arcshape(x, y,
-                                                r=r-(w*(1-vec_flt_frequency[i])),
-                                                w=w*vec_flt_frequency[i],
+                                                r=r-(w*(1-vec_flt_hits_freq[i])),
+                                                w=w*vec_flt_hits_freq[i],
                                                 n_int_points=10)
             plot!(plt, vec_flt_coor_hist_inverse_slice, legend=false, color=col, linecolor=col)
         end
@@ -403,10 +435,15 @@ function fun_plot_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromo
     return(plt)
 end
 ### precompile
-vec_bool_hits = Bool.(round.(rand(1000)))
-fun_plot_histogram_layer!(plt, temp_M, temp_L, vec_bool_hits)
-
-
+str_filename_coor = "test-coor.temp"
+FILE = open(str_filename_coor, "w")
+for i in 1:length(temp_M)
+    for j in collect(1:i:temp_L[i])
+        write(FILE, string(temp_M[i], ',', j, '\n'))
+    end
+end
+close(FILE)
+fun_plot_hits_histogram_layer!(plt, temp_M, temp_L, str_filename_coor)
 ### Precompilation clean-up
 for f in readdir()[match.(r"FOR_TESTING-", readdir()) .!= nothing]
     rm(f)
@@ -418,6 +455,8 @@ end
 ### EXECUTE ###
 ###############
 str_filename_fasta = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta"
+str_filename_LTR_COPIA = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out-LTR_coordinates-COPIA.csv"
+str_filename_LTR_GYPSY = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out-LTR_coordinates-GYPSY.csv"
 n = 7 ## haploid chromosome number
 n_int_tick_length_bp = 100*1e+6
 n_int_tick_label_size=7
@@ -446,7 +485,43 @@ annotate!(plt, 0.0, (r-w/2), ("b", 10, :gray, :center))
 fun_plot_GC_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths;
                    r=r, w=w,
                    n_int_total_chunks_across_genome=1000,
-                   vec_colours_GC=palette(:thermometer, 25))
+                   vec_colours_GC=palette(:thermometer, 7))
+### Layer 3: Ty1-Copia LTR histogram
+r=0.60; w=0.10
+annotate!(plt, 0.0, (r-w/2), ("c", 10, :gray, :center))
+fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths,
+                               str_filename_LTR_COPIA,
+                               r=r, w=w,
+                               n_int_window_size = 1e6,
+                               col=:black,
+                               col_background=:lightgray)
+### find Copia LTR percentage in the genome
+n_int_covered = 0
+FILE = open(str_filename_LTR_COPIA)
+while !eof(FILE)
+    line = readline(FILE)
+    n_int_covered = n_int_covered + abs(diff(parse.(Int, split(line, ',')[2:3]))[1])
+end
+close(FILE)
+n_flt_covered = n_int_covered / sum(vec_int_chromosome_lengths)
+
+### Layer 3: Ty1-Gypsy LTR histogram
+r=0.40; w=0.10
+annotate!(plt, 0.0, (r-w/2), ("d", 10, :gray, :center))
+fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths,
+                               str_filename_LTR_GYPSY,
+                               r=r, w=w,
+                               n_int_window_size = 1e6,
+                               col=:gray,
+                               col_background=:lightgray)
+n_int_covered = 0
+FILE = open(str_filename_LTR_GYPSY)
+while !eof(FILE)
+    line = readline(FILE)
+    n_int_covered = n_int_covered + abs(diff(parse.(Int, split(line, ',')[2:3]))[1])
+end
+close(FILE)
+n_flt_covered = n_int_covered / sum(vec_int_chromosome_lengths)
 
 savefig(plt, "Lolium_rigidum_genome.svg")
 
