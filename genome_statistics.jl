@@ -449,6 +449,44 @@ for f in readdir()[match.(r"FOR_TESTING-", readdir()) .!= nothing]
     rm(f)
 end
 
+####################
+### GENOME STATS ###
+####################
+# (1) RepeatModeler-RepeatMasker outputs:
+#       - "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.tbl" - summary
+#       - "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out" - repeat IDs and coordinates
+# (2) Statistics for the whole assembly including the tiny contigs
+using ProgressMeter
+str_filename_fasta = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta"
+str_filename_repeats = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out"
+
+### Counting again - I know it's redandunt with above code but Im hoping this could be standalone script to be packaged into a standalone binary
+FILE = open(str_filename_fasta, "r")
+ProgressMeter.seekend(FILE) # find file size by navigating to the end of the file
+n_int_FILE_size = ProgressMeter.position(FILE) # this file size is not equal to the number of lines in the file
+ProgressMeter.seekstart(FILE) # reset to the begining of the file to initial the progress bar and the while loop
+pb = ProgressMeter.Progress(n_int_FILE_size, 1)
+vec_str_names = String.([])
+vec_int_length = Int.([])
+while !eof(FILE)
+    line = readline(FILE)
+    if line[1] == '>'
+        push!(vec_str_names, line[2:end])
+        append!(vec_int_length, 0)
+    else
+        vec_int_length[end ] += length(line)
+    end
+    ProgressMeter.update!(pb, ProgressMeter.position(FILE))
+end
+close(FILE)
+n_int_total_size = sum(vec_int_length)
+
+### N50, L50 etc...
+
+
+
+# (3) Statistics for the chromosomes, i.e. largest 7 sequences
+
 
 
 ###############
@@ -495,16 +533,6 @@ fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome
                                n_int_window_size = 1e6,
                                col=:black,
                                col_background=:lightgray)
-### find Copia LTR percentage in the genome
-n_int_covered = 0
-FILE = open(str_filename_LTR_COPIA)
-while !eof(FILE)
-    line = readline(FILE)
-    n_int_covered = n_int_covered + abs(diff(parse.(Int, split(line, ',')[2:3]))[1])
-end
-close(FILE)
-n_flt_covered = n_int_covered / sum(vec_int_chromosome_lengths)
-
 ### Layer 3: Ty1-Gypsy LTR histogram
 r=0.40; w=0.10
 annotate!(plt, 0.0, (r-w/2), ("d", 10, :gray, :center))
@@ -514,14 +542,6 @@ fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome
                                n_int_window_size = 1e6,
                                col=:gray,
                                col_background=:lightgray)
-n_int_covered = 0
-FILE = open(str_filename_LTR_GYPSY)
-while !eof(FILE)
-    line = readline(FILE)
-    n_int_covered = n_int_covered + abs(diff(parse.(Int, split(line, ',')[2:3]))[1])
-end
-close(FILE)
-n_flt_covered = n_int_covered / sum(vec_int_chromosome_lengths)
-
+### Save as svg
 savefig(plt, "Lolium_rigidum_genome.svg")
 

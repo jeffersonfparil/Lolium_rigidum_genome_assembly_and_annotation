@@ -177,53 +177,51 @@ RepeatMasker/RepeatMasker \
 
 ## Find Copia and Gypsy LTR (2 out of 3 known LTR families, where the 3rd one BEL/pa family have only been found in animals)
 - Copia (order of protein coding domains: *protease*, *integrase*, *reverse transcriptase*, and *ribonuclease H*)
+
 - Gypsy (order of protein coding domains: *protease*, *reverse transcriptase*, *ribonuclease H*, and *integrase*)
 
-**NOTES**:
-- probably using the wrong data to extract the frequency of LTRs
-- Waiting for RepeatMarker to finish which hopefully should give the right hit counts
-
-
+- Install julia
 ```{sh}
-### Install Julia
-wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.1-linux-x86_64.tar.gz
-tar xvzf julia-1.7.1-linux-x86_64.tar.gz
-echo alias \'julia=$(pwd)/julia-1.7.1/bin/julia\' >> ~/.bashrc
-source ~/.bashrc
-```
+   ### Install Julia
+   wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.1-linux-x86_64.tar.gz
+   tar xvzf julia-1.7.1-linux-x86_64.tar.gz
+   echo alias \'julia=$(pwd)/julia-1.7.1/bin/julia\' >> ~/.bashrc
+   source ~/.bashrc
+   ```
 
-```{julia}
-using ProgressMeter
-str_filename_stk = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out"
-str_filename_output_COPIA = string(str_filename_stk, "-LTR_coordinates-COPIA.csv")
-str_filename_output_GYPSY = string(str_filename_stk, "-LTR_coordinates-GYPSY.csv")
-FILE = open(str_filename_stk, "r")
-file_output_COPIA = open(str_filename_output_COPIA, "w")
-file_output_GYPSY = open(str_filename_output_GYPSY, "w")
-### Find file size by navigating to the end of the file
-ProgressMeter.seekend(FILE)
-n_int_FILE_size = ProgressMeter.position(FILE)
-### Reset to the begining of the file to initial the progress bar and the while loop
-ProgressMeter.seekstart(FILE)
-pb = ProgressMeter.Progress(n_int_FILE_size, 1)
-while !eof(FILE)
-   line = readline(FILE)
-   if (match(Regex("Chromosome"), line) != nothing) & ( (match(Regex("Copia"), line) != nothing) | (match(Regex("Gypsy"), line) != nothing) )
-      match(Regex("Copia"), line) != nothing ? str_LTR="Copia" : str_LTR="Gypsy"
-      str_chrom, str_start, str_end = split(line)[5:7]
-      if str_LTR=="Copia"
-         write(file_output_COPIA, string(join([str_chrom, str_start, str_end, str_LTR], ','), '\n'))
-      else
-         write(file_output_GYPSY, string(join([str_chrom, str_start, str_end, str_LTR], ','), '\n'))
-      end
+- Extract the coordinates of the Copia and Gypsy long termina retrotransposons
+   ```{julia}
+   using ProgressMeter
+   str_filename_stk = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out"
+   str_filename_output_COPIA = string(str_filename_stk, "-LTR_coordinates-COPIA.csv")
+   str_filename_output_GYPSY = string(str_filename_stk, "-LTR_coordinates-GYPSY.csv")
+   FILE = open(str_filename_stk, "r")
+   file_output_COPIA = open(str_filename_output_COPIA, "w")
+   file_output_GYPSY = open(str_filename_output_GYPSY, "w")
+   ### Find file size by navigating to the end of the file
+   ProgressMeter.seekend(FILE)
+   n_int_FILE_size = ProgressMeter.position(FILE)
+   ### Reset to the begining of the file to initial the progress bar and the while loop
+   ProgressMeter.seekstart(FILE)
+   pb = ProgressMeter.Progress(n_int_FILE_size, 1)
+   while !eof(FILE)
       line = readline(FILE)
+      if (match(Regex("Chromosome"), line) != nothing) & ( (match(Regex("Copia"), line) != nothing) | (match(Regex("Gypsy"), line) != nothing) )
+         match(Regex("Copia"), line) != nothing ? str_LTR="Copia" : str_LTR="Gypsy"
+         str_chrom, str_start, str_end = split(line)[5:7]
+         if str_LTR=="Copia"
+            write(file_output_COPIA, string(join([str_chrom, str_start, str_end, str_LTR], ','), '\n'))
+         else
+            write(file_output_GYPSY, string(join([str_chrom, str_start, str_end, str_LTR], ','), '\n'))
+         end
+         line = readline(FILE)
+      end
+      ProgressMeter.update!(pb, ProgressMeter.position(FILE))
    end
-   ProgressMeter.update!(pb, ProgressMeter.position(FILE))
-end
-close(FILE)
-close(file_output_COPIA)
-close(file_output_GYPSY)
-```
+   close(FILE)
+   close(file_output_COPIA)
+   close(file_output_GYPSY)
+   ```
 
 
 
