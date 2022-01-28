@@ -14,73 +14,90 @@ gr()
 ### Measure the size of each pseudochromosome and contigs
 ### Retains only the 1:nth largest sequences and removes contigs split file
 ### Returns assembly size, chromosome names, and chromosome lengths
-function fun_split_fasta_count_lengths(str_filename_fasta, n)
-    n_int_number_of_sequences = 0
-    vec_str_sequence_names = []
-    vec_int_sequence_lengths = []
+function fun_fasta_lengths_GC_N(str_filename_fasta, n_int_keep_top_seq=0, bool_write_files=false)
+    vec_str_sequence_names = String.([])
+    vec_int_sequence_lengths = Int.([])
+    vec_int_sequence_GC = Int.([])
+    vec_int_sequence_N = Int.([])
+    regex_GgCc = Regex("[GgCc]")
+    regex_Nn = Regex("[Nn]")
     FILE = open(str_filename_fasta, "r")
-    line = readline(FILE) ### read the first line assumes we start with the very first sequence in the first line, i.e. no need to test for "^>"
-    @time while !eof(FILE)
-        n_int_number_of_sequences += 1
-        str_sequence_name = line[2:end]
-        push!(vec_str_sequence_names, str_sequence_name)
-        append!(vec_int_sequence_lengths, 0)
-        file = open(string(str_sequence_name, ".fasta"), "w")
-        write(file, string(line, '\n'))
+    ProgressMeter.seekend(FILE) # find file size by navigating to the end of the file
+    n_int_FILE_size = ProgressMeter.position(FILE) # find the size of the file which is not equal to the the number of lines in the file
+    pb = ProgressMeter.Progress(n_int_FILE_size, 1) # initialise the progress bar
+    ProgressMeter.seekstart(FILE) # reset to the begining of the file to initial the progress bar and the while loop
+    while !eof(FILE)
         line = readline(FILE)
-        while (!eof(FILE)) & (line[1] != '>')
-            vec_int_sequence_lengths[end] = vec_int_sequence_lengths[end] + length(line)
-            write(file, string(line, '\n'))
-            line = readline(FILE)
+        if line[1]=='>'
+            try
+                close(file_seq)
+                close(file_GC)
+            catch
+                nothing
+            end
+            str_sequence_name = line[2:end]
+            push!(vec_str_sequence_names, str_sequence_name)
+            append!(vec_int_sequence_lengths, 0)
+            append!(vec_int_sequence_GC, 0)
+            append!(vec_int_sequence_N, 0)
+            if bool_write_files
+                global file_seq = open(string(str_sequence_name, ".fasta"), "w")
+                global file_GC  = open(string(str_sequence_name, "-GC_content.txt"), "w")
+                write(file_seq, string(line, '\n'))
+                # write(file_GC, string(line, '\n'))
+            end
+        else
+            n_int_total = length(line)
+            n_int_GC = length(collect(eachmatch(regex_GgCc, line)))
+            n_int_N = sum(match.(regex_Nn, string.(collect(line))) .!= nothing)
+            vec_int_sequence_lengths[end] = vec_int_sequence_lengths[end] + n_int_total
+            vec_int_sequence_GC[end] = vec_int_sequence_GC[end] + n_int_GC
+            vec_int_sequence_N[end] = vec_int_sequence_N[end] + n_int_N
+            if bool_write_files
+                write(file_seq, string(line, '\n'))
+                write(file_GC, string(round(n_int_GC / (n_int_total-n_int_N+1e-100), digits=4), '\n'))
+            end
         end
-        close(file)
+        ProgressMeter.update!(pb, ProgressMeter.position(FILE))
     end
+    try
+        close(file_seq)
+        close(file_GC)
+    catch
+        nothing
+    end        
     close(FILE)
-    ### Calculate the assembly size including only the 7 largest sequences (n=7 expectation)
+    ### Calculate the assembly size including only the n largest sequences (if n=0, then use all the sequences)
+    if n_int_keep_top_seq == 0
+        n_int_keep_top_seq = length(vec_str_sequence_names)
+    end
     vec_int_idx_sortperm = sortperm(vec_int_sequence_lengths, rev=true)
-    vec_str_chromosome_names = vec_str_sequence_names[vec_int_idx_sortperm][1:n]
-    vec_int_chromosome_lengths = vec_int_sequence_lengths[vec_int_idx_sortperm][1:n]
+    vec_str_chromosome_names = vec_str_sequence_names[vec_int_idx_sortperm][1:n_int_keep_top_seq]
+    vec_int_chromosome_lengths = vec_int_sequence_lengths[vec_int_idx_sortperm][1:n_int_keep_top_seq]
+    vec_int_chromosome_GC = vec_int_sequence_GC[vec_int_idx_sortperm][1:n_int_keep_top_seq]
+    vec_int_chromosome_N = vec_int_sequence_N[vec_int_idx_sortperm][1:n_int_keep_top_seq]
     vec_int_sort_by_name = sortperm(vec_str_chromosome_names)
-    vec_str_chromosome_names = vec_str_chromosome_names[vec_int_sort_by_name]
-    vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_sort_by_name]
+    vec_str_chromosome_names = String.(vec_str_chromosome_names[vec_int_sort_by_name])
+    vec_int_chromosome_lengths = Int.(vec_int_chromosome_lengths[vec_int_sort_by_name])
+    vec_int_chromosome_GC = Int.(vec_int_chromosome_GC[vec_int_sort_by_name])
+    vec_int_chromosome_N = Int.(vec_int_chromosome_N[vec_int_sort_by_name])
     n_int_assembly_size = sum(vec_int_chromosome_lengths)
+    n_int_assembly_GC = sum(vec_int_chromosome_GC)
+    n_int_assembly_N = sum(vec_int_chromosome_N)
     ### Remove the uncateogised contigs
-    for name in vec_str_sequence_names[vec_int_idx_sortperm][n+1:end]
-        rm(string(name, ".fasta"))
+    for name in vec_str_sequence_names[vec_int_idx_sortperm][(n_int_keep_top_seq+1):end]
+        try
+            rm(string(name, ".fasta"))
+            rm(string(name, "-GC_content.txt"))
+        catch
+            nothing
+        end
     end
     ### Return assembly size, chromosome names, and lengths
-    return(n_int_assembly_size, vec_str_chromosome_names, vec_int_chromosome_lengths)
+    return(n_int_assembly_size, n_int_assembly_GC, n_int_assembly_N, vec_str_chromosome_names, vec_int_chromosome_lengths, vec_int_chromosome_GC, vec_int_chromosome_N)
 end
 ### precompile with tiny test file
-temp_N, temp_M, temp_L = fun_split_fasta_count_lengths("test.fasta", 3)
-
-### GC content per line per chromosome and across the entire genome
-### Ouputs a file per chromosome where each line correspond to the GC count per line of the fasta file
-### Returns the genomewide GC content, minimum and maximum GC contents per line
-function fun_estimate_GC_content(vec_str_chromosome_names, n_int_assembly_size)
-    n_int_GC_count_genomewide = 0
-    ProgressMeter.@showprogress for str_chrom in vec_str_chromosome_names
-        # str_chrom = vec_str_chromosome_names[1]
-        FILE = open(string(str_chrom, ".fasta"), "r")
-        file = open(string(str_chrom, "-GC_content.txt"), "w")
-        line = readline(FILE)
-        str_previous_base = 'N'
-        while !eof(FILE)
-            line = readline(FILE)
-            n_int_GC_count = length(collect(eachmatch(r"[GC]", line)))
-            n_int_total_bases = length(line)
-            n_flt_GC_perc = round(n_int_GC_count/n_int_total_bases, digits=4)
-            write(file, string(n_flt_GC_perc, '\n'))
-            n_int_GC_count_genomewide = n_int_GC_count_genomewide + n_int_GC_count
-        end
-        close(FILE)
-        close(file)
-    end
-    n_flt_percent_GC_content = n_int_GC_count_genomewide / n_int_assembly_size
-    return(n_flt_percent_GC_content)
-end
-### precompile
-temp_GC = fun_estimate_GC_content(temp_M, temp_N)
+temp_N, temp_GC, temp_X, temp_M, temp_L, temp_gc, temp_n = fun_fasta_lengths_GC_N("test.fasta", 3, true)
 
 ### Compute the coordinates for an arc polygon
 function fun_arcshape(θ1, θ2; r=1.0, w=0.2, n_int_points=50)
@@ -341,8 +358,7 @@ function fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_c
                                       col_background=:lightgray)
     ########################
     ### TEST
-    # # vec_bool_hits = Bool.(round.(rand(n_int_chrom_size)))
-    # str_filename_coor = "Lolium_rigidum-families-LTR_coordinates-COPIA.csv"
+    # str_filename_coor = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out-LTR_coordinates-COPIA.csv"
     # r=0.50
     # w=0.15
     # n_int_window_size = 10 # 1e6
@@ -395,7 +411,7 @@ function fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_c
             θ1 = (θ1+π/2)-2π
             θ2 = (θ2+π/2)-2π
         end
-        ### Extract the end-position for the current chromosome
+        ### Extract the end-positions for the current chromosome
         FILE = open(str_filename_coor, "r")
         vec_int_position = []
         while !eof(FILE)
@@ -415,10 +431,10 @@ function fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_c
             n_int_end = ((j-0)*n_int_window_size)+0
             append!(vec_flt_hits_freq, sum((vec_int_position .>= n_int_start) .& (vec_int_position .<= n_int_end)) / n_int_max_hit_count)
         end
-        ### draw background as ink to the main histogram
+        ### draw background
         vec_flt_coor_background_slice = fun_arcshape(θ1, θ2, r=r, w=w)
         plot!(plt, vec_flt_coor_background_slice, legend=false, color=col_background, linecolor=col_background)
-        ### remove upper part to draw the histograms since we are drawing the arc polygons from top to bottom
+        ### draw histogram
         for i in 1:n_int_windows_count
             # i = 1
             x = θ1 - (abs(θ1-θ2)*i/n_int_windows_count)
@@ -449,43 +465,13 @@ for f in readdir()[match.(r"FOR_TESTING-", readdir()) .!= nothing]
     rm(f)
 end
 
-####################
-### GENOME STATS ###
-####################
-# (1) RepeatModeler-RepeatMasker outputs:
-#       - "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.tbl" - summary
-#       - "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out" - repeat IDs and coordinates
-# (2) Statistics for the whole assembly including the tiny contigs
-using ProgressMeter
-str_filename_fasta = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta"
-str_filename_repeats = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out"
-
-### Counting again - I know it's redandunt with above code but Im hoping this could be standalone script to be packaged into a standalone binary
-FILE = open(str_filename_fasta, "r")
-ProgressMeter.seekend(FILE) # find file size by navigating to the end of the file
-n_int_FILE_size = ProgressMeter.position(FILE) # this file size is not equal to the number of lines in the file
-ProgressMeter.seekstart(FILE) # reset to the begining of the file to initial the progress bar and the while loop
-pb = ProgressMeter.Progress(n_int_FILE_size, 1)
-vec_str_names = String.([])
-vec_int_length = Int.([])
-while !eof(FILE)
-    line = readline(FILE)
-    if line[1] == '>'
-        push!(vec_str_names, line[2:end])
-        append!(vec_int_length, 0)
-    else
-        vec_int_length[end ] += length(line)
-    end
-    ProgressMeter.update!(pb, ProgressMeter.position(FILE))
-end
-close(FILE)
-n_int_total_size = sum(vec_int_length)
-
-### N50, L50 etc...
 
 
 
-# (3) Statistics for the chromosomes, i.e. largest 7 sequences
+
+
+
+
 
 
 
@@ -500,12 +486,37 @@ n_int_tick_length_bp = 100*1e+6
 n_int_tick_label_size=7
 n_int_chrom_name_size=7
 
-### Split into chromosomes
+### Split into chromosomes, count assembly size, GC content, Ns, and GC fractiopn per line
 @time n_int_assembly_size,
+      n_int_assembly_GC,
+      n_int_assembly_N,
       vec_str_chromosome_names,
-      vec_int_chromosome_lengths = fun_split_fasta_count_lengths(str_filename_fasta, n)
-### Measure GC content
-@time n_flt_percent_GC_content = fun_estimate_GC_content(vec_str_chromosome_names, n_int_assembly_size)
+      vec_int_chromosome_lengths,
+      vec_int_chromosome_GC,
+      vec_int_chromosome_N = fun_fasta_lengths_GC_N(str_filename_fasta, 0, true)
+
+### Using only the 7 chromosomes, i.e. largest sequences
+vec_str_chromosome_names = vec_str_chromosome_names[1:n]
+vec_int_chromosome_lengths = vec_int_chromosome_lengths[1:n]
+vec_int_chromosome_GC = vec_int_chromosome_GC[1:n]
+vec_int_chromosome_N = vec_int_chromosome_N[1:n]
+
+### Some assembly stats
+vec_int_idx_sort_by_decreasing_size = sortperm(vec_int_chromosome_lengths, rev=true)
+vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_decreasing_size]
+vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_decreasing_size]
+vec_int_cumsum_length = reverse(cumsum(reverse(vec_int_chromosome_lengths)))
+vec_int_cumsum_less_median = abs.(vec_int_cumsum_length .- n_int_assembly_size/2)
+L50 = collect(1:length(vec_str_chromosome_names))[vec_int_cumsum_less_median .== minimum(vec_int_cumsum_less_median)]
+N50 = vec_int_chromosome_lengths[vec_int_cumsum_less_median .== minimum(vec_int_cumsum_less_median)]
+n_int_size_of_largest_chromosome = maximum(vec_int_chromosome_lengths)
+str_largest_chromosome = vec_str_chromosome_names[vec_int_chromosome_lengths.==maximum(vec_int_chromosome_lengths)]
+
+### Sort back according to chromosome names
+vec_int_idx_sort_by_name = sortperm(vec_str_chromosome_names)
+vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_name]
+vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_name]
+
 ### Base plot
 plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), size=(700,700), axis=([], false), title="Lolium rigidum genome")
 ### Layer 1: chromosome lengths

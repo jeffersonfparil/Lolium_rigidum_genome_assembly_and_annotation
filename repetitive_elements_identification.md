@@ -180,15 +180,6 @@ RepeatMasker/RepeatMasker \
 
 - Gypsy (order of protein coding domains: *protease*, *reverse transcriptase*, *ribonuclease H*, and *integrase*)
 
-- Install julia
-```{sh}
-   ### Install Julia
-   wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.1-linux-x86_64.tar.gz
-   tar xvzf julia-1.7.1-linux-x86_64.tar.gz
-   echo alias \'julia=$(pwd)/julia-1.7.1/bin/julia\' >> ~/.bashrc
-   source ~/.bashrc
-   ```
-
 - Extract the coordinates of the Copia and Gypsy long termina retrotransposons
    ```{julia}
    using ProgressMeter
