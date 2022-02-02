@@ -51,7 +51,7 @@
    ### Set the proper directories:
    ### /usr/local/trf409.linux64
    ### /usr/local/rmblast-2.11.0/bin
-   ### Need to explicitly 'exit' afterwards.
+   ### Need to explicitly exit with '5. Done' afterwards.
    cd -
    ```
 9. RECON
@@ -101,11 +101,14 @@
    wget https://github.com/oushujun/LTR_retriever/archive/refs/tags/v2.9.0.tar.gz
    tar -xzvf v2.9.0.tar.gz
    cd LTR_retriever-2.9.0/
-   nano paths
-   BLAST+=/usr/local/rmblast-2.11.0/bin
-   RepeatMasker=/usr/local/RepeatMasker
-   HMMER=/usr/bin
-   CDHIT=/usr/local/cd-hit-v4.8.1-2019-0228
+   sed -i "s/^BLAST/# BLAST/g" paths
+   sed -i "s/^Repeat/# Repeat/g" paths
+   sed -i "s/^HMMER/# HMMER/g" paths
+   sed -i "s/^CDHIT/# CDHIT/g" paths
+   echo 'BLAST+=/usr/local/rmblast-2.11.0/bin' >> paths
+   echo 'RepeatMasker=/usr/local/RepeatMasker' >> paths
+   echo 'HMMER=/usr/bin' >> paths
+   echo 'CDHIT=/usr/local/cd-hit-v4.8.1-2019-0228' >> paths
    cd ..
    sudo mv LTR_retriever-2.9.0/ /usr/local/
    ```
@@ -146,7 +149,7 @@
 ## Build the BLAST database using our genome sequence
 ```{sh}
 DIR=/data-weedomics-3
-REF=${DIR}/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta
+REF=${DIR}/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta
 cd $DIR
 time \
 /usr/local/RepeatModeler-2.0.2a/BuildDatabase \
@@ -183,7 +186,7 @@ RepeatMasker/RepeatMasker \
 - Extract the coordinates of the Copia and Gypsy long termina retrotransposons
    ```{julia}
    using ProgressMeter
-   str_filename_stk = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta.out"
+   str_filename_stk = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta.out"
    str_filename_output_COPIA = string(str_filename_stk, "-LTR_coordinates-COPIA.csv")
    str_filename_output_GYPSY = string(str_filename_stk, "-LTR_coordinates-GYPSY.csv")
    FILE = open(str_filename_stk, "r")
