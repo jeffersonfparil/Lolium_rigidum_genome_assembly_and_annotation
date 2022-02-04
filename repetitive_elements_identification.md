@@ -165,6 +165,7 @@ time \
    -pa 14 \
    -LTRStruct
 ```
+Ran for about 2216 minutes (~1.5 days) in a 15-threaded machine.
 
 ## Find the repeats by generating a masked genome
 ```{sh}

@@ -386,7 +386,7 @@ function fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_c
         for j in 1:n_int_windows_count
             # j = 1
             n_int_start = ((j-1)*n_int_window_size)+1
-            n_int_end = ((j-0)*n_int_window_size)+0
+            n_int_end = ((j-0)*n_int_window_size)+0 
             n_int_hit_count = sum((vec_int_position .>= n_int_start) .& (vec_int_position .<= n_int_end))
             n_int_max_hit_count<n_int_hit_count ? n_int_max_hit_count=n_int_hit_count : nothing
         end
@@ -454,7 +454,7 @@ end
 str_filename_coor = "test-coor.temp"
 FILE = open(str_filename_coor, "w")
 ### random segment setting up sa features
-vec_int_n_features = [2, 7, 10]
+vec_int_n_features = [10, 20, 100]
 for i in 1:length(temp_M)
     # i = 1
     str_chr = temp_M[i]
@@ -591,7 +591,6 @@ annotate!(plt, -1.5, 1.25,(string("Whole assembly:\n  n=", int_n_chromosomes_who
                                   "\n  size=", int_size, " bp",
                                   "\n  L50=", L50, " chromosomes",
                                   "\n  N50=", N50, " bp"), 8, :gray, :left))
-
 ### Layer 2: GC content
 r=0.80; w=0.10
 annotate!(plt, 0.0, (r-w/2), ("b", 10, :gray, :center))
