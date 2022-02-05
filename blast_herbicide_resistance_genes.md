@@ -2,8 +2,8 @@
 
 ## Set our working directory directory, reference genome assembly, and TSR & NTSR protein query sequences
 ```{sh}
-DIR=/data-weedomic-2/Lrigidum_assembly_TSR_NTSR
-REF=${DIR}/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta
+DIR=/data-weedomics-3
+REF=${DIR}/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta
 DIR_GENES=${DIR}/Lolium_rigidum_genome_assembly_and_annotation/misc/TSR_NTSR_etc_protein_sequences
 cd $DIR
 ```
@@ -41,3 +41,4 @@ chmod +x tblastn_for_parallel_execution.sh
 time parallel -j 14 ./tblastn_for_parallel_execution.sh {} ${REF} ${DIR} ::: $(find ${DIR_GENES}/*.fasta)
 ```
 
+*Note:* Atrazine, clethodim, and paraquat will take a very very very long time to finsh > 1 week - I had to stop it manually.

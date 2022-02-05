@@ -1,0 +1,12 @@
+ms/*.log
+ms/*.bbl
+ms/*.xml
+ms/*.blg
+ms/*.fls
+ms/*.out
+ms/*.gz
+ms/*.fdb_latexmk
+ms/*.aux
+ms/*-blx.bib
+ms.zip
+.vscode/
