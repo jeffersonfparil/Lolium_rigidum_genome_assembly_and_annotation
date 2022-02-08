@@ -34,7 +34,7 @@ temp_name_1=$(basename $query)
 temp_name_2=${temp_name_1%.fasta*}
 tblastn -db ${REF} \
     -query ${query} \
-    -outfmt "6 qseqid staxids pident evalue qcovhsp bitscore stitle" \
+    -outfmt "6 qseqid staxids sstart send pident evalue qcovhsp bitscore stitle" \
     -out ${DIR}/BLASTOUT-${temp_name_2}.txt
 ' > tblastn_for_parallel_execution.sh
 chmod +x tblastn_for_parallel_execution.sh
