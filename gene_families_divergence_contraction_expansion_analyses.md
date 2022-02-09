@@ -2,7 +2,7 @@
 
 **NOTE:** We need to have the gene annotation on-hand to perform these analyses.
 
-## Cluster gene families with OrthoMCL
+## Cluster gene families with OrthoMCL or Panther HMM
 ```{sh}
 wget https://orthomcl.org/common/downloads/software/v2.0/orthomclSoftware-v2.0.9.tar.gz
 tar -xvzf orthomclSoftware-v2.0.9.tar.gz
