@@ -291,23 +291,27 @@ unzip bowtie2-2.4.5-linux-x86_64.zip
 
 BOWTIE_BUILD_INDEX=bowtie2-2.4.5-linux-x86_64/bowtie2-build
 ${BOWTIE_BUILD_INDEX} ${REF_LORI} ${REF_LORI%.fasta*}
-${BOWTIE_BUILD_INDEX} ${REF_LORI} ${REF_LOPE%.fasta*}
+${BOWTIE_BUILD_INDEX} ${REF_LOPE} ${REF_LOPE%.fasta*}
 
 BOWTIE=bowtie2-2.4.5-linux-x86_64/bowtie2
 FNAME_READ1=${DIR}/02_FASTQ/ACC01_combined_R1.fastq.gz
 FNAME_READ2=${DIR}/02_FASTQ/ACC01_combined_R2.fastq.gz
-FNAME_READ2=${DIR}/02_FASTQ/ACC01_combined_R2.fastq.gz
 BAM=${DIR}/ACC01.bam
+# BAM=${DIR}/ACC01_LOPE.bam
 MAPQ=20
+# ${BOWTIE} \
+#     -x ${REF_LOPE%.fasta*} \
 time \
 ${BOWTIE} \
-    -x ${REF_LOPE%.fasta*} \
+    -x ${REF_LORI%.fasta*} \
     -1 ${FNAME_READ1} \
     -2 ${FNAME_READ2} | \
     samtools view -q ${MAPQ} -b | \
     samtools sort > ${BAM}
 
-
+samtools stat ${BAM} > ${BAM%.bam*}.stat
+plot-bamstats ${BAM%.bam*}.stat -p ${BAM%.bam*}
+eog ${BAM%.bam*}-coverage.png
 ```
 
 
