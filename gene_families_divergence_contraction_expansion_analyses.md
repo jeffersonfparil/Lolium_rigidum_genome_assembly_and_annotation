@@ -57,15 +57,15 @@ using ProgressMeter
 
 ### Load the blast output
 cd("/data-weedomics-3/GENE_FAMILIES")
-@time for filename_blastout in readdir()[match.(Regex("txt\$"), readdir()) .!= nothing]
+vec_fnames_blastout = readdir()[match.(Regex("txt\$"), readdir()) .!= nothing]
+@time for filename_blastout in vec_fnames_blastout
     # filename_blastout = "BLASTOUT-Glyphosate-target_EPSPS_UniProt_Mesangiospermae.txt"
-    # filename_blastout = "BLASTOUT-Atrazine-target_psbA_UniProt_Mesangiospermae.txt"
     FILE = open(filename_blastout, "r")
     dat = CSV.read(FILE, DataFrames.DataFrame, delim='\t', header=["qseqid", "staxids", "sstart", "send", "pident", "evalue", "qcovhsp", "bitscore", "stitle"])
     close(FILE)
 
     ### Filter and sort
-    subdat = dat[(dat.qcovhsp .>= 95) .& (dat.pident .>= 95), :]
+    subdat = dat[(dat.qcovhsp .>= 95) .& (dat.pident .>= 50), :]
     sort!(subdat, rev=false, [:sstart, :send])
 
     ### Find overlaps
