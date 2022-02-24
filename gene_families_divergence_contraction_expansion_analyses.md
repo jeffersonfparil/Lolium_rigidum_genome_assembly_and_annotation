@@ -23,31 +23,45 @@ sudo apt install -y mafft
 **NOTE:** Naive cluster analysis using blast hits to build a tree with mafft
 
 DIR=/data-weedomics-3
-BLASTOUT=${DIR}/BLASTOUT-Overwatch-target_DXS_UniProt_Mesangiospermae.txt
+
+time \
+parallel \
+makeblastdb -in {}/{}.fasta \
+            -title {} \
+            -dbtype nucl ::: \
+Lolium_rigidum \
+Lolium_perenne \
+Secale_cereale \
+Zea_mays \
+Oryza_sativa \
+Arabidopsis_thaliana \
+Marchantia_polymorpha
 
 ```{sh}
 echo '#!/bin/bash
-query=$1
-REF=$2
-DIR=$3
-echo $query
-temp_name_1=$(basename $query)
+QUERY=$1
+SPECIES=$2
+echo "${SPECIES}----${QUERY}"
+temp_name_1=$(basename $QUERY)
 temp_name_2=${temp_name_1%.fasta*}
-tblastn -db ${REF} \
-    -query ${query} \
+tblastn -db ${SPECIES}/${SPECIES}.fasta \
+    -query ${QUERY} \
     -outfmt "6 qseqid staxids sstart send pident evalue qcovhsp bitscore stitle" \
-    -out ${DIR}/BLASTOUT-${temp_name_2}.txt
+    -out ${SPECIES}/BLASTOUT-${SPECIES}-${temp_name_2}.txt
 ' > tblastn_for_parallel_execution.sh
 chmod +x tblastn_for_parallel_execution.sh
-
-DIR=/data-weedomics-3
-REF=${DIR}/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta 
 
 time \
 parallel ./tblastn_for_parallel_execution.sh \
     {} \
-    ${REF} \
-    ${DIR}
+    {} ::: $(ls ${DIR}/Lolium_rigidum_genome_assembly_and_annotation/misc/TSR_NTSR_etc_protein_sequences/*.fasta) \
+       ::: Lolium_rigidum \
+           Lolium_perenne \
+           Secale_cereale \
+           Zea_mays \
+           Oryza_sativa \
+           Arabidopsis_thaliana \
+           Marchantia_polymorpha
 ```
 
 ```{julia}
@@ -100,6 +114,23 @@ vec_fnames_blastout = readdir()[match.(Regex("txt\$"), readdir()) .!= nothing]
     CSV.write(OUT, subdat)
     close(OUT)
 end
+
+cd("/data-weedomics-3/GENE_FAMILIES")
+
+using CSV, DataFrames
+include("/home/jeffersonfparil/Documents/Lolium_rigidum_genome_assembly_and_annotation/genome_statistics.jl")
+
+vec_fnames_blastout_uniques = readdir()[match.(Regex("-UNIQUE_HITS.csv\$"), readdir()) .!= nothing]
+for f in vec_fnames_blastout_uniques
+    # f = vec_fnames_blastout_uniques[1]
+    gene_name = split(split(f, '-')[3], '_')[2]
+    FILE = open(f, "r")
+    dat = CSV.read(FILE, DataFrames.DataFrame, header=true)
+    close(FILE)
+end
+
+
+
 
 ```
 
