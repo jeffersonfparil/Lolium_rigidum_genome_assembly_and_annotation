@@ -9,6 +9,9 @@ Plots.gr()
 
 ### Load plotting library and set backend to gr(): GKS and openGL
 module PlotGenome
+
+    println("Pre-compiling genome statistics plotting module:")
+
     using Random
     using ProgressMeter
     using Plots
@@ -132,6 +135,40 @@ module PlotGenome
     ### precompile
     fun_arcshape(0.0, π)
 
+    function fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
+        n = length(vec_str_chromosome_names)
+        ### chromosome slice properties
+        n_int_assembly_size = sum(vec_int_chromosome_lengths)
+        n_flt_empty_slice = 0.05(2π)
+        n_flt_available_circumference = 2*π - n_flt_empty_slice
+        n_flt_fraction_filled = 0.9*n_flt_available_circumference
+        n_flt_fraction_spacer = 0.1*n_flt_available_circumference
+        vec_flt_arc_lengths_filled = n_flt_fraction_filled * (vec_int_chromosome_lengths ./ n_int_assembly_size)
+        n_flt_arc_lengths_spacer = n_flt_fraction_spacer / (n-1)
+        # ### Tick arc length
+        # n_flt_arc_length_per_tick = n_flt_fraction_filled * n_int_tick_length_bp / n_int_assembly_size
+        ### Intial position (unrotated)
+        θ1 = 2π - (n_flt_empty_slice/2)
+        ### find chromosome end-points mapping into the radians
+        vec_θ_start = []
+        vec_θ_end = []
+        for i in 1:n
+            # i = 1
+            ### update track tail coordinate
+            θ2 = θ1 - vec_flt_arc_lengths_filled[i]
+            ### rotate to proper orientation
+            if ((θ1 + π/2) > 2π) | ((θ2 + π/2) > 2π)
+                θ1 = (θ1+π/2)-2π
+                θ2 = (θ2+π/2)-2π
+            end
+            append!(vec_θ_start, θ1)
+            append!(vec_θ_end, θ2)
+            ### update track head coordinate
+            θ1 = θ2 - n_flt_arc_lengths_spacer
+        end
+        return(vec_θ_start, vec_θ_end)
+    end
+
     ### Plot chromosome lengths layer (outer-most layer)
     function fun_plot_chrom_length_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths;
                                     r=1.00, w=0.10,
@@ -155,23 +192,17 @@ module PlotGenome
         n_flt_empty_slice = 0.05(2π)
         n_flt_available_circumference = 2*π - n_flt_empty_slice
         n_flt_fraction_filled = 0.9*n_flt_available_circumference
-        n_flt_fraction_spacer = 0.1*n_flt_available_circumference
         vec_flt_arc_lengths_filled = n_flt_fraction_filled * (vec_int_chromosome_lengths ./ n_int_assembly_size)
-        n_flt_arc_lengths_spacer = n_flt_fraction_spacer / (n-1)
         ### Tick arc length
         n_flt_arc_length_per_tick = n_flt_fraction_filled * n_int_tick_length_bp / n_int_assembly_size
-        ### Intial position (unrotated)
-        θ1 = 2π - (n_flt_empty_slice/2)
+        ### Chromosome endpoints in radians
+        vec_θ_start, vec_θ_end = fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
         ### plot per chromosome
         ProgressMeter.@showprogress for i in 1:n
             # i = 1
-            ### update track tail coordinate
-            θ2 = θ1 - vec_flt_arc_lengths_filled[i]
-            ### rotate to proper orientation
-            if ((θ1 + π/2) > 2π) | ((θ2 + π/2) > 2π)
-                θ1 = (θ1+π/2)-2π
-                θ2 = (θ2+π/2)-2π
-            end
+            ### chromosome endpoints
+            θ1 = vec_θ_start[i]
+            θ2 = vec_θ_end[i]
             ### plot each chromosome
             plot!(plt, fun_arcshape(θ1,
                                     θ2,
@@ -205,8 +236,6 @@ module PlotGenome
             annotate!(plt, vec_flt_coor_text.x[1],
                         vec_flt_coor_text.y[1],
                         (str_chromosome_name, n_int_chrom_name_size, :gray, :center))
-            ### update track head coordinate
-            θ1 = θ2 - n_flt_arc_lengths_spacer
         end
         ### add legend
         annotate!(plt, -1.5, -1.5, (string("×", n_int_tick_length_bp, " bases"), n_int_chrom_name_size, :gray, :left))
@@ -235,29 +264,14 @@ module PlotGenome
         n = length(vec_str_chromosome_names)
         ### chromosome slice properties
         n_int_assembly_size = sum(vec_int_chromosome_lengths)
-        n_flt_empty_slice = 0.05(2π)
-        n_flt_available_circumference = 2*π - n_flt_empty_slice
-        n_flt_fraction_filled = 0.9*n_flt_available_circumference
-        n_flt_fraction_spacer = 0.1*n_flt_available_circumference
-        vec_flt_arc_lengths_filled = n_flt_fraction_filled * (vec_int_chromosome_lengths ./ n_int_assembly_size)
-        n_flt_arc_lengths_spacer = n_flt_fraction_spacer / (n-1)
-        #################################################################################
-        ### Find minimum and maximum GC per chunk and plot legend
-        ### Intial position (unrotated)
-        θ1 = 2π - (n_flt_empty_slice/2)
+        ### chromosome endpoints in radians
+        vec_θ_start, vec_θ_end = fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
         ### Initialise minimum and maximum GC content per chunk
         n_flt_min_GC_perc_genomewide = 1.0
         n_flt_max_GC_perc_genomewide = 0.0
         ### Iterate across chromosomes to find the minumum and maximum GC contents per chunk
         for i in 1:n
             # i = 1
-            ### update track tail coordinate
-            θ2 = θ1 - vec_flt_arc_lengths_filled[i]
-            ### rotate to proper orientation
-            if ((θ1 + π/2) > 2π) | ((θ2 + π/2) > 2π)
-                θ1 = (θ1+π/2)-2π
-                θ2 = (θ2+π/2)-2π
-            end
             ### plot GC heatmap with 1 coloured slice per GC content chucnk
             vec_flt_GC_content = parse.(Float64, readlines(string(vec_str_chromosome_names[i], "-GC_content.txt")))
             n_int_bp_per_chunk = Int(ceil(n_int_assembly_size / n_int_total_chunks_across_genome))
@@ -279,8 +293,6 @@ module PlotGenome
                 n_flt_min_GC_perc_genomewide > n_flt_mean_GC_content ? n_flt_min_GC_perc_genomewide=n_flt_mean_GC_content : nothing
                 n_flt_max_GC_perc_genomewide < n_flt_mean_GC_content ? n_flt_max_GC_perc_genomewide=n_flt_mean_GC_content : nothing
             end
-            ### update track head coordinate
-            θ1 = θ2 - n_flt_arc_lengths_spacer
         end
         n_int_remainder_min = round(n_flt_min_GC_perc_genomewide*100) % 5
         n_flt_min_GC_perc_genomewide = round(n_flt_min_GC_perc_genomewide + ((0 - n_int_remainder_min)/100), digits=2)
@@ -317,19 +329,13 @@ module PlotGenome
                 x0+((x1-x0)/2),
                 -1.5,
                 ("GC content", n_int_tick_label_size, :gray, :bottom))
-        #################################################################################
-        ### Intial position (unrotated)
-        θ1 = 2π - (n_flt_empty_slice/2)
+
         ### plot per chromosome
         ProgressMeter.@showprogress for i in 1:n
             # i = 1
-            ### update track tail coordinate
-            θ2 = θ1 - vec_flt_arc_lengths_filled[i]
-            ### rotate to proper orientation
-            if ((θ1 + π/2) > 2π) | ((θ2 + π/2) > 2π)
-                θ1 = (θ1+π/2)-2π
-                θ2 = (θ2+π/2)-2π
-            end
+            ### chromosome endpoints
+            θ1 = vec_θ_start[i]
+            θ2 = vec_θ_end[i]
             ### plot GC heatmap with 1 coloured slice per GC content chucnk
             vec_flt_GC_content = parse.(Float64, readlines(string(vec_str_chromosome_names[i], "-GC_content.txt")))
             n_int_bp_per_chunk = Int(ceil(n_int_assembly_size / n_int_total_chunks_across_genome))
@@ -358,8 +364,6 @@ module PlotGenome
                     color=col,
                     linecolor=col)
             end
-            ### update track head coordinate
-            θ1 = θ2 - n_flt_arc_lengths_spacer
         end
         return(plt)
     end
@@ -396,6 +400,9 @@ module PlotGenome
                 end
             end
             close(FILE)
+            if length(vec_int_position) == 0
+                continue
+            end
             ### measure frequencies per window per chromosome
             n_int_chrom_size = vec_int_chromosome_lengths[i]
             n_int_windows_count = Int(ceil(n_int_chrom_size/n_int_window_size))
@@ -407,26 +414,14 @@ module PlotGenome
                 n_int_max_hit_count<n_int_hit_count ? n_int_max_hit_count=n_int_hit_count : nothing
             end
         end
-        ### chromosome slice properties
-        n_int_assembly_size = sum(vec_int_chromosome_lengths)
-        n_flt_empty_slice = 0.05(2π)
-        n_flt_available_circumference = 2*π - n_flt_empty_slice
-        n_flt_fraction_filled = 0.9*n_flt_available_circumference
-        n_flt_fraction_spacer = 0.1*n_flt_available_circumference
-        vec_flt_arc_lengths_filled = n_flt_fraction_filled * (vec_int_chromosome_lengths ./ n_int_assembly_size)
-        n_flt_arc_lengths_spacer = n_flt_fraction_spacer / (n-1)
-        ### Intial position (unrotated)
-        θ1 = 2π - (n_flt_empty_slice/2)
+        ### chromosome endpoints in radians
+        vec_θ_start, vec_θ_end = fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
         ### plot per chromosome
         ProgressMeter.@showprogress for i in 1:n
             # i = 1
-            ### update track tail coordinate
-            θ2 = θ1 - vec_flt_arc_lengths_filled[i]
-            ### rotate to proper orientation
-            if ((θ1 + π/2) > 2π) | ((θ2 + π/2) > 2π)
-                θ1 = (θ1+π/2)-2π
-                θ2 = (θ2+π/2)-2π
-            end
+            ### chromosome endpoints
+            θ1 = vec_θ_start[i]
+            θ2 = vec_θ_end[i]
             ### Extract the end-positions for the current chromosome
             FILE = open(str_filename_coor, "r")
             vec_int_position = []
@@ -461,8 +456,6 @@ module PlotGenome
                                                     n_int_points=10)
                 plot!(plt, vec_flt_coor_hist_inverse_slice, legend=false, color=col, linecolor=col)
             end
-            ### update track head coordinate
-            θ1 = θ2 - n_flt_arc_lengths_spacer
         end
         return(plt)
     end
@@ -487,10 +480,6 @@ module PlotGenome
     end
     close(FILE)
     fun_plot_hits_histogram_layer!(plt, temp_M, temp_L, str_filename_coor)
-    ### Precompilation clean-up
-    for f in readdir()[match.(r"test_fake_chr", readdir()) .!= nothing]
-        rm(f)
-    end
 
     ### add comma separators on large positive integers
     function fun_add_comma_separator_on_large_positive_integers(int_positive_number)
@@ -518,24 +507,159 @@ module PlotGenome
         return(str_number)
     end
 
+    ### Quadrativ Bézier curve (i.e. 3 points, P1 drags the line towards the P0 and P2 endpoints)
+    function BezCurve(P0, P1, P2, vec_t)
+        # P0 = [-1,0]
+        # P1 = [1,0]
+        # P2 = [0,1]
+        # vec_t = range(0,1;length=100)
+        vec_x = []
+        vec_y = []
+        for t in vec_t
+            P = (1-t)*((1-t)*P0 + (t*P1)) + t*((1-t)*P1 + (t*P2))
+            append!(vec_x, P[1])
+            append!(vec_y, P[2])
+        end
+        return (vec_x, vec_y)
+    end
+    # x, y = BezCurve([-1,0], [0,1], [1,0], range(0,1;length=100))
+    # plot(x,y)
 
     ### draw chords connecting herbicide target gene paralogs
-    n = 5
+    function fun_add_chords!(plt, str_filename_blastout, vec_str_chromosome_names, vec_int_chromosome_lengths; r=0.5, w=0.05, endpoint=1)
+        ### input parameters
+        # str_filename_blastout = "test-blastout.csv"
+        # vec_str_chromosome_names = temp_M
+        # vec_int_chromosome_lengths = temp_L
+        # r = 0.5
+        # w = 0.1
+        # endpoint = 1
+
+        ### chromosome endpoints in radians
+        vec_θ_start, vec_θ_end = fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
+
+        ### Load only qseqid, sstart and send
+        FILE = open(str_filename_blastout, "r")
+        vec_str_seq = []
+        vec_str_chr = []
+        vec_int_pos1 = []
+        vec_int_pos2 = []
+        header = readline(FILE)
+        while !eof(FILE)
+            line = readline(FILE)
+            vec_line = split(line, ',')
+            push!(vec_str_seq, vec_line[1])
+            push!(vec_str_chr, vec_line[end])
+            append!(vec_int_pos1, parse(Int, vec_line[3]))
+            append!(vec_int_pos2, parse(Int, vec_line[4]))
+        end
+        close(FILE)
+
+        vec_str_groups = unique(vec_str_seq)
+        vec_colours = palette(:rainbow, length(vec_str_groups))
+        for g in 1:length(vec_str_groups)
+            str_seq = vec_str_groups[g]
+            col = vec_colours[g]
+            vec_idx_int = collect(1:length(vec_str_seq))[vec_str_seq .== str_seq]
+            for i in 1:length(vec_idx_int)
+                # i = 1
+                x = vec_idx_int[i]
+                
+                if sum(vec_str_chr[x] .== vec_str_chromosome_names) == 0
+                    continue
+                end
+
+                str_chr = vec_str_chr[x]
+                int_pos1 = vec_int_pos1[x]
+                int_pos2 = vec_int_pos2[x]
+
+                int_chr_len = vec_int_chromosome_lengths[str_chr .== vec_str_chromosome_names][1]
+
+                flt_arc_start = vec_θ_start[str_chr .== vec_str_chromosome_names][1]
+                flt_arc_end = vec_θ_end[str_chr .== vec_str_chromosome_names][1]
+                flt_arc_dist = flt_arc_end - flt_arc_start
+
+                θ1_x = ( (int_pos1/int_chr_len) * flt_arc_dist ) + flt_arc_start
+                θ2_x = ( (int_pos2/int_chr_len) * flt_arc_dist ) + flt_arc_start
+
+                for j in (i+1):length(vec_idx_int)
+                    # j = 2
+                    y = vec_idx_int[j]
+
+                    if sum(vec_str_chr[y] .== vec_str_chromosome_names) == 0
+                        continue
+                    end
+
+                    str_chr = vec_str_chr[y]
+                    int_pos1 = vec_int_pos1[y]
+                    int_pos2 = vec_int_pos2[y]
+
+                    int_chr_len = vec_int_chromosome_lengths[str_chr .== vec_str_chromosome_names][1]
+
+                    flt_arc_start = vec_θ_start[str_chr .== vec_str_chromosome_names][1]
+                    flt_arc_end = vec_θ_end[str_chr .== vec_str_chromosome_names][1]
+                    flt_arc_dist = flt_arc_end - flt_arc_start
+
+                    θ1_y = ( (int_pos1/int_chr_len) * flt_arc_dist ) + flt_arc_start
+                    θ2_y = ( (int_pos2/int_chr_len) * flt_arc_dist ) + flt_arc_start
+
+                    shape_x = fun_arcshape(θ1_x, θ2_x; r=0.5, w=0.05, n_int_points=50)
+                    shape_y = fun_arcshape(θ1_y, θ2_y; r=0.5, w=0.05, n_int_points=50)
+
+                    P0 = [shape_x.x[endpoint], shape_x.y[endpoint]]
+                    P1 = [0, 0]
+                    P2 = [shape_y.x[endpoint], shape_y.y[endpoint]]
+
+                    vec_x, vec_y = BezCurve(P0, P1, P2, range(0,1;length=100))
+                    plot!(plt, vec_x, vec_y, color=col)
+                end
+            end
+        end
+        return(plt)
+    end
+    str_filename_blastout = "test-blastout.csv"
+    FILE = open(str_filename_blastout, "w")
+    n = 10
     header = ["qseqid", "staxids", "sstart", "send", "pident", "evalue", "qcovhsp", "bitscore", "stitle"]
+    write(FILE, string(join(header, ','), '\n'))
     for i in 1:n
-        chr = rand(temp_M, 1)
+        chr = rand(temp_M, 1)[1]
         chr_len = temp_L[chr .== temp_M][1]
         len = Int(round.(chr_len * rand(collect(0.01:0.01:0.25), 1)[1]))
-        pos1 = rand(collect(1:chr_len), 1)[1]
+        pos1 = rand(collect(1:Int(round(chr_len*0.9))), 1)[1]
         pos2 = minimum([pos1+len, chr_len])
-        qseqid = randstring("ABCDEFGHIJKLMNOPQRSTUVWXYZ", 10)
+        qseqid = randstring("ABC", 1)
+        staxids = 0
+        sstart = pos1
+        send = pos2
+        pident = round(rand(1)[1]*100, digits=2)
+        evalue = round(rand(1)[1], digits=2)
+        qcovhsp = round(rand(1)[1], digits=2)
+        bitscore = round(rand(1)[1], digits=2)
+        stitle = chr
+        line = join([qseqid,
+                        staxids,
+                        sstart,
+                        send,
+                        pident,
+                        evalue,
+                        qcovhsp,
+                        bitscore,
+                        stitle], ',')
+    write(FILE, string(line, '\n'))
+    end
+    close(FILE)
+    fun_add_chords!(plt, str_filename_blastout, temp_M, temp_L,
+                    r=0.5, w=0.05, endpoint=1)
+    fun_add_chords!(plt, str_filename_blastout, temp_M, temp_L,
+                    r=0.5, w=0.05, endpoint=2)
+
+    ### Precompilation clean-up
+    for f in readdir()[match.(r"test", readdir()) .!= nothing]
+        rm(f)
+    end
+
 end ### PlotGenome
-
-
-
-
-
-
 
 ###############
 ### EXECUTE ###
