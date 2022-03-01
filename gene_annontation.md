@@ -7,7 +7,7 @@
 
 0. Set our working directory, and define our genome assembly, as well as the transcriptome assembly
 ```{sh}
-DIR=/data-weedomics-3
+DIR=/data-weedomics-1/Lolium_rigidum_gene_annotation
 REF=${DIR}/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n.fasta
 TRA=${DIR}/LolRig_transcripts_fpkm_1.fa ### Pooled all tissues
 # TRA=${DIR}/transcripts_fpkm_1.fa ### Tissue-specific
@@ -16,9 +16,8 @@ cd $DIR
 
 1. Perl modules for GeneMark-EX and ProtHint
     ```{sh}
-    ### NOTE: may require sudo
-    cpan Hash::Merge MCE::Mutex Math::Utils Parallel:ForkManager ### GeneMark-EX dependencies
-    cpan threads YAML Thread::Queue ### ProtHint dependencies
+    sudo cpan Hash::Merge MCE::Mutex Math::Utils Parallel:ForkManager ### GeneMark-EX dependencies
+    sudo cpan threads YAML Thread::Queue ### ProtHint dependencies
     ```
 2. GeneMark-EX
 Download **GeneMark-ES/ET/EP** manually from (http://exon.gatech.edu/GeneMark/license_download.cgi)[http://exon.gatech.edu/GeneMark/license_download.cgi]. Enter the credentials being required. You will need to download the software and its corresponding key.

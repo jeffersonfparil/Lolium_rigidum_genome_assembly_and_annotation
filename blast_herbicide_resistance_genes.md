@@ -41,4 +41,6 @@ chmod +x tblastn_for_parallel_execution.sh
 time parallel -j 14 ./tblastn_for_parallel_execution.sh {} ${REF} ${DIR} ::: $(find ${DIR_GENES}/*.fasta)
 ```
 
+*Relax open gap penalty to ~ 0.0*
+
 *Note:* Atrazine, clethodim, and paraquat will take a very very very long time to finsh > 1 week - I had to stop it manually.
