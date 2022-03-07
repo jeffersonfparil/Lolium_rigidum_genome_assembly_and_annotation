@@ -12,7 +12,7 @@ module PlotGenome
 
     println("Pre-compiling genome statistics plotting module:")
 
-    using Random
+    using Random; Random.seed!(123)
     using ProgressMeter
     using Plots
     gr()
@@ -557,17 +557,22 @@ module PlotGenome
 
         vec_str_groups = unique(vec_str_seq)
         vec_colours = palette(:rainbow, length(vec_str_groups))
+        vec_str_included_groups = []
+        vec_included_colours = []
         for g in 1:length(vec_str_groups)
             str_seq = vec_str_groups[g]
             col = vec_colours[g]
             vec_idx_int = collect(1:length(vec_str_seq))[vec_str_seq .== str_seq]
-            for i in 1:length(vec_idx_int)
+            for i in 1:(length(vec_idx_int)-1)
                 # i = 1
                 x = vec_idx_int[i]
                 
                 if sum(vec_str_chr[x] .== vec_str_chromosome_names) == 0
                     continue
                 end
+
+                push!(vec_str_included_groups, str_seq)
+                push!(vec_included_colours, col)
 
                 str_chr = vec_str_chr[x]
                 int_pos1 = vec_int_pos1[x]
@@ -582,7 +587,8 @@ module PlotGenome
                 θ1_x = ( (int_pos1/int_chr_len) * flt_arc_dist ) + flt_arc_start
                 θ2_x = ( (int_pos2/int_chr_len) * flt_arc_dist ) + flt_arc_start
 
-                for j in (i+1):length(vec_idx_int)
+                # for j in (i+1):length(vec_idx_int)
+                for j in (i+1)
                     # j = 2
                     y = vec_idx_int[j]
 
@@ -603,8 +609,8 @@ module PlotGenome
                     θ1_y = ( (int_pos1/int_chr_len) * flt_arc_dist ) + flt_arc_start
                     θ2_y = ( (int_pos2/int_chr_len) * flt_arc_dist ) + flt_arc_start
 
-                    shape_x = fun_arcshape(θ1_x, θ2_x; r=0.5, w=0.05, n_int_points=50)
-                    shape_y = fun_arcshape(θ1_y, θ2_y; r=0.5, w=0.05, n_int_points=50)
+                    shape_x = fun_arcshape(θ1_x, θ2_x; r=r, w=w, n_int_points=50)
+                    shape_y = fun_arcshape(θ1_y, θ2_y; r=r, w=w, n_int_points=50)
 
                     P0 = [shape_x.x[endpoint], shape_x.y[endpoint]]
                     P1 = [0, 0]
@@ -615,6 +621,19 @@ module PlotGenome
                 end
             end
         end
+        ### add legend
+        idx = sortperm(vec_str_included_groups)
+        grp = unique(vec_str_included_groups[idx])
+        col = unique(vec_included_colours[idx])
+        
+        x0 = -1.5; y0 = -0.5
+        x1 = -1.4; y1 = -1.4
+        for i in 1:length(col)
+            y = y0+(y1-y0)*((i-1)/length(col))
+            plot!(plt, [x0,x1], [y,y], color=col[i], linecolor=col[i])
+            annotate!(plt, x1+0.05, y, (grp[i], 5, :gray, :left))
+        end
+
         return(plt)
     end
     str_filename_blastout = "test-blastout.csv"
@@ -668,6 +687,7 @@ function execute()
     str_filename_fasta = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta"
     str_filename_LTR_COPIA = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta.out-LTR_coordinates-COPIA.csv"
     str_filename_LTR_GYPSY = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta.out-LTR_coordinates-GYPSY.csv"
+    str_filename_blastout = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta.out-BLASTOUT_TSR_NTSR.csv"
     n = 7 ## haploid chromosome number
     n_int_tick_length_bp = 100*1e+6 # make this adjustable
     n_int_tick_label_size=7
@@ -726,7 +746,6 @@ function execute()
     annotate!(plt, 0.0, (r-w/2), ("a", 10, :gray, :center))
     PlotGenome.fun_plot_chrom_length_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths;
                                 r=r, w=w,
-                                vec_colours_chrom=palette(:default, n),
                                 n_int_tick_length_bp=n_int_tick_length_bp,
                                 n_int_tick_label_size=n_int_tick_label_size,
                                 n_int_chrom_name_size=n_int_chrom_name_size)
@@ -768,6 +787,16 @@ function execute()
                                 n_int_window_size = 1e6,
                                 col=:gray,
                                 col_background=:lightgray)
+    ### Layer 4: Chord diagram
+    r = r-w; w=0.05
+    PlotGenome.fun_add_chords!(plt,
+                    str_filename_blastout,
+                    vec_str_chromosome_names,
+                    vec_int_chromosome_lengths,
+                    r=r, w=w, endpoint=1)
+    
     ### Save as svg
     savefig(plt, "Lolium_rigidum_genome.svg")
 end
+
+@time execute()
