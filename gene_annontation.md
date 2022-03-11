@@ -177,7 +177,7 @@ PATH=${PATH}:${DIR}/gth-1.7.3-Linux_x86_64-64bit/bin
 PATH=${PATH}:${DIR}/BRAKER-2.1.6/scripts
 ```
 
-Step 1 of 3: BRAKER run using RNAseq data
+Step 1 of 3: BRAKER run using RNAseq data (1,261 minutes)
 ```{sh}
 time \
 braker.pl \
@@ -185,6 +185,12 @@ braker.pl \
     --genome=${GENOME} \
     --bam=${RNASEQ_BAM} \
     --cores 32
+```
+
+Check log
+```{sh}
+bat braker/errors/new_species.stderr
+bat braker/braker.log
 ```
 
 Step 2 of 3: BRAKER run using protein database information
