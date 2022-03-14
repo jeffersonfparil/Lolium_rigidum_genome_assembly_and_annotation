@@ -5,6 +5,7 @@
 ## Working directory
 ```{sh}
 DIR=/data/Lolium_rigidum_ASSEMBLY/ANNOTATION
+cd $DIR
 ```
 
 ## Install dependencies
@@ -119,11 +120,16 @@ cat plants/Rawdata/* > plant_proteins.fasta
 
 ## Genome assembly and RNAseq data
 ```{sh}
+
+## using rRNA-depleted reads...
+
+
+
 GENOME=/data/Lolium_rigidum_ASSEMBLY/GENOME_ASSEMBLY/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta
-DIR_RAW_RNASEQ=/data/Lolium_rigidum_ASSEMBLY/TRANSCRIPTOME_ASSEMBLY/raw_reads
+DIR_RAW_RNASEQ=/data/Lolium_rigidum_ASSEMBLY/TRANSCRIPTOME_ASSEMBLY/rRNAdepleted_reads/
 cd $DIR_RAW_RNASEQ
-cat *_R1.fastq > ${DIR}/RNAseq_R1.fastq
-cat *_R2.fastq > ${DIR}/RNAseq_R2.fastq
+zcat *_paired_*.fq.1.gz > ${DIR}/RNAseq_R1.fastq.gz
+zcat *_paired_*.fq.2.gz > ${DIR}/RNAseq_R2.fastq.gz
 cd -
 RNASEQ_BAM=RNAseqAlignedSorted.bam
 ```
@@ -142,8 +148,8 @@ STAR --runMode genomeGenerate \
 time \
 STAR --genomeDir $(dirname ${GENOME}) \
     --readFilesIn \
-    ${DIR}/RNAseq_R1.fastq \
-    ${DIR}/RNAseq_R2.fastq \
+    ${DIR}/RNAseq_R1.fastq.gz \
+    ${DIR}/RNAseq_R2.fastq.gz \
     --runThreadN 31 \
     --outFileNamePrefix RNAseq
 
@@ -193,16 +199,34 @@ bat braker/errors/new_species.stderr
 bat braker/braker.log
 ```
 
+Rename braker output folder
+```{sh}
+mv braker braker_RNAseq
+```
+
 Step 2 of 3: BRAKER run using protein database information
+
+But first, run ProtHint separately so we can finish the algorithm before the heat death of the universe using the option: `--maxProteinsPerSeed 5`:
+```{sh}
+time \
+ProtHint/bin/prothint.py \
+    ${REF} \
+    plant_proteins.fasta \
+    --maxProteinsPerSeed 5 \
+    --threads 32
+```
+
+Now run braker with prothint-generated hints:
 ```{sh}
 time \
 braker.pl \
     --species=Lolium_rigidum_Viridiprot \
     --genome=${GENOME} \
-    --prot_seq=${PROTEIN} \
-    --epmode \
+    --hints=prothint_augustus.gff \
     --cores 32
 ```
+
+
 Step 3 of 3: TSEBRA
 ```{sh}
 ```

@@ -70,6 +70,7 @@ ProtHint/bin/prothint.py \
 
 time \
 ProtHint/bin/prothint.py \
+    --maxProteinsPerSeed 5 \
     ${REF} \
     plant_proteins.fasta
 ```
