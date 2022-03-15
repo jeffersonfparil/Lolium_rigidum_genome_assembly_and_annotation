@@ -111,6 +111,14 @@ wget https://github.com/Gaius-Augustus/BRAKER/archive/refs/tags/v2.1.6.tar.gz
 tar -xvzf v2.1.6.tar.gz
 ```
 
+## Install TSEBRA
+```{sh}
+git clone https://github.com/Gaius-Augustus/TSEBRA
+cd TSEBRA/bin
+./tsebra.py -h
+cd -
+```
+
 ## Download Viridiplantae protein database
 ```{sh}
 wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
@@ -182,6 +190,7 @@ export PROTHINT_PATH=${DIR}/ProtHint-2.6.0/bin
 PATH=${PATH}:${DIR}/gth-1.7.3-Linux_x86_64-64bit/bin
 PATH=${PATH}:${DIR}/BRAKER-2.1.6/scripts
 PATH=${PATH}:${GENEMARK_PATH}
+PATH=${PATH}:${DIR}/TSEBRA/bin
 ```
 
 Step 1 of 3: BRAKER run using RNAseq data (1,261 minutes)
@@ -227,7 +236,17 @@ braker.pl \
     --cores 32
 ```
 
+Rename braker output folder
+```{sh}
+mv braker braker_proteins
+```
+
 
 Step 3 of 3: TSEBRA
 ```{sh}
+./bin/tsebra.py \
+    -g ${DIR}/braker_RNAseq/augustus.hints.gtf,${DIR}/braker_proteins/augustus.hints.gtf \
+    -c default.cfg \
+    -e ${DIR}/braker_RNAseq/hintsfile.gff,${DIR}/braker_proteins/hintsfile.gff \
+    -o ${DIR}/BRAKER_OUTPUT.gtf
 ```
