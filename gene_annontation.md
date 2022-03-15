@@ -181,6 +181,7 @@ export AUGUSTUS_SCRIPTS_PATH=${DIR}/augustus-3.4.0/scripts
 export PROTHINT_PATH=${DIR}/ProtHint-2.6.0/bin
 PATH=${PATH}:${DIR}/gth-1.7.3-Linux_x86_64-64bit/bin
 PATH=${PATH}:${DIR}/BRAKER-2.1.6/scripts
+PATH=${PATH}:${GENEMARK_PATH}
 ```
 
 Step 1 of 3: BRAKER run using RNAseq data (1,261 minutes)
@@ -204,16 +205,16 @@ Rename braker output folder
 mv braker braker_RNAseq
 ```
 
-Step 2 of 3: BRAKER run using protein database information
+Step 2 of 3: BRAKER run using protein database information (Can be run in parallel with Step 1)
 
 But first, run ProtHint separately so we can finish the algorithm before the heat death of the universe using the option: `--maxProteinsPerSeed 5`:
 ```{sh}
 time \
-ProtHint/bin/prothint.py \
-    ${REF} \
-    plant_proteins.fasta \
+${PROTHINT_PATH}/prothint.py \
+    ${GENOME} \
+    ${PROTEIN} \
     --maxProteinsPerSeed 5 \
-    --threads 32
+    --threads 30
 ```
 
 Now run braker with prothint-generated hints:
