@@ -1,4 +1,4 @@
-# Gaisu-Augustus/BRAKER pipeline D
+# Gaia-Augustus/BRAKER pipeline D + GeMoMa
 
 ![](misc/braker2_pipeline_D.png)
 
@@ -105,6 +105,11 @@ wget https://github.com/Gaius-Augustus/MakeHub/archive/refs/tags/1.0.6.tar.gz
 sudo apt install -y rna-star
 ```
 
+15. Java
+```{sh}
+sudo apt install default-jre
+```
+
 ## Install BRAKER
 ```{sh}
 wget https://github.com/Gaius-Augustus/BRAKER/archive/refs/tags/v2.1.6.tar.gz
@@ -117,6 +122,14 @@ git clone https://github.com/Gaius-Augustus/TSEBRA
 cd TSEBRA/bin
 ./tsebra.py -h
 cd -
+```
+
+## Install GeMoMa
+```{sh}
+wget http://www.jstacs.de/download.php?which=GeMoMa
+mv 'download.php?which=GeMoMa' GeMoMa.zip
+unzip GeMoMa.zip
+java -jar GeMoMa-1.8.jar CLI -h
 ```
 
 ## Download Viridiplantae protein database
@@ -249,4 +262,42 @@ Step 3 of 3: TSEBRA
     -c default.cfg \
     -e ${DIR}/braker_RNAseq/hintsfile.gff,${DIR}/braker_proteins/hintsfile.gff \
     -o ${DIR}/BRAKER_OUTPUT.gtf
+```
+
+
+## GeMoMa (Gene Model Mapper)
+For more information visit: [http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell](http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell)
+
+```{sh}
+time \
+java -jar Xmx200G GeMoMa-1.8.jar CLI \
+    GeMoMaPipeline \
+    threads=<threads>\
+    GeMoMa.Score=ReAlign \
+    AnnotationFinalizer.r=NO \
+    p=true pc=true pgr=true \
+    o=true \
+    t=<target_genome> \
+    i=<reference_1_id> \
+    r=MAPPED \
+    ERE.m=<SAM/BAM> \
+    a=<reference_1_annotation> \
+    g=<reference_1_genome> \
+    outdir=<outdir> 
+
+# e.g.
+java -jar GeMoMa-1.8.jar CLI \
+    GeMoMaPipeline \
+    threads=20 \
+    AnnotationFinalizer.r=NO \
+    p=false \
+    o=true \
+    t=NCBI/GCF_000004255.2_v.1.0_genomic.fna.gz \
+    GAF.a="pAA>=0.7" \
+    i=thaliana \
+    a=NCBI/GCF_000001735.4_TAIR10.1_genomic.gff.gz \
+    r=MAPPED \
+    ERE.m=<SAM/BAM> \
+    g=NCBI/GCF_000001735.4_TAIR10.1_genomic.fna.gz \
+    outdir=output/
 ```
