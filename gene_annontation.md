@@ -237,6 +237,13 @@ ${PROTHINT_PATH}/prothint.py \
     ${PROTEIN} \
     --maxProteinsPerSeed 5 \
     --threads 30
+
+mkdir PROTHINT_plant_proteins
+mv prothint.gff PROTHINT_plant_proteins
+mv top_chains.gff PROTHINT_plant_proteins
+mv evidence.gff PROTHINT_plant_proteins
+mv prothint_augustus.gff PROTHINT_plant_proteins
+PROTHINT_AUGUSTUS_HINTS=${DIR}/PROTHINT_plant_proteins/prothint_augustus.gff
 ```
 
 Now run braker with prothint-generated hints:
@@ -245,8 +252,10 @@ time \
 braker.pl \
     --species=Lolium_rigidum_Viridiprot \
     --genome=${GENOME} \
-    --hints=prothint_augustus.gff \
+    --hints=${PROTHINT_AUGUSTUS_HINTS} \
     --cores 32
+
+bat braker/braker.log
 ```
 
 Rename braker output folder
