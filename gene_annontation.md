@@ -139,6 +139,20 @@ tar -xvzf odb10_plants_fasta.tar.gz
 cat plants/Rawdata/* > plant_proteins.fasta
 ```
 
+## Download *Arabidopsis thaliana* and *Oryza sativa* reference genomes and gene annotations
+```{sh}
+### Arabidopsis thaliana (TAIR10)
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.gff.gz
+mv GCF_000001735.4_TAIR10.1_genomic.fna.gz Arabidopsis_thaliana.fasta.gz
+mv GCF_000001735.4_TAIR10.1_genomic.gff.gz Arabidopsis_thaliana.gff.gz
+### Oryza sativa (IRGSP-1.0)
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/433/935/GCF_001433935.1_IRGSP-1.0/GCF_001433935.1_IRGSP-1.0_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/433/935/GCF_001433935.1_IRGSP-1.0/GCF_001433935.1_IRGSP-1.0_genomic.gff.gz
+mv GCF_001433935.1_IRGSP-1.0_genomic.fna.gz Oryza_sativa.fasta.gz
+mv GCF_001433935.1_IRGSP-1.0_genomic.gff.gz Oryza_sativa.gff.gz
+```
+
 ## Genome assembly and RNAseq data
 ```{sh}
 
@@ -266,9 +280,10 @@ mv braker braker_proteins
 
 Step 3 of 3: TSEBRA
 ```{sh}
-./bin/tsebra.py \
+time \
+tsebra.py \
     -g ${DIR}/braker_RNAseq/augustus.hints.gtf,${DIR}/braker_proteins/augustus.hints.gtf \
-    -c default.cfg \
+    -c ${DIR}/TSEBRA/config/default.cfg \
     -e ${DIR}/braker_RNAseq/hintsfile.gff,${DIR}/braker_proteins/hintsfile.gff \
     -o ${DIR}/BRAKER_OUTPUT.gtf
 ```
