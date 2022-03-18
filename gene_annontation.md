@@ -110,6 +110,11 @@ sudo apt install -y rna-star
 sudo apt install default-jre
 ```
 
+16. Bedtools
+```{sh}
+sudo apt install bedtools
+```
+
 ## Install BRAKER
 ```{sh}
 wget https://github.com/Gaius-Augustus/BRAKER/archive/refs/tags/v2.1.6.tar.gz
@@ -294,9 +299,41 @@ tsebra.py \
     -o ${DIR}/BRAKER_OUTPUT.gtf
 ```
 
-Step 4 of 4: TransDecoder
+Step 4 of 4: BLASTX predicted genes against the plant protein database
 ```{sh}
-## Install TransDecoder first...
+# Using the fixed fasta file, i.e. non-terminal lines have the same number of characters per line
+GENOME_FIXED_CHARNUM_PER_LINE=/data/Lolium/Quantitative_Genetics/02_FASTQ/REFERENCE/Reference.fasta
+# Filter and modify name field in ${DIR}/BRAKER_OUTPUT.gtf
+grep -v "start_codon\|stop_codon" ${DIR}/BRAKER_OUTPUT.gtf > ${DIR}/BRAKER_OUTPUT-FILTERED.tmp
+awk -F'\t' -v OFS='\t' '$3=$9' ${DIR}/BRAKER_OUTPUT-FILTERED.tmp > ${DIR}/BRAKER_OUTPUT-FILTERED.gtf
+
+time \
+bedtools getfasta \
+    -fi ${GENOME_FIXED_CHARNUM_PER_LINE} \
+    -bed ${DIR}/BRAKER_OUTPUT-FILTERED.gtf \
+    -name+ \
+    -fo ${DIR}/BRAKER_OUTPUT.fasta
+
+sed -i 's/ "/-/g' ${DIR}/BRAKER_OUTPUT.fasta
+sed -i 's/"; /-/g' ${DIR}/BRAKER_OUTPUT.fasta
+sed -i 's/";::/::/g' ${DIR}/BRAKER_OUTPUT.fasta
+
+time \
+makeblastdb \
+    -in ${PROTEIN} \
+    -dbtype prot
+
+time \
+blastx -db ${PROTEIN} \
+    -query ${DIR}/BRAKER_OUTPUT.fasta \
+    -outfmt "6 qseqid staxids sstart send pident evalue qcovhsp bitscore stitle" \
+    -max_target_seqs 5 \
+    -num_threads 31 \
+    -out ${DIR}/BRAKER_OUTPUT.blastout
+
+### Then find the identities and gene ontologies of the hits
+### HOW? Probably go to OrthDB?
+
 ```
 
 
