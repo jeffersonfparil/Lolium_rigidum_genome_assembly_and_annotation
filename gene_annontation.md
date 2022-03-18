@@ -132,6 +132,15 @@ unzip GeMoMa.zip
 java -jar GeMoMa-1.8.jar CLI -h
 ```
 
+## Install mmseq for GeMoMa
+```{sh}
+wget https://github.com/soedinglab/MMseqs2/releases/download/13-45111/mmseqs-linux-avx2.tar.gz
+tar -xvzf mmseqs-linux-avx2.tar.gz
+cd mmseqs/bin
+./mmseqs -h
+cd -
+```
+
 ## Download Viridiplantae protein database
 ```{sh}
 wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
@@ -155,11 +164,6 @@ mv GCF_001433935.1_IRGSP-1.0_genomic.gff.gz Oryza_sativa.gff.gz
 
 ## Genome assembly and RNAseq data
 ```{sh}
-
-## using rRNA-depleted reads...
-
-
-
 GENOME=/data/Lolium_rigidum_ASSEMBLY/GENOME_ASSEMBLY/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta
 DIR_RAW_RNASEQ=/data/Lolium_rigidum_ASSEMBLY/TRANSCRIPTOME_ASSEMBLY/rRNAdepleted_reads/
 cd $DIR_RAW_RNASEQ
@@ -218,9 +222,11 @@ PATH=${PATH}:${DIR}/gth-1.7.3-Linux_x86_64-64bit/bin
 PATH=${PATH}:${DIR}/BRAKER-2.1.6/scripts
 PATH=${PATH}:${GENEMARK_PATH}
 PATH=${PATH}:${DIR}/TSEBRA/bin
+PATH=${PATH}:${DIR} ### for GeMoMa.jar
+PATH=${PATH}:${DIR}/mmseqs/bin
 ```
 
-Step 1 of 3: BRAKER run using RNAseq data (1,261 minutes)
+Step 1 of 4: BRAKER run using RNAseq data (1,261 minutes)
 ```{sh}
 time \
 braker.pl \
@@ -241,7 +247,7 @@ Rename braker output folder
 mv braker braker_RNAseq
 ```
 
-Step 2 of 3: BRAKER run using protein database information (Can be run in parallel with Step 1)
+Step 2 of 4: BRAKER run using protein database information (Can be run in parallel with Step 1)
 
 But first, run ProtHint separately so we can finish the algorithm before the heat death of the universe using the option: `--maxProteinsPerSeed 5`:
 ```{sh}
@@ -278,7 +284,7 @@ mv braker braker_proteins
 ```
 
 
-Step 3 of 3: TSEBRA
+Step 3 of 4: TSEBRA
 ```{sh}
 time \
 tsebra.py \
@@ -288,40 +294,51 @@ tsebra.py \
     -o ${DIR}/BRAKER_OUTPUT.gtf
 ```
 
+Step 4 of 4: TransDecoder
+```{sh}
+## Install TransDecoder first...
+```
+
 
 ## GeMoMa (Gene Model Mapper)
 For more information visit: [http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell](http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell)
 
+Using the *Arabidopsis thaliana* gene annotations:
+
 ```{sh}
 time \
-java -jar Xmx200G GeMoMa-1.8.jar CLI \
+java -jar -Xmx200G GeMoMa-1.8.jar CLI \
     GeMoMaPipeline \
-    threads=<threads>\
+    threads=31 \
     GeMoMa.Score=ReAlign \
     AnnotationFinalizer.r=NO \
     p=true pc=true pgr=true \
     o=true \
-    t=<target_genome> \
-    i=<reference_1_id> \
+    t=${GENOME} \
+    i=Arabidopsis_thaliana \
     r=MAPPED \
-    ERE.m=<SAM/BAM> \
-    a=<reference_1_annotation> \
-    g=<reference_1_genome> \
-    outdir=<outdir> 
+    ERE.m=${RNASEQ_BAM} \
+    a=${DIR}/Arabidopsis_thaliana.gff.gz \
+    g=${DIR}/Arabidopsis_thaliana.fasta.gz \
+    outdir=${DIR}/GEMOMA_ARABIDOPSIS_THALIANA_OUTPUT
+```
 
-# e.g.
-java -jar GeMoMa-1.8.jar CLI \
+Using the *Oryza sativa* gene annotations:
+
+```{sh}
+time \
+java -jar -Xmx200G GeMoMa-1.8.jar CLI \
     GeMoMaPipeline \
-    threads=20 \
+    threads=31 \
+    GeMoMa.Score=ReAlign \
     AnnotationFinalizer.r=NO \
-    p=false \
+    p=true pc=true pgr=true \
     o=true \
-    t=NCBI/GCF_000004255.2_v.1.0_genomic.fna.gz \
-    GAF.a="pAA>=0.7" \
-    i=thaliana \
-    a=NCBI/GCF_000001735.4_TAIR10.1_genomic.gff.gz \
+    t=${GENOME} \
+    i=Oryza_sativa \
     r=MAPPED \
-    ERE.m=<SAM/BAM> \
-    g=NCBI/GCF_000001735.4_TAIR10.1_genomic.fna.gz \
-    outdir=output/
+    ERE.m=${RNASEQ_BAM} \
+    a=${DIR}/Oryza_sativa.gff.gz \
+    g=${DIR}/Oryza_sativa.fasta.gz \
+    outdir=${DIR}/GEMOMA_ORYZA_SATIVA_OUTPUT
 ```

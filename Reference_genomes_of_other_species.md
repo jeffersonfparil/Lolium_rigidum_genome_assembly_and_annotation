@@ -6,6 +6,17 @@ DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
 # DIR=/data-weedomics-3
 ```
 
+## Download BioPerl-Live to convert bgff to gff
+```{sh}
+sudo cpan Bio::Root::RootI
+git clone https://github.com/bioperl/bioperl-live.git
+cd bioperl-live/bin
+chmod +x bp_genbank2gff3
+./bp_genbank2gff3 -h
+PATH=${PATH}:$(pwd)
+cd -
+```
+
 ## Lolium rigidum (our genome assembly)
 ```{sh}
 mkdir ${DIR}/Lolium_rigidum
@@ -25,6 +36,9 @@ wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/019/359/855/GCA_019359855.1_MP
 
 gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz > Lolium_perenne.fasta
 gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.gbff.gz > Lolium_perenne.gbff
+
+bp_genbank2gff3 Lolium_perenne.gbff
+
 cd -
 ```
 
