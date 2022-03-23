@@ -5,7 +5,7 @@
 DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
 # DIR=/data-weedomics-3
 ```
-
+<!-- 
 ## Download BioPerl-Live to convert bgff to gff
 ```{sh}
 sudo cpan Bio::Root::RootI
@@ -15,13 +15,17 @@ chmod +x bp_genbank2gff3
 ./bp_genbank2gff3 -h
 PATH=${PATH}:$(pwd)
 cd -
-```
+``` -->
+
+**TODO:** Comment-out gbff downloads becuase we don't need them for the moment 20220322
+
 
 ## Lolium rigidum (our genome assembly)
 ```{sh}
 mkdir ${DIR}/Lolium_rigidum
 cd ${DIR}/Lolium_rigidum
-mv APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta Lolium_rigidum.fasta
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/022/539/505/GCA_022539505.1_APGP_CSIRO_Lrig_0.1/GCA_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
+gunzip GCA_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz > Lolium_rigidum.fasta
 cd -
 ```
 
@@ -32,10 +36,9 @@ Frei, Daniel, Elisabeth Veekman, Daniel Grogg, Ingrid Stoffel-Studer, Aki Morish
 mkdir ${DIR}/Lolium_perenne
 cd ${DIR}/Lolium_perenne    
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/019/359/855/GCA_019359855.1_MPB_Lper_Kyuss_1697/GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/019/359/855/GCA_019359855.1_MPB_Lper_Kyuss_1697/GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.gbff.gz
-
 gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz > Lolium_perenne.fasta
-gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.gbff.gz > Lolium_perenne.gbff
+# wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/019/359/855/GCA_019359855.1_MPB_Lper_Kyuss_1697/GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.gbff.gz
+# gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.gbff.gz > Lolium_perenne.gbff
 
 bp_genbank2gff3 Lolium_perenne.gbff
 

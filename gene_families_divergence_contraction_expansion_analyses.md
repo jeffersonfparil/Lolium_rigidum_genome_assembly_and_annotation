@@ -1,6 +1,110 @@
 # Across multiple species, cluster gene families, align, estimate divergence times, and identify expanded and contracted gene families
 
-**NOTE:** We need to have the gene annotation on-hand to perform these analyses.
+## Set working directory
+```{sh}
+DIR=/data-weedomics-3
+```
+
+## Download genomes
+Please refer to *Reference_genomes.md*
+
+## Install GeMoMa (Gene Model Mapper)
+```{sh}
+wget http://www.jstacs.de/download.php?which=GeMoMa
+mv 'download.php?which=GeMoMa' GeMoMa.zip
+unzip GeMoMa.zip
+java -jar GeMoMa-1.8.jar CLI -h
+PATH=${PATH}:${DIR} ### for GeMoMa.jar
+```
+
+## Install mmseq for GeMoMa
+```{sh}
+wget https://github.com/soedinglab/MMseqs2/releases/download/13-45111/mmseqs-linux-avx2.tar.gz
+tar -xvzf mmseqs-linux-avx2.tar.gz
+mmseqs/bin/mmseqs -h
+PATH=${PATH}:${DIR}/mmseqs/bin
+```
+
+## Download RefSeq version of the *Arabidopsis thaliana* and *Oryza sativa* reference genomes and gene annotations
+
+We're using the Refseq data (i.e. non-GeneBank, GCF instead of GCA prefix) because we want to use the gff annotations and we don't want the hassle of converting the genebank gbff to gff
+
+```{sh}
+### Arabidopsis thaliana (TAIR10)
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.gff.gz
+mv GCF_000001735.4_TAIR10.1_genomic.fna.gz Arabidopsis_thaliana.fasta.gz
+mv GCF_000001735.4_TAIR10.1_genomic.gff.gz Arabidopsis_thaliana.gff.gz
+### Oryza sativa (IRGSP-1.0)
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/433/935/GCF_001433935.1_IRGSP-1.0/GCF_001433935.1_IRGSP-1.0_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/433/935/GCF_001433935.1_IRGSP-1.0/GCF_001433935.1_IRGSP-1.0_genomic.gff.gz
+mv GCF_001433935.1_IRGSP-1.0_genomic.fna.gz Oryza_sativa.fasta.gz
+mv GCF_001433935.1_IRGSP-1.0_genomic.gff.gz Oryza_sativa.gff.gz
+```
+
+Identify genes across the genomes we want compare with *Gene Model Mapper*. For more information visit: [http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell](http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell)
+
+Using the *Arabidopsis thaliana* gene annotations:
+
+```{sh}
+time \
+for REF in Lolium_rigidum Lolium_perenne Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
+do
+echo ${REF}
+java -jar -Xmx30G GeMoMa-1.8.jar CLI \
+    GeMoMaPipeline \
+    threads=15 \
+    GeMoMa.Score=ReAlign \
+    AnnotationFinalizer.r=NO \
+    p=true pc=true pgr=true \
+    o=true \
+    t=${DIR}/${REF}/${REF}.fasta \
+    i=Arabidopsis_thaliana \
+    a=${DIR}/Arabidopsis_thaliana.gff.gz \
+    g=${DIR}/Arabidopsis_thaliana.fasta.gz \
+    outdir=${DIR}/GeMoMa_output_Arabidopsis_thaliana/${REF}
+done
+
+### WITH RNAseq data
+# time \
+# for REF in 
+# java -jar -Xmx200G GeMoMa-1.8.jar CLI \
+#     GeMoMaPipeline \
+#     threads=31 \
+#     GeMoMa.Score=ReAlign \
+#     AnnotationFinalizer.r=NO \
+#     p=true pc=true pgr=true \
+#     o=true \
+#     t=${GENOME} \
+#     i=Arabidopsis_thaliana \
+#     r=MAPPED \
+#     ERE.m=${RNASEQ_BAM} \
+#     a=${DIR}/Arabidopsis_thaliana.gff.gz \
+#     g=${DIR}/Arabidopsis_thaliana.fasta.gz \
+#     outdir=${DIR}/GEMOMA_ARABIDOPSIS_THALIANA_OUTPUT
+```
+
+Using the *Oryza sativa* gene annotations:
+
+```{sh}
+time \
+for REF in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Zea_mays Secale_cereale Marchantia_polymorpha
+do
+echo ${REF}
+java -jar -Xmx30G GeMoMa-1.8.jar CLI \
+    GeMoMaPipeline \
+    threads=15 \
+    GeMoMa.Score=ReAlign \
+    AnnotationFinalizer.r=NO \
+    p=true pc=true pgr=true \
+    o=true \
+    t=${DIR}/${REF}/${REF}.fasta \
+    i=Oryza_sativa \
+    a=${DIR}/Oryza_sativa.gff.gz \
+    g=${DIR}/Oryza_sativa.fasta.gz \
+    outdir=${DIR}/GeMoMa_output_Oryza_sativa/${REF}
+done
+```
 
 ## Cluster gene families with OrthoMCL or Panther HMM
 ```{sh}

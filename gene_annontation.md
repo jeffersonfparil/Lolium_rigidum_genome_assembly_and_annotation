@@ -129,42 +129,12 @@ cd TSEBRA/bin
 cd -
 ```
 
-## Install GeMoMa
-```{sh}
-wget http://www.jstacs.de/download.php?which=GeMoMa
-mv 'download.php?which=GeMoMa' GeMoMa.zip
-unzip GeMoMa.zip
-java -jar GeMoMa-1.8.jar CLI -h
-```
-
-## Install mmseq for GeMoMa
-```{sh}
-wget https://github.com/soedinglab/MMseqs2/releases/download/13-45111/mmseqs-linux-avx2.tar.gz
-tar -xvzf mmseqs-linux-avx2.tar.gz
-cd mmseqs/bin
-./mmseqs -h
-cd -
-```
 
 ## Download Viridiplantae protein database
 ```{sh}
 wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz
 tar -xvzf odb10_plants_fasta.tar.gz
 cat plants/Rawdata/* > plant_proteins.fasta
-```
-
-## Download *Arabidopsis thaliana* and *Oryza sativa* reference genomes and gene annotations
-```{sh}
-### Arabidopsis thaliana (TAIR10)
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.fna.gz
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.gff.gz
-mv GCF_000001735.4_TAIR10.1_genomic.fna.gz Arabidopsis_thaliana.fasta.gz
-mv GCF_000001735.4_TAIR10.1_genomic.gff.gz Arabidopsis_thaliana.gff.gz
-### Oryza sativa (IRGSP-1.0)
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/433/935/GCF_001433935.1_IRGSP-1.0/GCF_001433935.1_IRGSP-1.0_genomic.fna.gz
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/433/935/GCF_001433935.1_IRGSP-1.0/GCF_001433935.1_IRGSP-1.0_genomic.gff.gz
-mv GCF_001433935.1_IRGSP-1.0_genomic.fna.gz Oryza_sativa.fasta.gz
-mv GCF_001433935.1_IRGSP-1.0_genomic.gff.gz Oryza_sativa.gff.gz
 ```
 
 ## Genome assembly and RNAseq data
@@ -227,8 +197,6 @@ PATH=${PATH}:${DIR}/gth-1.7.3-Linux_x86_64-64bit/bin
 PATH=${PATH}:${DIR}/BRAKER-2.1.6/scripts
 PATH=${PATH}:${GENEMARK_PATH}
 PATH=${PATH}:${DIR}/TSEBRA/bin
-PATH=${PATH}:${DIR} ### for GeMoMa.jar
-PATH=${PATH}:${DIR}/mmseqs/bin
 ```
 
 Step 1 of 4: BRAKER run using RNAseq data (1,261 minutes)
@@ -334,48 +302,4 @@ blastx -db ${PROTEIN} \
 ### Then find the identities and gene ontologies of the hits
 ### HOW? Probably go to OrthDB?
 
-```
-
-
-## GeMoMa (Gene Model Mapper)
-For more information visit: [http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell](http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell)
-
-Using the *Arabidopsis thaliana* gene annotations:
-
-```{sh}
-time \
-java -jar -Xmx200G GeMoMa-1.8.jar CLI \
-    GeMoMaPipeline \
-    threads=31 \
-    GeMoMa.Score=ReAlign \
-    AnnotationFinalizer.r=NO \
-    p=true pc=true pgr=true \
-    o=true \
-    t=${GENOME} \
-    i=Arabidopsis_thaliana \
-    r=MAPPED \
-    ERE.m=${RNASEQ_BAM} \
-    a=${DIR}/Arabidopsis_thaliana.gff.gz \
-    g=${DIR}/Arabidopsis_thaliana.fasta.gz \
-    outdir=${DIR}/GEMOMA_ARABIDOPSIS_THALIANA_OUTPUT
-```
-
-Using the *Oryza sativa* gene annotations:
-
-```{sh}
-time \
-java -jar -Xmx200G GeMoMa-1.8.jar CLI \
-    GeMoMaPipeline \
-    threads=31 \
-    GeMoMa.Score=ReAlign \
-    AnnotationFinalizer.r=NO \
-    p=true pc=true pgr=true \
-    o=true \
-    t=${GENOME} \
-    i=Oryza_sativa \
-    r=MAPPED \
-    ERE.m=${RNASEQ_BAM} \
-    a=${DIR}/Oryza_sativa.gff.gz \
-    g=${DIR}/Oryza_sativa.fasta.gz \
-    outdir=${DIR}/GEMOMA_ORYZA_SATIVA_OUTPUT
 ```
