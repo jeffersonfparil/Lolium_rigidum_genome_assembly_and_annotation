@@ -62,7 +62,7 @@ java -jar -Xmx30G GeMoMa-1.8.jar CLI \
     i=Arabidopsis_thaliana \
     a=${DIR}/Arabidopsis_thaliana.gff.gz \
     g=${DIR}/Arabidopsis_thaliana.fasta.gz \
-    outdir=${DIR}/GeMoMa_output_Arabidopsis_thaliana/${REF}
+    outdir=${DIR}/${REF}/GeMoMa_output_Arabidopsis_thaliana
 done
 
 ### WITH RNAseq data
@@ -102,7 +102,7 @@ java -jar -Xmx30G GeMoMa-1.8.jar CLI \
     i=Oryza_sativa \
     a=${DIR}/Oryza_sativa.gff.gz \
     g=${DIR}/Oryza_sativa.fasta.gz \
-    outdir=${DIR}/GeMoMa_output_Oryza_sativa/${REF}
+    outdir=${DIR}/${REF}/GeMoMa_output_Oryza_sativa
 done
 ```
 
