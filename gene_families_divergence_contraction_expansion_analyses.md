@@ -2,7 +2,8 @@
 
 ## Set working directory
 ```{sh}
-DIR=/data-weedomics-3
+# DIR=/data-weedomics-3
+DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
 ```
 
 ## Download genomes
@@ -25,6 +26,11 @@ mmseqs/bin/mmseqs -h
 PATH=${PATH}:${DIR}/mmseqs/bin
 ```
 
+## Install HMMER
+```{sh}
+sudo apt install hmmer
+```
+
 ## Download RefSeq version of the *Arabidopsis thaliana* and *Oryza sativa* reference genomes and gene annotations
 
 We're using the Refseq data (i.e. non-GeneBank, GCF instead of GCA prefix) because we want to use the gff annotations and we don't want the hassle of converting the genebank gbff to gff
@@ -41,6 +47,18 @@ wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/433/935/GCF_001433935.1_IR
 mv GCF_001433935.1_IRGSP-1.0_genomic.fna.gz Oryza_sativa.fasta.gz
 mv GCF_001433935.1_IRGSP-1.0_genomic.gff.gz Oryza_sativa.gff.gz
 ```
+
+## Download PatherHMM library including 15,619 protein family HMMs and their GO terms
+```{sh}
+wget http://data.pantherdb.org/ftp/panther_library/current_release/PANTHER17.0_hmmscoring.tgz
+tar -xvzf PANTHER17.0_hmmscoring.tgz
+mv target/ PatherHMM_17.0/
+cd PatherHMM_17.0/
+wget http://data.pantherdb.org/ftp/hmm_classifications/current_release/PANTHER17.0_HMM_classifications
+cd -
+```
+
+## Gene model mapping with GeMoMa
 
 Identify genes across the genomes we want compare with *Gene Model Mapper*. For more information visit: [http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell](http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell)
 
@@ -64,24 +82,6 @@ java -jar -Xmx30G GeMoMa-1.8.jar CLI \
     g=${DIR}/Arabidopsis_thaliana.fasta.gz \
     outdir=${DIR}/${REF}/GeMoMa_output_Arabidopsis_thaliana
 done
-
-### WITH RNAseq data
-# time \
-# for REF in 
-# java -jar -Xmx200G GeMoMa-1.8.jar CLI \
-#     GeMoMaPipeline \
-#     threads=31 \
-#     GeMoMa.Score=ReAlign \
-#     AnnotationFinalizer.r=NO \
-#     p=true pc=true pgr=true \
-#     o=true \
-#     t=${GENOME} \
-#     i=Arabidopsis_thaliana \
-#     r=MAPPED \
-#     ERE.m=${RNASEQ_BAM} \
-#     a=${DIR}/Arabidopsis_thaliana.gff.gz \
-#     g=${DIR}/Arabidopsis_thaliana.fasta.gz \
-#     outdir=${DIR}/GEMOMA_ARABIDOPSIS_THALIANA_OUTPUT
 ```
 
 Using the *Oryza sativa* gene annotations:
@@ -106,12 +106,55 @@ java -jar -Xmx30G GeMoMa-1.8.jar CLI \
 done
 ```
 
+## Classify GeMoMa-predicted proteins by gene families using PatherHMM database and HMMER
+```{sh}
+# Define the location of the 15,619 protein family HMMs
+DIR_PANTHER=${DIR}/PatherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
+GOT_PATHER=${DIR}/PatherHMM_17.0/PANTHER17.0_HMM_classifications
+# Prepare parallelisable HMMER search script
+echo '#!/bin/bash
+PROTFA=$1
+DIR_PANTHER=$2
+d=$3
+HMMODL=${DIR_PANTHER}/${d}/hmmer.hmm
+OUTEMP=$(dirname ${PROTFA})/hhmer_gene_family_hits-${d}.tmp
+hmmsearch -E 0.0001 --tblout ${OUTEMP} ${HMMODL} ${PROTFA}
+' > hmmsearch_for_parallel_execution.sh
+chmod +x hmmsearch_for_parallel_execution.sh
+# Iteratively, for each GeMoMa-predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
+for PROTFA in $(ls */GeMoMa_output_*/predicted_proteins.fasta)
+do
+    # PROTFA=Arabidopsis_thaliana/GeMoMa_output_Oryza_sativa/predicted_proteins.fasta
+    time \
+    parallel ./hmmsearch_for_parallel_execution.sh \
+        ${PROTFA} \
+        ${DIR_PANTHER} \
+        {} ::: $(ls $DIR_PANTHER)
+    ### Concatenate hmmsearch output for each protein family into a single output file
+    OUTPUT=$(dirname ${PROTFA})/hhmer_gene_family_hits.txt
+    touch $OUTPUT
+    for f in $(ls $(dirname ${PROTFA})/hhmer_gene_family_hits-*)
+    do
+        sed "/^#/d" ${f} >> ${OUTPUT}
+    done
+    sort ${OUTPUT} > ${OUTPUT}.tmp
+    mv ${OUTPUT}.tmp ${OUTPUT}
+
+    ### Find the best hit for each predicted protein sequence, i.e remove duplicates
+
+    julia
+
+
+    awk '{print $3}' $OUTPUT | awk -F'.' '{print $1}'
+done
+```
+<!-- 
 ## Cluster gene families with OrthoMCL or Panther HMM
 ```{sh}
 wget https://orthomcl.org/common/downloads/software/v2.0/orthomclSoftware-v2.0.9.tar.gz
 tar -xvzf orthomclSoftware-v2.0.9.tar.gz
 cd orthomclSoftware-v2.0.9/
-```
+``` -->
 
 ## Align gene families across species with MAFFT
 ```{sh}
