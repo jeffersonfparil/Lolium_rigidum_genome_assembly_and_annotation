@@ -55,6 +55,8 @@ tar -xvzf PANTHER17.0_hmmscoring.tgz
 mv target/ PatherHMM_17.0/
 cd PatherHMM_17.0/
 wget http://data.pantherdb.org/ftp/hmm_classifications/current_release/PANTHER17.0_HMM_classifications
+### Isolate family codes and names, i.e. exclude subfamily info
+grep -v ':SF' PANTHER17.0_HMM_classifications > Panther17.0_HMM_familyIDs.txt
 cd -
 ```
 
@@ -66,7 +68,7 @@ Using the *Arabidopsis thaliana* gene annotations:
 
 ```{sh}
 time \
-for REF in Lolium_rigidum Lolium_perenne Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
+for REF in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
 do
 echo ${REF}
 java -jar -Xmx30G GeMoMa-1.8.jar CLI \
@@ -88,7 +90,7 @@ Using the *Oryza sativa* gene annotations:
 
 ```{sh}
 time \
-for REF in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Zea_mays Secale_cereale Marchantia_polymorpha
+for REF in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
 do
 echo ${REF}
 java -jar -Xmx30G GeMoMa-1.8.jar CLI \
@@ -108,6 +110,7 @@ done
 
 ## Classify GeMoMa-predicted proteins by gene families using PatherHMM database and HMMER
 ```{sh}
+cd $DIR
 # Define the location of the 15,619 protein family HMMs
 DIR_PANTHER=${DIR}/PatherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
 GOT_PATHER=${DIR}/PatherHMM_17.0/PANTHER17.0_HMM_classifications
@@ -124,7 +127,7 @@ chmod +x hmmsearch_for_parallel_execution.sh
 # Iteratively, for each GeMoMa-predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
 for PROTFA in $(ls */GeMoMa_output_*/predicted_proteins.fasta)
 do
-    # PROTFA=Arabidopsis_thaliana/GeMoMa_output_Oryza_sativa/predicted_proteins.fasta
+    # PROTFA=Lolium_rigidum/GeMoMa_output_Arabidopsis_thaliana/predicted_proteins.fasta
     time \
     parallel ./hmmsearch_for_parallel_execution.sh \
         ${PROTFA} \
@@ -135,19 +138,89 @@ do
     touch $OUTPUT
     for f in $(ls $(dirname ${PROTFA})/hhmer_gene_family_hits-*)
     do
-        sed "/^#/d" ${f} >> ${OUTPUT}
+        sed "/^#/d" ${f} | awk '{print $1,$3,$5}' >> ${OUTPUT}
     done
     sort ${OUTPUT} > ${OUTPUT}.tmp
     mv ${OUTPUT}.tmp ${OUTPUT}
-
-    ### Find the best hit for each predicted protein sequence, i.e remove duplicates
-
-    julia
-
-
-    awk '{print $3}' $OUTPUT | awk -F'.' '{print $1}'
 done
 ```
+## Generate a new annotation file with PantherHMM-derived gene families
+```{julia}
+using CSV, DataFrames, ProgressMeter
+fname_input = ARGS[1]
+fname_codes = ARGS[2]
+fname_annot = ARGS[3]
+# fname_input = "/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/Lolium_rigidum/GeMoMa_output_Arabidopsis_thaliana/hhmer_gene_family_hits.txt"; fname_codes = "/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/PatherHMM_17.0/Panther17.0_HMM_familyIDs.txt"; fname_annot = "/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/Lolium_rigidum/GeMoMa_output_Arabidopsis_thaliana/final_annotation.gff"
+# fname_input = "hhmer_gene_family_hits.txt"; fname_codes = "Panther17.0_HMM_familyIDs.txt"; fname_annot = "final_annotation.gff"
+dat = CSV.read(open(fname_input), DataFrames.DataFrame, header=false)
+### Find most likely gene family per predicted gene, i.e. remove duplicate family hits
+gene_names = []
+panther_codes = []
+@showprogress for gene in levels(dat.Column1)
+    # gene = levels(dat.Column1)[2]
+    subset = dat[dat.Column1 .== gene, :]
+    sort!(subset, :Column3, rev=false)
+    push!(gene_names, subset[1,1])
+    push!(panther_codes, split(subset[1,2], '.')[1])
+end
+### Identify PatherHMM gene families
+gene_families = []
+cod = CSV.read(open(fname_codes), DataFrames.DataFrame, header=false)
+@showprogress for code in panther_codes
+    # code = panther_codes[1]
+    push!(gene_families, cod.Column2[code .== cod.Column1][1])
+end
+### Create a new annotation file with PatherHMM codes and gene family names
+fname_output = "FINAL_ANNOTATION_PATHERHMM_GENE_FAMILIES.gff"
+if dirname(fname_input) != ""
+    fname_output = string(dirname(fname_input), "/", fname_output)
+end
+gff_input = open(fname_annot, "r")
+gff_output = open(fname_output, "a")
+seekend(gff_input); end_position = position(gff_input)
+seekstart(gff_input)
+p = Progress(end_position, 1)
+while !eof(gff_input)
+    line = readline(gff_input)
+    if line[1] == '#'
+        write(gff_output, string(line, '\n'))
+        continue
+    end
+    vec_split = split(line, '\t')
+    gene = replace(split(vec_split[end], ';')[1], "ID="=>"")
+    idx = gene .== gene_names
+    if sum(idx) == 1
+        output_line = vec_split[1:(end-1)]
+        push!(output_line, string("ID=", gene, ";",
+                                        panther_codes[idx][1], ";", 
+                                        gene_families[idx][1]))
+        write(gff_output, string(join(output_line, '\t'), '\n'))
+    end
+    update!(p, position(gff_input))
+end
+close(gff_input)
+close(gff_output)
+## Misc
+# gene_families[match.(Regex("ENOLPY"), gene_families) .!= nothing] ### EPSPS
+# gene_families[match.(Regex("PSB"), gene_families) .!= nothing] ### psbA
+# gene_families[match.(Regex("ACETO"), gene_families) .!= nothing] ### ALS
+# gene_families[match.(Regex("ACETYL"), gene_families) .!= nothing] ### ACCase
+# gene_families[match.(Regex("CYT"), gene_families) .!= nothing] ### NTSR cytochorme detox gene families
+# gene_families[match.(Regex("UBIQUITIN"), gene_families) .!= nothing] ### use in assessing divergence between species?
+```
+
+Save the above Julia script as `generate_final_gff_annotation_file.jl` and generate final annotation files:
+```{sh}
+cd $DIR
+PANTHER_CODES=${DIR}/PatherHMM_17.0/Panther17.0_HMM_familyIDs.txt
+time \
+parallel --link \
+julia generate_final_gff_annotation_file.jl {1} ${PANTHER_CODES} {2} ::: \
+    $(ls */GeMoMa_output_*/hhmer_gene_family_hits.txt) ::: \
+    $(ls */GeMoMa_output_*/final_annotation.gff)
+```
+
+
 <!-- 
 ## Cluster gene families with OrthoMCL or Panther HMM
 ```{sh}
@@ -270,7 +343,7 @@ include("/home/jeffersonfparil/Documents/Lolium_rigidum_genome_assembly_and_anno
 vec_fnames_blastout_uniques = readdir()[match.(Regex("-UNIQUE_HITS.csv\$"), readdir()) .!= nothing]
 for f in vec_fnames_blastout_uniques
     # f = vec_fnames_blastout_uniques[1]
-    gene_name = split(split(f, '-')[3], '_')[2]
+    gene_names = split(split(f, '-')[3], '_')[2]
     FILE = open(f, "r")
     dat = CSV.read(FILE, DataFrames.DataFrame, header=true)
     close(FILE)
