@@ -137,7 +137,7 @@ tar -xvzf odb10_plants_fasta.tar.gz
 cat plants/Rawdata/* > plant_proteins.fasta
 ```
 
-## Genome assembly and RNAseq data
+## Define genome assembly and RNAseq data
 ```{sh}
 GENOME=/data/Lolium_rigidum_ASSEMBLY/GENOME_ASSEMBLY/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta
 DIR_RAW_RNASEQ=/data/Lolium_rigidum_ASSEMBLY/TRANSCRIPTOME_ASSEMBLY/rRNAdepleted_reads/
@@ -178,14 +178,14 @@ samtools view -bS RNAseqAligned.out.sam | \
 Quote from BRAKER README.md:
 "Even though BRAKER supports the combination of RNA-Seq and protein data within the BRAKER pipeline, we strongly recommend to run BRAKER twice (1x with RNA-Seq only, 1x with protein data only) and subsequently combine the results of both runs with TSEBRA, the Transcript Selector for BRAKER (https://github.com/Gaius-Augustus/TSEBRA). You find more information on TSEBRA at https://www.biorxiv.org/content/10.1101/2021.06.07.447316v1"
 
-Input file paths:
+### Input file paths:
 ```{sh}
 GENOME=/data/Lolium_rigidum_ASSEMBLY/GENOME_ASSEMBLY/APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta
 RNASEQ_BAM=/data/Lolium_rigidum_ASSEMBLY/ANNOTATION/RNAseqAlignedSorted.bam
 PROTEIN=/data/Lolium_rigidum_ASSEMBLY/ANNOTATION/plant_proteins.fasta
 ```
 
-Set-up paths:
+### Set-up paths:
 ```{sh}
 DIR=/data/Lolium_rigidum_ASSEMBLY/ANNOTATION
 export GENEMARK_PATH=${DIR}/gmes_linux_64
@@ -199,7 +199,7 @@ PATH=${PATH}:${GENEMARK_PATH}
 PATH=${PATH}:${DIR}/TSEBRA/bin
 ```
 
-Step 1 of 4: BRAKER run using RNAseq data (1,261 minutes)
+### Step 1 of 4: BRAKER run using RNAseq data (1,261 minutes)
 ```{sh}
 time \
 braker.pl \
@@ -220,7 +220,7 @@ Rename braker output folder
 mv braker braker_RNAseq
 ```
 
-Step 2 of 4: BRAKER run using protein database information (Can be run in parallel with Step 1)
+### Step 2 of 4: BRAKER run using protein database information (Can be run in parallel with Step 1)
 
 But first, run ProtHint separately so we can finish the algorithm before the heat death of the universe using the option: `--maxProteinsPerSeed 5`:
 ```{sh}
@@ -257,7 +257,7 @@ mv braker braker_proteins
 ```
 
 
-Step 3 of 4: TSEBRA
+### Step 3 of 4: TSEBRA
 ```{sh}
 time \
 tsebra.py \
@@ -267,7 +267,7 @@ tsebra.py \
     -o ${DIR}/BRAKER_OUTPUT.gtf
 ```
 
-Step 4 of 4: BLASTX predicted genes against the plant protein database
+### Step 4 of 4: BLASTX predicted genes against the plant protein database
 ```{sh}
 # Using the fixed fasta file, i.e. non-terminal lines have the same number of characters per line
 GENOME_FIXED_CHARNUM_PER_LINE=/data/Lolium/Quantitative_Genetics/02_FASTQ/REFERENCE/Reference.fasta
@@ -298,8 +298,4 @@ blastx -db ${PROTEIN} \
     -max_target_seqs 5 \
     -num_threads 31 \
     -out ${DIR}/BRAKER_OUTPUT.blastout
-
-### Then find the identities and gene ontologies of the hits
-### HOW? Probably go to OrthDB?
-
 ```

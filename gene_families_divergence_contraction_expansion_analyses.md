@@ -139,12 +139,16 @@ do
     for f in $(ls $(dirname ${PROTFA})/hhmer_gene_family_hits-*)
     do
         sed "/^#/d" ${f} | awk '{print $1,$3,$5}' >> ${OUTPUT}
+        rm $f
     done
     sort ${OUTPUT} > ${OUTPUT}.tmp
     mv ${OUTPUT}.tmp ${OUTPUT}
 done
 ```
+
 ## Generate a new annotation file with PantherHMM-derived gene families
+
+Save the following Julia script as `generate_final_gff_annotation_file.jl`:
 ```{julia}
 using CSV, DataFrames, ProgressMeter
 fname_input = ARGS[1]
@@ -209,7 +213,7 @@ close(gff_output)
 # gene_families[match.(Regex("UBIQUITIN"), gene_families) .!= nothing] ### use in assessing divergence between species?
 ```
 
-Save the above Julia script as `generate_final_gff_annotation_file.jl` and generate final annotation files:
+Generate the final annotation files (`FINAL_ANNOTATION_PATHERHMM_GENE_FAMILIES.gff`) in parallel:
 ```{sh}
 cd $DIR
 PANTHER_CODES=${DIR}/PatherHMM_17.0/Panther17.0_HMM_familyIDs.txt
@@ -219,15 +223,6 @@ julia generate_final_gff_annotation_file.jl {1} ${PANTHER_CODES} {2} ::: \
     $(ls */GeMoMa_output_*/hhmer_gene_family_hits.txt) ::: \
     $(ls */GeMoMa_output_*/final_annotation.gff)
 ```
-
-
-<!-- 
-## Cluster gene families with OrthoMCL or Panther HMM
-```{sh}
-wget https://orthomcl.org/common/downloads/software/v2.0/orthomclSoftware-v2.0.9.tar.gz
-tar -xvzf orthomclSoftware-v2.0.9.tar.gz
-cd orthomclSoftware-v2.0.9/
-``` -->
 
 ## Align gene families across species with MAFFT
 ```{sh}
