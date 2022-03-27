@@ -33,27 +33,25 @@ sudo apt install hmmer
 
 ## Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
 ```{sh}
-wget http://abacus.gene.ucl.ac.uk/software/paml4.9j.tgz
-tar -xvzf paml4.9j.tgz
-cd paml4.9j/
-rm bin/*.exe
-cd src
-make -f Makefile
-ls -lF
-rm *.o
-mv baseml basemlg codeml pamp evolver yn00 chi2 ../bin
-cd ..
-ls -lF bin
-bin/baseml
-bin/codeml
-bin/evolver
-PATH=${PATH}:$(pwd)/bin
-cd ${DIR}
+sudo apt install -y paml
 ```
 
 ## Install MAFFT (multiple alignment program for amino acid or nucleotide sequences)
 ```{sh}
 sudo apt install -y mafft
+```
+
+## Install FastTreeDbl:
+```{sh}
+wget http://www.microbesonline.org/fasttree/FastTreeDbl
+chmod +x FastTreeDbl
+PATH=${PATH}:$(pwd)
+cd -
+```
+
+## Install the ape R package:
+```{R}
+install.packages("ape")
 ```
 
 ## Download RefSeq version of the *Arabidopsis thaliana* and *Oryza sativa* reference genomes and gene annotations
@@ -261,7 +259,115 @@ Identify protein sequences we want to use to build the tree...
 ```
 
 ## Align TSR and NTSR gene families across species with MAFFT
+
+Create a fast and simple sequence extractor in julia: `extract_sequence_using_name_query.jl`:
+```{julia}
+using ProgressMeter
+fasta_input = ARGS[1]
+sequence_name_query = ARGS[2]
+fasta_output = try 
+                    ARGS[3]
+                catch
+                    ""
+                end
+new_sequence_name = try 
+                    ARGS[4]
+                catch
+                    ""
+                end
+# fasta_input = "/data-weedomics-3/Arabidopsis_thaliana/GeMoMa_output_Arabidopsis_thaliana/predicted_proteins.fasta"
+# sequence_name_query = "Arabidopsis_thaliana_gene-AT1G01010"
+# fasta_input = "/data-weedomics-3/Oryza_sativa/GeMoMa_output_Oryza_sativa/predicted_proteins.fasta"
+# sequence_name_query = "Oryza_sativa_rna-XM_015766610.2_R0"
+# fasta_output = ""
+if fasta_output == ""
+    fasta_output = "/data-weedomics-3/temp.fasta"
+end
+file_input = open(fasta_input, "r")
+seekend(file_input); n = position(file_input)
+seekstart(file_input)
+pb = Progress(n)
+while !eof(file_input)
+    line = readline(file_input)
+    if line[1] == '>'
+        while match(Regex(sequence_name_query), line) != nothing
+            file_output = open(fasta_output, "a")
+            if new_sequence_name != ""
+                vec_line = split(line, " ")
+                chr = vec_line[match.(Regex("chr"), vec_line) .!= nothing][1]
+                interval = vec_line[match.(Regex("interval"), vec_line) .!= nothing][1]
+                line = string(">", new_sequence_name, "-", chr, "-", interval)
+            end
+            write(file_output, string(line, '\n'))
+            line = readline(file_input)
+            while line[1] != '>'
+                write(file_output, string(line, '\n'))
+                line = readline(file_input)
+                update!(pb, position(file_input))
+            end
+            close(file_output)
+        end
+    end
+    update!(pb, position(file_input))
+end
+close(file_input)
+```
+
+Extract protein sequences using `extract_sequence_using_name_query.jl`:
 ```{sh}
+# Create parallelisable bash script
+echo '#!/bin/bash
+DIR=$1
+GENOME=$2
+QUERY=$3
+GENE_FAMILY_REGEX=$4
+REF=$5
+julia \
+extract_sequence_using_name_query.jl \
+    ${DIR}/${GENOME}/GeMoMa_output_${REF}/predicted_proteins.fasta \
+    ${QUERY} \
+    $(echo temp_${GENOME}-${GENE_FAMILY_REGEX}-${QUERY} | sed -z "s/ /_/g").fasta \
+    $(echo ${GENOME}-${GENE_FAMILY_REGEX}-${QUERY} | sed -z "s/ /_/g")
+' > extract_sequence_using_name_query_PARALLEL.sh
+chmod +x extract_sequence_using_name_query_PARALLEL.sh
+
+# Execute in parallel and merge
+REF="Arabidopsis_thaliana"
+# REF="Oryza_sativa"
+GENE_FAMILY_REGEX="ACETOLACTATE SYNTHASE"
+GENE_FAMILY=$(echo ${GENE_FAMILY_REGEX} | sed -z 's/ /_/g')
+OUTPUT=${GENE_FAMILY}-GeMoMa_${REF}_genes-PatherHMM-predicted.fasta
+time \
+parallel \
+./extract_sequence_using_name_query_PARALLEL.sh \
+    ${DIR} \
+    {1} \
+    {2} \
+    ${GENE_FAMILY} \
+    ${REF} \
+    ::: Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha \
+    ::: $(grep "$GENE_FAMILY_REGEX" */GeMoMa_output_${REF}/FINAL*.gff  | cut -f9 | cut -d';' -f1 | sed 's/ID=//g' | sort | uniq)
+
+cat temp_*.fasta > ${OUTPUT}
+rm temp_*.fasta
+```
+
+Align sequences with `MAFFT`, and build the phylogenetic tree with `FastTreeDbl`:
+```{sh}
+mafft --maxiterate 1000 --localpair ${OUTPUT} > ${OUTPUT%.fasta*}-ALIGNED.fasta
+FastTreeDbl ${OUTPUT%.fasta*}-ALIGNED.fasta > ${OUTPUT%.fasta*}-ALIGNED.tree
+```
+
+Draw and save the tree using `R::ape`:
+```{sh}
+echo 'args = commandArgs(trailingOnly=TRUE)
+myTree = ape::read.tree(args[1])
+svg(args[2], width=20, height=5)
+plot(myTree)
+dev.off()' > draw_tree.R
+Rscript draw_tree.R \
+    ${OUTPUT%.fasta*}-ALIGNED.tree \
+    ${OUTPUT%.fasta*}-TREE.svg
 ```
 
 ## Identify expanded and contracted gene families for each species
