@@ -31,11 +31,6 @@ PATH=${PATH}:${DIR}/mmseqs/bin
 sudo apt install hmmer
 ```
 
-## Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
-```{sh}
-sudo apt install -y paml
-```
-
 ## Install MAFFT (multiple alignment program for amino acid or nucleotide sequences)
 ```{sh}
 sudo apt install -y mafft
@@ -48,11 +43,6 @@ chmod +x FastTreeDbl
 PATH=${PATH}:$(pwd)
 ```
 
-## Install the ape R package:
-```{R}
-install.packages("ape")
-```
-
 ## Install Clann for merging trees generated using each ortholog into a single supertree
 ```{sh}
 wget https://github.com/ChrisCreevey/clann/archive/refs/tags/v4.2.4.tar.gz
@@ -62,6 +52,30 @@ cd clann-4.2.4/
 ./configure
 make
 PATH=${PATH}:$(pwd)
+```
+
+
+## Install RaxML-ng
+```{sh}
+wget https://github.com/amkozlov/raxml-ng/releases/download/1.1.0/raxml-ng_v1.1.0_linux_x86_64.zip
+unzip raxml-ng_v1.1.0_linux_x86_64.zip -d raxml-ng_v1.1.0
+cd raxml-ng_v1.1.0/
+PATH=${PATH}:$(pwd)
+cd -
+```
+
+## Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
+```{sh}
+wget http://abacus.gene.ucl.ac.uk/software/paml4.9j.tgz
+tar -xvzf paml4.9j.tgz
+cd paml4.9j/
+PATH=${PATH}/bin
+PATH=${PATH}/src
+```
+
+## Install the ape R package:
+```{R}
+install.packages("ape")
 ```
 
 ## Download RefSeq version of the *Arabidopsis thaliana* and *Oryza sativa* reference genomes and gene annotations
@@ -418,52 +432,194 @@ do
         ${REF} \
         ::: $(cat temp_gene_names-${GENOME}-${REF}.txt) \
         ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
-    cat temp_${GENOME}-GENE_*.fasta > ${GENOME}-Athaliana_genes-ORTHOLOGS.fasta
+    cat temp_${GENOME}-GENE_*.fasta > ${GENOME}-SINGLE_COPY_GENE_FAMILY_Athaliana_genes.fasta
     rm temp_${GENOME}-GENE_*.fasta
 done
 rm temp_gene_names-*-${REF}.txt
 ```
 
-Align sequences with `MAFFT`, build the trees for each ortholog with `FastTreeDbl`, and optionally plot the trees:
+Align sequences with `MAFFT`, build the trees for each ortholog with `RaxML-ng`, and merge all trees into a single multi-tree file `temp_ALL_TREES.trees`:
 ```{sh}
 ### Generate parallelisable MAFFT alignement script
 echo '#!/bin/bash
 ORTHOLOG=$1
-cat *-Athaliana_genes-ORTHOLOGS.fasta | grep -A1 ${ORTHOLOG} | sed "/^--$/d" | sed "s/-${ORTHOLOG}//g" > temp_${ORTHOLOG}.fasta
-mafft --maxiterate 1000 --localpair temp_${ORTHOLOG}.fasta > temp_${ORTHOLOG}-ALIGNED.fasta
-FastTreeDbl temp_${ORTHOLOG}-ALIGNED.fasta > temp_${ORTHOLOG}.tree
+cat *-SINGLE_COPY_GENE_FAMILY_Athaliana_genes.fasta | \
+    grep -A1 ${ORTHOLOG} | \
+    sed "/^--$/d" | \
+    sed "s/-${ORTHOLOG}//g" > temp_${ORTHOLOG}.fasta
+mafft --maxiterate 1000 \
+      --localpair temp_${ORTHOLOG}.fasta > temp_${ORTHOLOG}-ALIGNED.fasta
+raxml-ng --all \
+         --msa temp_${ORTHOLOG}-ALIGNED.fasta \
+         --model LG+G8+F \
+         --outgroup Marchantia_polymorpha \
+         --prefix temp_${ORTHOLOG} \
+         --threads 1 \
+         --seed 42069 \
+         --tree pars{25},rand{25}
 rm temp_${ORTHOLOG}.fasta temp_${ORTHOLOG}-ALIGNED.fasta
-# Rscript draw_tree.R \
-#     temp_${ORTHOLOG}.tree \
-#     temp_${ORTHOLOG}-TREE.svg
-' > mafft_PARALLEL.sh
-chmod +x mafft_PARALLEL.sh
+rm $(ls | grep "^temp_${ORTHOLOG}" | grep "raxml" | grep -v "support$")
+' > mafft_RaxML-ng_PARALLEL.sh
+chmod +x mafft_RaxML-ng_PARALLEL.sh
 
 ### Parallel execution
 time \
 parallel \
-./mafft_PARALLEL.sh {} ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
+./mafft_RaxML-ng_PARALLEL.sh {} ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
 
 ### Merge tree files
-cat temp_*.tree > temp_ALL_TREES.trees
-rm temp_*.tree
+cat temp_*.bestTree > temp_ALL_TREES.trees
+rm temp_*.bestTree
 ```
 
-
-Merge trees with ``:
+Merge trees with `CLANN`:
 ```{clann}
 exe temp_ALL_TREES.trees
-alltrees create weight=equal savetrees=MERGED_TREE.tree
+set criterion=dfit
+alltrees all create weight=equal savetrees=SINGLE_COPY_GENE_FAMILIES.tree
 ```
 
-Plot merged tree:
+Clean-up `CLANN` output leaving only `SINGLE_COPY_GENE_FAMILIES.tree` and rename `supertree.ps` into `SINGLE_COPY_GENE_FAMILIES.ps`:
+```{sh}
+rm temp_ALL_TREES.trees
+rm alltrees.ph
+mv supertree.ps SINGLE_COPY_GENE_FAMILIES.ps
+```
+
+Plot merged tree with `R::ape`:
 ```{sh}
 Rscript draw_tree.R \
-    MERGED_TREE.tree \
-    MERGED_TREE.svg
+    SINGLE_COPY_GENE_FAMILIES.tree \
+    SINGLE_COPY_GENE_FAMILIES.svg
 ```
 
+Prepare julia script to convert fasta into phylip format `fasta_to_phylip.jl`:
+```{julia}
+filename_input = ARGS[1]
+filename_output = string(join(split(filename_input, '.')[1:(end-1)], '.'), ".phylip")
+# count number of sequences
+function COUNT_SEQUENCES(filename_input)
+    FILE = open(filename_input, "r")
+    count_sequences = 0
+    while !eof(FILE)
+        if readline(FILE)[1] == '>'
+        count_sequences += 1
+        end
+    end
+    close(FILE)
+    return(count_sequences)
+end
+count_sequences = COUNT_SEQUENCES(filename_input)
+# count sequence length
+function SEQUENCE_LENGTH(filename_input)
+    FILE = open(filename_input, "r")
+    _ = readline(FILE)
+    line = readline(FILE)
+    sequence_length = length(line)
+    while line[1] != '>'
+        line = readline(FILE)
+        sequence_length = sequence_length + length(line)
+    end
+    sequence_length = sequence_length - length(line)
+    close(FILE)
+    return(sequence_length)
+end
+sequence_length = SEQUENCE_LENGTH(filename_input)
+# output phylip format
+function CONVERT_FASTA_TO_PHYLIP(filename_input, filename_output, count_sequences, sequence_length)
+    FILE_INPUT = open(filename_input, "r")
+    FILE_OUTPUT = open(filename_output, "a")
+    write(FILE_OUTPUT, string(count_sequences, " ", sequence_length, '\n'))
+    while !eof(FILE_INPUT)
+        line = readline(FILE_INPUT)
+        if line[1] == '>'
+            line = line[2:end]
+        end
+        write(FILE_OUTPUT, string(line, '\n'))
+    end
+    close(FILE_INPUT)
+    close(FILE_OUTPUT)
+    return(0)
+end
+CONVERT_FASTA_TO_PHYLIP(filename_input, filename_output, count_sequences, sequence_length)
+```
 
+Realign genes into CLUSTAL format, convert to PHYLIP format, merge into a single file `SINGLE_COPY_GENE_FAMILIES.phylip`:
+```{sh}
+### Generate parallelisable MAFFT alignement script with CLUSTAL format output
+echo '#!/bin/bash
+ORTHOLOG=$1
+cat *-SINGLE_COPY_GENE_FAMILY_Athaliana_genes.fasta | \
+    grep -A1 ${ORTHOLOG} | \
+    sed "/^--$/d" | \
+    sed "s/-${ORTHOLOG}//g" > temp_${ORTHOLOG}.fasta
+mafft --maxiterate 1000 \
+      --localpair temp_${ORTHOLOG}.fasta > temp_${ORTHOLOG}-ALIGNED.fasta
+julia fasta_to_phylip.jl \
+      temp_${ORTHOLOG}-ALIGNED.fasta
+rm temp_${ORTHOLOG}.fasta temp_${ORTHOLOG}-ALIGNED.fasta
+' > mafft_PHYLIP_PARALLEL.sh
+chmod +x mafft_PHYLIP_PARALLEL.sh
+
+### Parallel execution
+time \
+parallel \
+./mafft_PHYLIP_PARALLEL.sh {} ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
+
+### Merge PHYLIP sequences
+cat temp_PTHR*-ALIGNED.phylip > SINGLE_COPY_GENE_FAMILIES.phylip
+rm temp_PTHR*-ALIGNED.phylip
+```
+
+Add number of species and trees into `SINGLE_COPY_GENE_FAMILIES.tree`:
+```{sh}
+mv SINGLE_COPY_GENE_FAMILIES.tree SINGLE_COPY_GENE_FAMILIES.tree.bk
+echo "7 1" > SINGLE_COPY_GENE_FAMILIES.tree
+cat SINGLE_COPY_GENE_FAMILIES.tree.bk >> SINGLE_COPY_GENE_FAMILIES.tree
+rm SINGLE_COPY_GENE_FAMILIES.tree.bk
+```
+
+Prepare MCMCTree control or script file: `SINGLE_COPY_GENE_FAMILIES.ctl`:
+```{MCMCTree-ctl}
+          seed = 42069
+       seqfile = SINGLE_COPY_GENE_FAMILIES.phylip
+      treefile = SINGLE_COPY_GENE_FAMILIES.tree
+      mcmcfile = SINGLE_COPY_GENE_FAMILIES-MCMCTREE.mcmc
+       outfile = SINGLE_COPY_GENE_FAMILIES-MCMCTREE.out
+
+         ndata = 222
+       seqtype = 2    * 0: nucleotides; 1:codons; 2:AAs
+       usedata = 0    * 0: no data; 1:seq like; 2:normal approximation; 3:out.BV (in.BV)
+         clock = 1    * 1: global clock; 2: independent rates; 3: correlated rates
+       RootAge = '<1.0'  * safe constraint on root age, used if no fossil for root.
+    
+       runmode = 2
+         model = 0    * 0:JC69, 1:K80, 2:F81, 3:F84, 4:HKY85
+         alpha = 0    * alpha for gamma rates at sites
+         ncatG = 5    * No. categories in discrete gamma
+
+     cleandata = 0    * remove sites with ambiguity data (1:yes, 0:no)?
+
+       BDparas = 1 1 0.1  * birth, death, sampling
+   kappa_gamma = 6 2      * gamma prior for kappa
+   alpha_gamma = 1 1      * gamma prior for alpha
+
+   rgene_gamma = 2 20 1   * gammaDir prior for rate for genes
+  sigma2_gamma = 1 10 1   * gammaDir prior for sigma^2     (for clock=2 or 3)
+
+      finetune = 1: .1 .1 .1 .1 .1 .1 * auto (0 or 1): times, musigma2, rates, mixing, paras, FossilErr
+
+         print = 1   * 0: no mcmc sample; 1: everything except branch rates 2: everything
+        burnin = 2000
+      sampfreq = 10
+       nsample = 20000
+```
+
+Run `MCMCTree`:
+```{sh}
+time \
+mcmctree SINGLE_COPY_GENE_FAMILIES.ctl
+```
 
 
 
