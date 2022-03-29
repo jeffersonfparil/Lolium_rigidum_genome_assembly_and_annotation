@@ -468,8 +468,8 @@ parallel \
 ./mafft_RaxML-ng_PARALLEL.sh {} ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
 
 ### Merge tree files
-cat temp_*.bestTree > temp_ALL_TREES.trees
-rm temp_*.bestTree
+cat temp_*.support > temp_ALL_TREES.trees
+rm temp_*.support
 ```
 
 Merge trees with `CLANN`:
