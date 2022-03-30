@@ -555,7 +555,7 @@ cat SINGLE_COPY_GENE_FAMILIES.trees.bk >> SINGLE_COPY_GENE_FAMILIES.trees
 rm SINGLE_COPY_GENE_FAMILIES.trees.bk
 ```
 
-Using `timetree.org` tree:
+<!-- Using `timetree.org` tree:
 ```{sh}
 echo "7 1
 (Marchantia_polymorpha:532.29191200,
@@ -570,7 +570,7 @@ echo "7 1
     ) #5 'E':371.81478475 '@1.6'
 )'@5.32';
 " > SINGLE_COPY_GENE_FAMILIES.tree
-```
+``` -->
 
 
 
@@ -581,7 +581,7 @@ echo '
 *** INPUTS ***
 **************
       seqfile = SINGLE_COPY_GENE_FAMILIES.phylip    * sequence data file name
-     treefile = SINGLE_COPY_GENE_FAMILIES.tree      * tree structure file name
+     treefile = SINGLE_COPY_GENE_FAMILIES.trees     * tree structure file name
 **************
 *** OUPUTS ***
 **************
@@ -593,30 +593,45 @@ echo '
 *** PROPERTIES OF THE INPUTS ***
 ********************************
         ndata = 222                                 * number of datasets
-      seqtype = 1                                   * 
-    CodonFreq = 2
-   aaRatefile = jones.dat
+      seqtype = 1                                   * 1:codons; 2:AAs; 3:codons-->AAs 
+    CodonFreq = 2                                   * 0:1/61 each, 1:F1X4, 2:F3X4, 3:codon table, 4:F1x4MG, 5:F3x4MG, 6:FMutSel0, 7:FMutSel
+********************************
+*** CODON SUBSTITUTION MODEL ***
+********************************
         model = 0                                   * 0: JC69, 1: K80, 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
-      NSsites = 0 1 2 7 8
-        icode = 0
+      NSsites = 0                                   * 0: M0 (one ratio), 1: M1a (neutral), 2: M2a (selection), ...
+        icode = 0                                   * 0:universal code, 1:mammalian mt, ...
         Mgene = 0                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
-    fix_kappa = 0
-        kappa = 1.6
-    fix_omega = 0
-        omega = .9
-
-    fix_alpha = 1
-        alpha = 0
-        ncatG = 10
-
-        clock = 1                                   
+********************************************
+*** TRANSITION / TRANSVERSION RATE RATIO ***
+********************************************
+    fix_kappa = 0                                   * 0: estimate kappa, 1: fix kappa, 2: kappa for branches
+        kappa = 1.6                                 * initial or fixed kappa
+*********************************************************
+*** dN/dS: NONSYNONYNOUS / SYNONYNOUS VARIATION RATIO ***
+*********************************************************
+    fix_omega = 0                                   * 0: estimate omega, 1: fix omega
+        omega = .9                                  * initial or fixed omega
+******************************************
+*** GAMMA DISTRIBUTION SHAPE PARAMETER ***
+******************************************
+    fix_alpha = 0                                   * 0: estimate alpha; 1: fix alpha
+        alpha = 1                                   * initial or fixed alpha or is equal 0:infinity (constant rate)
+       Malpha = 0                                   * 0: one alpha, 1: different alphas for genes
+        ncatG = 10                                  * number of categories in the dG, AdG, or nparK models of rates
+**********************
+*** CLOCK SETTINGS ***
+**********************
+        clock = 1                                   * 0:no clock, 1:global clock; 2:local clock; 3:CombinedAnalysis
         getSE = 0
  RateAncestor = 0
-
+*********************
+*** MISCELLANEOUS ***
+*********************
    Small_Diff = .1e-6
-*    cleandata = 1
-        method = 0
-   fix_blength = 0  * 0: ignore, -1: random, 1: initial, 2: fixed
+    cleandata = 1
+       method = 0
+  fix_blength = 0                                  * 0: ignore, -1: random, 1: initial, 2: fixed
 ' > SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
 
 time codeml SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
