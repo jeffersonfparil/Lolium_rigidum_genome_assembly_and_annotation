@@ -31,16 +31,28 @@ PATH=${PATH}:${DIR}/mmseqs/bin
 sudo apt install hmmer
 ```
 
-## Install MAFFT (multiple alignment program for amino acid or nucleotide sequences)
+## Install MACSE: Multiple Alignment of Coding SEquences Accounting for Frameshifts and Stop Codons
 ```{sh}
-sudo apt install -y mafft
+wget https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar
+java -Xmx250G -jar macse_v2.06.jar -h
 ```
 
-## Install FastTreeDbl:
+## Install Gblocks to remove poorly aligned sequences
 ```{sh}
-wget http://www.microbesonline.org/fasttree/FastTreeDbl
-chmod +x FastTreeDbl
+wget http://molevol.cmima.csic.es/castresana/Gblocks/Gblocks_Linux64_0.91b.tar.Z
+tar -xvzf Gblocks_Linux64_0.91b.tar.Z
+cd Gblocks_0.91b/
 PATH=${PATH}:$(pwd)
+cd -
+```
+
+## Install RaxML-ng
+```{sh}
+wget https://github.com/amkozlov/raxml-ng/releases/download/1.1.0/raxml-ng_v1.1.0_linux_x86_64.zip
+unzip raxml-ng_v1.1.0_linux_x86_64.zip -d raxml-ng_v1.1.0
+cd raxml-ng_v1.1.0/
+PATH=${PATH}:$(pwd)
+cd -
 ```
 
 ## Install Clann for merging trees generated using each ortholog into a single supertree
@@ -52,15 +64,6 @@ cd clann-4.2.4/
 ./configure
 make
 PATH=${PATH}:$(pwd)
-```
-
-
-## Install RaxML-ng
-```{sh}
-wget https://github.com/amkozlov/raxml-ng/releases/download/1.1.0/raxml-ng_v1.1.0_linux_x86_64.zip
-unzip raxml-ng_v1.1.0_linux_x86_64.zip -d raxml-ng_v1.1.0
-cd raxml-ng_v1.1.0/
-PATH=${PATH}:$(pwd)
 cd -
 ```
 
@@ -71,6 +74,7 @@ tar -xvzf paml4.9j.tgz
 cd paml4.9j/
 PATH=${PATH}/bin
 PATH=${PATH}/src
+cd -
 ```
 
 ## Install the ape R package:
@@ -81,7 +85,6 @@ install.packages("ape")
 ## Download RefSeq version of the *Arabidopsis thaliana* and *Oryza sativa* reference genomes and gene annotations
 
 We're using the Refseq data (i.e. non-GeneBank, GCF instead of GCA prefix) because we want to use the gff annotations and we don't want the hassle of converting the genebank gbff to gff
-
 ```{sh}
 ### Arabidopsis thaliana (TAIR10)
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.fna.gz
@@ -112,7 +115,6 @@ cd -
 Identify genes across the genomes we want compare with *Gene Model Mapper*. For more information visit: [http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell](http://www.jstacs.de/index.php/GeMoMa#In_a_nutshell)
 
 Using the *Arabidopsis thaliana* gene annotations:
-
 ```{sh}
 time \
 for REF in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
@@ -134,7 +136,6 @@ done
 ```
 
 Using the *Oryza sativa* gene annotations:
-
 ```{sh}
 time \
 for REF in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
@@ -369,130 +370,6 @@ end
 close(file_input)
 ```
 
-Identify single-copy gene families:
-```{sh}
-cd $DIR
-REF="Arabidopsis_thaliana"
-# REF="Oryza_sativa" ### Which reference genome to use?
-# wc -l */GeMoMa_output_*/FINAL*.gff ### Arabidopsis thaliana generates consistently less mapped annotations than rice.
-for GENOME in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
-do
-    sed '/^#/d' ${GENOME}/GeMoMa_output_${REF}/FINAL_ANNOTATION_PATHERHMM_GENE_FAMILIES.gff | \
-        cut -f9 | \
-        cut -d';' -f2 > temp_gene_families-${REF}-${GENOME}.txt
-    Rscript find_single_copy_gene_families.R temp_gene_families-${REF}-${GENOME}.txt
-done
-Rscript find_common_single_copy_gene_families_across_genomes.R $(ls temp_*.txt) SINGLE_COPY_GENE_FAMILIES-${REF}.txt
-rm temp_*.txt
-```
-
-Extract gene names belonging to the single-copy gene families from the annotation files:
-```{sh}
-for GENOME in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
-do
-    for gene in $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
-    do
-        grep ${gene} ${GENOME}/GeMoMa_output_${REF}/FINAL_ANNOTATION_PATHERHMM_GENE_FAMILIES.gff | \
-                sed '/^#/d' | \
-                cut -f9 | \
-                cut -d';' -f1 | \
-                sed 's/ID=//g' >> temp_gene_names-${GENOME}-${REF}.txt
-    done
-done
-```
-
-Extract the protein sequences from the predicted protein sequences using the gene names:
-```{sh}
-# Create parallelisable bash script
-echo '#!/bin/bash
-DIR=$1
-GENOME=$2
-QUERY=$3
-PANTHER_GENE_FAMILY=$4
-REF=$5
-julia \
-extract_sequence_using_name_query.jl \
-    ${DIR}/${GENOME}/GeMoMa_output_${REF}/predicted_proteins.fasta \
-    ${QUERY} \
-    $(echo temp_${GENOME}-GENE_${QUERY} | sed -z "s/ /_/g").fasta \
-    ${GENOME}-${PANTHER_GENE_FAMILY} \
-    false
-' > extract_sequence_using_name_query_PARALLEL.sh
-chmod +x extract_sequence_using_name_query_PARALLEL.sh
-
-### Extract sequences for each species in parallel
-for GENOME in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
-do
-    parallel --link \
-    ./extract_sequence_using_name_query_PARALLEL.sh \
-        $DIR \
-        ${GENOME} \
-        {1} \
-        {2} \
-        ${REF} \
-        ::: $(cat temp_gene_names-${GENOME}-${REF}.txt) \
-        ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
-    cat temp_${GENOME}-GENE_*.fasta > ${GENOME}-SINGLE_COPY_GENE_FAMILY_Athaliana_genes.fasta
-    rm temp_${GENOME}-GENE_*.fasta
-done
-rm temp_gene_names-*-${REF}.txt
-```
-
-Align sequences with `MAFFT`, build the trees for each ortholog with `RaxML-ng`, and merge all trees into a single multi-tree file `temp_ALL_TREES.trees`:
-```{sh}
-### Generate parallelisable MAFFT alignement script
-echo '#!/bin/bash
-ORTHOLOG=$1
-cat *-SINGLE_COPY_GENE_FAMILY_Athaliana_genes.fasta | \
-    grep -A1 ${ORTHOLOG} | \
-    sed "/^--$/d" | \
-    sed "s/-${ORTHOLOG}//g" > temp_${ORTHOLOG}.fasta
-mafft --maxiterate 1000 \
-      --localpair temp_${ORTHOLOG}.fasta > temp_${ORTHOLOG}-ALIGNED.fasta
-raxml-ng --all \
-         --msa temp_${ORTHOLOG}-ALIGNED.fasta \
-         --model LG+G8+F \
-         --outgroup Marchantia_polymorpha \
-         --prefix temp_${ORTHOLOG} \
-         --threads 1 \
-         --seed 42069 \
-         --tree pars{25},rand{25}
-rm temp_${ORTHOLOG}.fasta temp_${ORTHOLOG}-ALIGNED.fasta
-rm $(ls | grep "^temp_${ORTHOLOG}" | grep "raxml" | grep -v "support$")
-' > mafft_RaxML-ng_PARALLEL.sh
-chmod +x mafft_RaxML-ng_PARALLEL.sh
-
-### Parallel execution
-time \
-parallel \
-./mafft_RaxML-ng_PARALLEL.sh {} ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
-
-### Merge tree files
-cat temp_*.support > temp_ALL_TREES.trees
-rm temp_*.support
-```
-
-Merge trees with `CLANN`:
-```{clann}
-exe temp_ALL_TREES.trees
-set criterion=dfit
-alltrees all create weight=equal savetrees=SINGLE_COPY_GENE_FAMILIES.tree
-```
-
-Clean-up `CLANN` output leaving only `SINGLE_COPY_GENE_FAMILIES.tree` and rename `supertree.ps` into `SINGLE_COPY_GENE_FAMILIES.ps`:
-```{sh}
-rm temp_ALL_TREES.trees
-rm alltrees.ph
-mv supertree.ps SINGLE_COPY_GENE_FAMILIES.ps
-```
-
-Plot merged tree with `R::ape`:
-```{sh}
-Rscript draw_tree.R \
-    SINGLE_COPY_GENE_FAMILIES.tree \
-    SINGLE_COPY_GENE_FAMILIES.svg
-```
-
 Prepare julia script to convert fasta into phylip format `fasta_to_phylip.jl`:
 ```{julia}
 filename_input = ARGS[1]
@@ -531,11 +408,11 @@ function CONVERT_FASTA_TO_PHYLIP(filename_input, filename_output, count_sequence
     FILE_OUTPUT = open(filename_output, "a")
     write(FILE_OUTPUT, string(count_sequences, " ", sequence_length, '\n'))
     while !eof(FILE_INPUT)
-        line = readline(FILE_INPUT)
+        line = string(readline(FILE_INPUT), '\n')
         if line[1] == '>'
-            line = line[2:end]
+            line = string(line[2:(end-1)], "  ")
         end
-        write(FILE_OUTPUT, string(line, '\n'))
+        write(FILE_OUTPUT, line)
     end
     close(FILE_INPUT)
     close(FILE_OUTPUT)
@@ -544,40 +421,210 @@ end
 CONVERT_FASTA_TO_PHYLIP(filename_input, filename_output, count_sequences, sequence_length)
 ```
 
-Realign genes into CLUSTAL format, convert to PHYLIP format, merge into a single file `SINGLE_COPY_GENE_FAMILIES.phylip`:
+Identify single-copy gene families:
 ```{sh}
-### Generate parallelisable MAFFT alignement script with CLUSTAL format output
+cd $DIR
+REF="Arabidopsis_thaliana"
+# REF="Oryza_sativa" ### Which reference genome to use?
+# wc -l */GeMoMa_output_*/FINAL*.gff ### Arabidopsis thaliana generates consistently less mapped annotations than rice.
+for GENOME in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
+do
+    sed '/^#/d' ${GENOME}/GeMoMa_output_${REF}/FINAL_ANNOTATION_PATHERHMM_GENE_FAMILIES.gff | \
+        cut -f9 | \
+        cut -d';' -f2 > temp_gene_families-${REF}-${GENOME}.txt
+    Rscript find_single_copy_gene_families.R temp_gene_families-${REF}-${GENOME}.txt
+done
+Rscript find_common_single_copy_gene_families_across_genomes.R $(ls temp_*.txt) SINGLE_COPY_GENE_FAMILIES-${REF}.txt
+rm temp_*.txt
+```
+
+Extract gene names belonging to the single-copy gene families from the annotation files:
+```{sh}
+for GENOME in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
+do
+    for gene in $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
+    do
+        grep ${gene} ${GENOME}/GeMoMa_output_${REF}/FINAL_ANNOTATION_PATHERHMM_GENE_FAMILIES.gff | \
+                sed '/^#/d' | \
+                cut -f9 | \
+                cut -d';' -f1 | \
+                sed 's/ID=//g' >> temp_gene_names-${GENOME}-${REF}.txt
+    done
+done
+```
+
+Extract the CDS sequences from the predicted protein sequences using the gene names:
+```{sh}
+# Create parallelisable bash script
+echo '#!/bin/bash
+DIR=$1
+GENOME=$2
+QUERY=$3
+PANTHER_GENE_FAMILY=$4
+REF=$5
+julia \
+extract_sequence_using_name_query.jl \
+    ${DIR}/${GENOME}/GeMoMa_output_${REF}/predicted_cds.fasta \
+    ${QUERY} \
+    $(echo temp_${GENOME}-GENE_${QUERY} | sed -z "s/ /_/g").fasta \
+    ${GENOME}-${PANTHER_GENE_FAMILY} \
+    false
+' > extract_sequence_using_name_query_PARALLEL.sh
+chmod +x extract_sequence_using_name_query_PARALLEL.sh
+
+### Extract sequences for each species in parallel
+for GENOME in Lolium_rigidum Lolium_perenne Arabidopsis_thaliana Oryza_sativa Zea_mays Secale_cereale Marchantia_polymorpha
+do
+    parallel --link \
+    ./extract_sequence_using_name_query_PARALLEL.sh \
+        $DIR \
+        ${GENOME} \
+        {1} \
+        {2} \
+        ${REF} \
+        ::: $(cat temp_gene_names-${GENOME}-${REF}.txt) \
+        ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
+    cat temp_${GENOME}-GENE_*.fasta > ${GENOME}-SINGLE_COPY_GENE_FAMILY_Athaliana_genes.fasta
+    rm temp_${GENOME}-GENE_*.fasta
+done
+rm temp_gene_names-*-${REF}.txt
+```
+
+Use `MACSE` to align the CDS into codons and protein sequences, build the trees for each ortholog with `RaxML-ng`, convert fasta alignemnts into phylip format for `PAML`, and merge all trees into a single multi-tree file `temp_ALL_TREES.trees`:
+```{sh}
+### Generate parallelisable MACSE alignement script
+### NOTES: Set the final stop codons as "---", and internal stop codons as "NNN" so that PAML programs won't ask you to press enter to continue; also set frameshifts from "!" into "-"
+###        Also sort the alignment sequences, because MACSE jumbles them u for some reason with no option to return input order
 echo '#!/bin/bash
 ORTHOLOG=$1
 cat *-SINGLE_COPY_GENE_FAMILY_Athaliana_genes.fasta | \
     grep -A1 ${ORTHOLOG} | \
     sed "/^--$/d" | \
     sed "s/-${ORTHOLOG}//g" > temp_${ORTHOLOG}.fasta
-mafft --maxiterate 1000 \
-      --localpair temp_${ORTHOLOG}.fasta > temp_${ORTHOLOG}-ALIGNED.fasta
+java -Xmx8G \
+     -jar macse_v2.06.jar \
+     -prog alignSequences \
+     -seq temp_${ORTHOLOG}.fasta \
+     -out_NT temp_${ORTHOLOG}-ALIGNED-NT.tmp \
+     -out_AA temp_${ORTHOLOG}-ALIGNED-AA.tmp
+java -Xmx8G \
+     -jar macse_v2.06.jar \
+     -prog exportAlignment \
+     -align temp_${ORTHOLOG}-ALIGNED-NT.tmp \
+     -codonForFinalStop --- \
+     -codonForInternalStop NNN \
+     -codonForExternalFS --- \
+     -codonForInternalFS --- \
+     -out_NT temp_${ORTHOLOG}-ALIGNED-NT.fasta \
+     -out_AA temp_${ORTHOLOG}-ALIGNED-AA.fasta
+raxml-ng --all \
+         --msa temp_${ORTHOLOG}-ALIGNED-NT.fasta \
+         --model GTR+G8+F \
+         --outgroup Marchantia_polymorpha \
+         --prefix temp_${ORTHOLOG} \
+         --threads 1 \
+         --seed 42069 \
+         --tree pars{25},rand{25}
 julia fasta_to_phylip.jl \
-      temp_${ORTHOLOG}-ALIGNED.fasta
-rm temp_${ORTHOLOG}.fasta temp_${ORTHOLOG}-ALIGNED.fasta
-' > mafft_PHYLIP_PARALLEL.sh
-chmod +x mafft_PHYLIP_PARALLEL.sh
+      temp_${ORTHOLOG}-ALIGNED-NT.fasta ### outputs: temp_${ORTHOLOG}-ALIGNED-NT.phylip
+julia fasta_to_phylip.jl \
+      temp_${ORTHOLOG}-ALIGNED-AA.fasta ### outputs: temp_${ORTHOLOG}-ALIGNED-AA.phylip
+mv temp_${ORTHOLOG}-ALIGNED-NT.phylip temp_${ORTHOLOG}-ALIGNED-NT.phylip.tmp
+mv temp_${ORTHOLOG}-ALIGNED-AA.phylip temp_${ORTHOLOG}-ALIGNED-AA.phylip.tmp
+sort temp_${ORTHOLOG}-ALIGNED-NT.phylip.tmp > temp_${ORTHOLOG}-ALIGNED-NT.phylip
+sort temp_${ORTHOLOG}-ALIGNED-AA.phylip.tmp > temp_${ORTHOLOG}-ALIGNED-AA.phylip
+' > macse_RaxML-ng_PARALLEL.sh
+chmod +x macse_RaxML-ng_PARALLEL.sh
 
 ### Parallel execution
 time \
 parallel \
-./mafft_PHYLIP_PARALLEL.sh {} ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
+./macse_RaxML-ng_PARALLEL.sh {} ::: $(cat SINGLE_COPY_GENE_FAMILIES-${REF}.txt)
 
-### Merge PHYLIP sequences
-cat temp_PTHR*-ALIGNED.phylip > SINGLE_COPY_GENE_FAMILIES.phylip
-rm temp_PTHR*-ALIGNED.phylip
+### Merge phylip alignements and tree files
+cat temp_*-ALIGNED-NT.phylip > SINGLE_COPY_GENE_FAMILIES.phylip
+cat temp_*.bestTree       > SINGLE_COPY_GENE_FAMILIES.trees
+rm temp_*.*
 ```
 
-Add number of species and trees into `SINGLE_COPY_GENE_FAMILIES.tree`:
+Add number of species and trees into `SINGLE_COPY_GENE_FAMILIES.trees`:
 ```{sh}
-mv SINGLE_COPY_GENE_FAMILIES.tree SINGLE_COPY_GENE_FAMILIES.tree.bk
-echo "7 1" > SINGLE_COPY_GENE_FAMILIES.tree
-cat SINGLE_COPY_GENE_FAMILIES.tree.bk >> SINGLE_COPY_GENE_FAMILIES.tree
-rm SINGLE_COPY_GENE_FAMILIES.tree.bk
+mv SINGLE_COPY_GENE_FAMILIES.trees SINGLE_COPY_GENE_FAMILIES.trees.bk
+echo "7 $(cat SINGLE_COPY_GENE_FAMILIES.trees.bk | wc -l)" > SINGLE_COPY_GENE_FAMILIES.trees
+cat SINGLE_COPY_GENE_FAMILIES.trees.bk >> SINGLE_COPY_GENE_FAMILIES.trees
+rm SINGLE_COPY_GENE_FAMILIES.trees.bk
 ```
+
+Using `timetree.org` tree:
+```{sh}
+echo "7 1
+(Marchantia_polymorpha:532.29191200,
+    (
+        (
+            (Oryza_sativa:49.60000000,
+                (Secale_cereale:24.10373857,
+                    (Lolium_rigidum:1.65000000, Lolium_perenne:1.65000000) #1 'A': 22.45373857 '@0.0165'
+                ) #2 'B': 25.49626143 '@0.241'
+            ) #3 'C': 0.00000000 '@0.5', Zea_mays:49.60000000
+        ) #4 'D':110.87712725 '@0.5', Arabidopsis_thaliana:160.47712725
+    ) #5 'E':371.81478475 '@1.6'
+)'@5.32';
+" > SINGLE_COPY_GENE_FAMILIES.tree
+```
+
+
+
+Estimate the parammeters for the gamma distribution prior for the substitution rates in gene using the CODEML control file `FIND_GENE_SUBS_RATE.ctl`:
+```{sh}
+echo '
+**************
+*** INPUTS ***
+**************
+      seqfile = SINGLE_COPY_GENE_FAMILIES.phylip    * sequence data file name
+     treefile = SINGLE_COPY_GENE_FAMILIES.tree      * tree structure file name
+**************
+*** OUPUTS ***
+**************
+      outfile = SINGLE_COPY_GENE_FAMILIES.codeml    * main result file
+        noisy = 0                                   * 0,1,2,3: how much rubbish on the screen
+      verbose = 0                                   * 1: detailed output, 0: concise output
+      runmode = 0                                   * 0: user tree; 1: semi-automatic; 2: automatic; 3: StepwiseAddition; (4,5):PerturbationNNI
+********************************
+*** PROPERTIES OF THE INPUTS ***
+********************************
+        ndata = 222                                 * number of datasets
+      seqtype = 1                                   * 
+    CodonFreq = 2
+   aaRatefile = jones.dat
+        model = 0                                   * 0: JC69, 1: K80, 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
+      NSsites = 0 1 2 7 8
+        icode = 0
+        Mgene = 0                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
+    fix_kappa = 0
+        kappa = 1.6
+    fix_omega = 0
+        omega = .9
+
+    fix_alpha = 1
+        alpha = 0
+        ncatG = 10
+
+        clock = 1                                   
+        getSE = 0
+ RateAncestor = 0
+
+   Small_Diff = .1e-6
+*    cleandata = 1
+        method = 0
+   fix_blength = 0  * 0: ignore, -1: random, 1: initial, 2: fixed
+' > SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
+
+time codeml SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
+
+
+```
+
+
 
 Prepare MCMCTree control or script file: `SINGLE_COPY_GENE_FAMILIES.ctl`:
 ```{MCMCTree-ctl}
@@ -589,9 +636,9 @@ Prepare MCMCTree control or script file: `SINGLE_COPY_GENE_FAMILIES.ctl`:
 
          ndata = 222
        seqtype = 2    * 0: nucleotides; 1:codons; 2:AAs
-       usedata = 0    * 0: no data; 1:seq like; 2:normal approximation; 3:out.BV (in.BV)
+       usedata = 2    * 0: no data; 1:seq like; 2:normal approximation; 3:out.BV (in.BV)
          clock = 1    * 1: global clock; 2: independent rates; 3: correlated rates
-       RootAge = '<1.0'  * safe constraint on root age, used if no fossil for root.
+       RootAge = '<5.33'  * safe constraint on root age, used if no fossil for root.
     
        runmode = 2
          model = 0    * 0:JC69, 1:K80, 2:F81, 3:F84, 4:HKY85
@@ -600,7 +647,7 @@ Prepare MCMCTree control or script file: `SINGLE_COPY_GENE_FAMILIES.ctl`:
 
      cleandata = 0    * remove sites with ambiguity data (1:yes, 0:no)?
 
-       BDparas = 1 1 0.1  * birth, death, sampling
+       BDparas = 2 2 0.1  * birth, death, sampling
    kappa_gamma = 6 2      * gamma prior for kappa
    alpha_gamma = 1 1      * gamma prior for alpha
 
