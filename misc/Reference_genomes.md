@@ -12,6 +12,14 @@ mkdir ${DIR}/Lolium_rigidum
 cd ${DIR}/Lolium_rigidum
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/022/539/505/GCA_022539505.1_APGP_CSIRO_Lrig_0.1/GCA_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
 gunzip -c GCA_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz > Lolium_rigidum.fasta
+
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_cds_from_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_protein.faa.gz
+gunzip GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
+gunzip GCF_022539505.1_APGP_CSIRO_Lrig_0.1_cds_from_genomic.fna.gz
+gunzip GCF_022539505.1_APGP_CSIRO_Lrig_0.1_protein.faa.gz
+
 cd -
 ```
 
