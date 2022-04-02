@@ -580,9 +580,7 @@ echo "7 1
 " > SINGLE_COPY_GENE_FAMILIES.tree
 ``` -->
 
-
-
-Estimate the parammeters for the gamma distribution prior for the substitution rates in gene using the CODEML control file `FIND_GENE_SUBS_RATE.ctl`:
+Estimate the alpha parammeter for the gamma distribution prior for the substitution rates in gene using the CODEML control file `FIND_GENE_SUBS_RATE.ctl`:
 ```{sh}
 echo '
 **************
@@ -647,10 +645,9 @@ time codeml SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
 
 ```
 
-
-
 Prepare MCMCTree control or script file: `SINGLE_COPY_GENE_FAMILIES.ctl`:
-```{MCMCTree-ctl}
+```{sh}
+echo '
           seed = 42069
        seqfile = SINGLE_COPY_GENE_FAMILIES.phylip
       treefile = SINGLE_COPY_GENE_FAMILIES.tree
@@ -683,35 +680,28 @@ Prepare MCMCTree control or script file: `SINGLE_COPY_GENE_FAMILIES.ctl`:
         burnin = 2000
       sampfreq = 10
        nsample = 20000
+' > SINGLE_COPY_GENE_FAMILIES.mcmctree
+
+time mcmctree SINGLE_COPY_GENE_FAMILIES.mcmctree
+
 ```
-
-Run `MCMCTree`:
-```{sh}
-time \
-mcmctree SINGLE_COPY_GENE_FAMILIES.ctl
-```
-
-
-
-
-
 
 
 ## Herbicide resistance genes
-echo -e "CYTOCHROME P450\tNTSR
-GLUTATHIONE S-TRANSFERASE\tNTSR
-ACETYL-COENZYME A CARBOXYLASE CARBOXYL TRANSFERASE\tACCase
-ACETOLACTATE SYNTHASE\tAcetolactate synthase
-AROM/DEHYDROQUINATE SYNTHASE\tEPSP
-FATTY ACID SYNTHASE SUBUNIT BETA\tFatty acid biosynthesis
-" > TSR_NTSR_PATHERHMM.list
-for GENE in $(cut -f1 TSR_NTSR_PATHERHMM.list)
-do
-    echo $GENE
-    for SPECIES in $(ls *.pthr | grep -v "SINGLE_COPY" | sed 's/.pthr//g')
+echo "CYTOCHROME P450,NTSR
+GLUTATHIONE S-TRANSFERASE,NTSR
+ACETYL-COENZYME A,ACCase
+ACETOLACTATE SYNTHASE SMALL SUBUNIT,Acetolactate synthase
+AROM/DEHYDROQUINATE SYNTHASE,EPSP" > TSR_NTSR_PATHERHMM.list
+echo "SPECIES,CYP450,GST,ACCASE,ALS,EPSPS" > HERBICIDE_RESISTANCE_GENE_COUNTS.csv
+for SPECIES in $(ls *.pthr | grep -v "SINGLE_COPY" | sed 's/.pthr//g')
     do
-        COUNT=$(grep '$GENE' ${SPECIES}.pthr | wc -l)
-        echo ${SPECIES}-${GENE}-${COUNT}
+    COUNTS=${SPECIES}
+    for i in $(seq 1 $(cat TSR_NTSR_PATHERHMM.list | wc -l))
+    do
+        GENE=$(head -n${i} TSR_NTSR_PATHERHMM.list | tail -n 1 | cut -d',' -f1)
+        COUNTS=${COUNTS},$(grep "$GENE" ${SPECIES}.pthr | wc -l)
     done
+    echo $COUNTS >> HERBICIDE_RESISTANCE_GENE_COUNTS.csv
 done
 
