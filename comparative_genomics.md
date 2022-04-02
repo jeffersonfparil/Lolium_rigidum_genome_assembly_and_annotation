@@ -88,6 +88,15 @@ cd -
 sudo apt install hmmer
 ```
 
+## Install OrthoFinder
+```{sh}
+wget https://github.com/davidemms/OrthoFinder/releases/download/2.5.4/OrthoFinder.tar.gz
+tar -xvzf OrthoFinder.tar.gz
+cd OrthoFinder/
+PATH=${PATH}:$(pwd)
+cd -
+```
+
 ## Install MACSE: Multiple Alignment of Coding SEquences Accounting for Frameshifts and Stop Codons
 ```{sh}
 wget https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar
@@ -170,6 +179,18 @@ do
     rm -R ${REF}
 done
 ```
+
+## Use OrthoFinder to find orthologs and paralogs
+```{sh}
+mkdir OrthoFinder_protein_sequences/
+cp *.faa OrthoFinder_protein_sequences/
+time \
+orthofinder \
+    -f OrthoFinder_protein_sequences/
+
+```
+
+
 
 ## Classify predicted proteins by gene families using PatherHMM database and HMMER
 ```{sh}
