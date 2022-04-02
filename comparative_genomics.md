@@ -187,8 +187,50 @@ cp *.faa OrthoFinder_protein_sequences/
 time \
 orthofinder \
     -f OrthoFinder_protein_sequences/
+```
+
+## Assign orthogroups into gene families (at least 1 family per orthogroup)
+```{sh}
+### Define the location of the 15,619 protein family HMMs
+DIR_PANTHER=${DIR}/PatherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
+GOT_PATHER=${DIR}/PatherHMM_17.0/PANTHER17.0_HMM_classifications
+
+### Prepare parallelisable HMMER search script
+echo '#!/bin/bash
+PROTFA=$1
+DIR_PANTHER=$2
+d=$3
+HMMODL=${DIR_PANTHER}/${d}/hmmer.hmm
+OUTEMP=${PROTFA}-hhmer_gene_family_hits-${d}.tmp
+hmmsearch -E 0.0001 --tblout ${OUTEMP} ${HMMODL} ${PROTFA}
+' > hmmsearch_for_parallel_execution.sh
+chmod +x hmmsearch_for_parallel_execution.sh
+
+### Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
+for PROTFA in $(find ${DIR}/OrthoFinder_protein_sequences/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa')
+do
+    # PROTFA=$(find ${DIR}/OrthoFinder_protein_sequences/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa' | head -n1)
+    echo ${PROTFA}
+    time \
+    parallel -j 31 \
+    ./hmmsearch_for_parallel_execution.sh \
+        ${PROTFA} \
+        ${DIR_PANTHER} \
+        {} ::: $(ls $DIR_PANTHER)
+    ### Concatenate hmmsearch output for each protein family into a single output file
+    CONCAT=${PROTFA}-hhmer_gene_family_hits.txt
+    touch $CONCAT
+    for f in $(ls ${PROTFA}-hhmer_gene_family_hits-*)
+    do
+        sed "/^#/d" ${f} | awk '{print $1,$3,$5}' >> ${CONCAT}
+        rm $f
+    done
+done
 
 ```
+
+
+
 
 
 
