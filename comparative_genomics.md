@@ -182,11 +182,12 @@ done
 
 ## Use OrthoFinder to find orthologs and paralogs
 ```{sh}
-mkdir OrthoFinder_protein_sequences/
-cp *.faa OrthoFinder_protein_sequences/
+mkdir ORTHOGROUPS/
+cp *.faa ORTHOGROUPS/
 time \
 orthofinder \
-    -f OrthoFinder_protein_sequences/
+    -f ORTHOGROUPS/ \
+    -t 32
 ```
 
 ## Assign orthogroups into gene families (at least 1 family per orthogroup)
@@ -203,28 +204,31 @@ d=$3
 HMMODL=${DIR_PANTHER}/${d}/hmmer.hmm
 OUTEMP=${PROTFA}-hhmer_gene_family_hits-${d}.tmp
 hmmsearch -E 0.0001 --tblout ${OUTEMP} ${HMMODL} ${PROTFA}
-' > hmmsearch_for_parallel_execution.sh
+sed "/^#/d" ${OUTEMP} | awk @{print $1,$3,$5}@ > ${OUTEMP}.tmp
+if [ $(cat ${OUTEMP}.tmp | wc -l) -eq 0 ]
+then
+    rm ${OUTEMP} ${OUTEMP}.tmp
+else
+    mv ${OUTEMP}.tmp ${OUTEMP}
+fi
+' | sed "s/@/'/g" > hmmsearch_for_parallel_execution.sh
 chmod +x hmmsearch_for_parallel_execution.sh
 
 ### Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
-for PROTFA in $(find ${DIR}/OrthoFinder_protein_sequences/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa')
+time \
+for PROTFA in $(find ${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa')
 do
-    # PROTFA=$(find ${DIR}/OrthoFinder_protein_sequences/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa' | head -n1)
+    # PROTFA=$(find ${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa' | head -n1)
     echo ${PROTFA}
-    time \
-    parallel -j 31 \
+    parallel \
     ./hmmsearch_for_parallel_execution.sh \
         ${PROTFA} \
         ${DIR_PANTHER} \
         {} ::: $(ls $DIR_PANTHER)
     ### Concatenate hmmsearch output for each protein family into a single output file
-    CONCAT=${PROTFA}-hhmer_gene_family_hits.txt
-    touch $CONCAT
-    for f in $(ls ${PROTFA}-hhmer_gene_family_hits-*)
-    do
-        sed "/^#/d" ${f} | awk '{print $1,$3,$5}' >> ${CONCAT}
-        rm $f
-    done
+    CONCAT=${DIR}/ORTHOGROUPS/$(basename ${PROTFA})-hhmer_gene_family_hits.txt
+    cat ${PROTFA}-hhmer_gene_family_hits-* > ${CONCAT}
+    rm ${PROTFA}-hhmer_gene_family_hits-*
 done
 
 ```

@@ -172,7 +172,7 @@ OUTEMP=$(dirname ${PROTFA})/hhmer_gene_family_hits-${d}.tmp
 hmmsearch -E 0.0001 --tblout ${OUTEMP} ${HMMODL} ${PROTFA}
 ' > hmmsearch_for_parallel_execution.sh
 chmod +x hmmsearch_for_parallel_execution.sh
-# Iteratively, for each GeMoMa-predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
+# Iteratively, for each predicted protein sequences file run hmmsearch in paralel for each PatherHMM protein family
 for PROTFA in $(ls */GeMoMa_output_*/predicted_proteins.fasta)
 do
     # PROTFA=Lolium_rigidum/GeMoMa_output_Arabidopsis_thaliana/predicted_proteins.fasta
@@ -202,10 +202,9 @@ using CSV, DataFrames, ProgressMeter
 fname_input = ARGS[1]
 fname_codes = ARGS[2]
 fname_annot = ARGS[3]
-# fname_input = "/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/Lolium_rigidum/GeMoMa_output_Arabidopsis_thaliana/hhmer_gene_family_hits.txt"; fname_codes = "/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/PatherHMM_17.0/Panther17.0_HMM_familyIDs.txt"; fname_annot = "/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/Lolium_rigidum/GeMoMa_output_Arabidopsis_thaliana/final_annotation.gff"
-# fname_input = "hhmer_gene_family_hits.txt"; fname_codes = "Panther17.0_HMM_familyIDs.txt"; fname_annot = "final_annotation.gff"
+# fname_input = "Lolium_rigidum.faa-hhmer_gene_family_hits.txt"; fname_codes = "Panther17.0_HMM_familyIDs.txt"; fname_annot = "final_annotation.gff"
 dat = CSV.read(open(fname_input), DataFrames.DataFrame, header=false)
-### Find most likely gene family per predicted gene, i.e. remove duplicate family hits
+### Find most likely gene family per predicted gene, i.e. first row has the best E-value
 gene_names = []
 panther_codes = []
 @showprogress for gene in levels(dat.Column1)
