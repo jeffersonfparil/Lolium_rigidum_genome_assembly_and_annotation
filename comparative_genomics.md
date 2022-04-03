@@ -269,7 +269,9 @@ rm ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-*
 ### Check if all orthogroups have been classified to at least 1 gene family,
 ### if not then append the unclassified orthogroup names at the end of the file with 'UNCLASSIFIED' gene family.
 
-### Next, add family name and GO terms to each PatherHMM gene family.
+### Then, find the best fitting gene family to each unique sequence per orthogroup.
+### This means that each orthogroup can have multiple gene families.
+### Next, add family name and GO terms to each gene family.
 
 ```
 
