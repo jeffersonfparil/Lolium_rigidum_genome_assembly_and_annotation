@@ -196,6 +196,44 @@ orthofinder \
 DIR_PANTHER=${DIR}/PatherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
 GOT_PATHER=${DIR}/PatherHMM_17.0/PANTHER17.0_HMM_classifications
 
+### Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
+
+### Add Orthogroup name to each protein sequence name and merge so that we can be more efficient with hmmsearch
+echo '#!/bin/bash
+f=$1
+ORTHOGROUP=$(basename ${f} | sed s/.fa$//g)
+sed "s/^>/>${ORTHOGROUP}:/g" ${f} > ${ORTHOGROUP}.tmp
+' > rename_sequences_with_orthogroup_ID.sh
+chmod +x rename_sequences_with_orthogroup_ID.sh
+
+### Split the large list of orthogroup filenames (too long for bash commands)
+find ${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa' > \
+    orthogroup_filenames.tmp
+split -l 10000 orthogroup_filenames.tmp orthogroup_filenames-SPLIT-
+
+### For each chunk of orthogroup filenames append the orthogroup names into the protein sequence names in parallel
+time \
+for F in $(ls orthogroup_filenames-SPLIT-*)
+do
+    echo $F
+    parallel \
+        ./rename_sequences_with_orthogroup_ID.sh \
+        {} \
+        ::: $(cat $F)
+done
+
+### Merge orthogroup sequences into a single fasta file
+MERGED_ORTHOGROUPS=ORTHOGROUPS/orthogroups.faa
+touch $MERGED_ORTHOGROUPS
+for f in $(ls | grep "^OG" | grep "tmp$")
+do
+    cat $f >> ${MERGED_ORTHOGROUPS}
+    rm $f
+done
+
+### Clean-up
+rm orthogroup_filenames*
+
 ### Prepare parallelisable HMMER search script
 echo '#!/bin/bash
 PROTFA=$1
@@ -214,22 +252,22 @@ fi
 ' | sed "s/@/'/g" > hmmsearch_for_parallel_execution.sh
 chmod +x hmmsearch_for_parallel_execution.sh
 
-### Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
+### Find PatherHMM protein families for each orthogroup
 time \
-for PROTFA in $(find ${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa')
-do
-    # PROTFA=$(find ${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa' | head -n1)
-    echo ${PROTFA}
-    parallel \
-    ./hmmsearch_for_parallel_execution.sh \
-        ${PROTFA} \
-        ${DIR_PANTHER} \
-        {} ::: $(ls $DIR_PANTHER)
-    ### Concatenate hmmsearch output for each protein family into a single output file
-    CONCAT=${DIR}/ORTHOGROUPS/$(basename ${PROTFA})-hhmer_gene_family_hits.txt
-    cat ${PROTFA}-hhmer_gene_family_hits-* > ${CONCAT}
-    rm ${PROTFA}-hhmer_gene_family_hits-*
-done
+parallel \
+./hmmsearch_for_parallel_execution.sh \
+    ${MERGED_ORTHOGROUPS} \
+    ${DIR_PANTHER} \
+    {} \
+    ::: $(ls $DIR_PANTHER)
+
+### Concatenate hmmsearch output for each protein family into a single output file
+PANTHER_ORTHOGROUPS=$(echo ${MERGED_ORTHOGROUPS} | sed s/.faa$//g).pthr
+cat ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-* > ${PANTHER_ORTHOGROUPS}
+rm ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-*
+
+### Check if all orthogroups have been classified to at least 1 gene family,
+### if not then append the unclassified orthogroup names at the end of the file with 'UNCLASSIFIED' gene family
 
 ```
 
@@ -755,6 +793,7 @@ time mcmctree SINGLE_COPY_GENE_FAMILIES.mcmctree
 
 
 ## Herbicide resistance genes
+```{sh}
 echo "CYTOCHROME P450,NTSR
 GLUTATHIONE S-TRANSFERASE,NTSR
 ACETYL-COENZYME A,ACCase
@@ -771,4 +810,4 @@ for SPECIES in $(ls *.pthr | grep -v "SINGLE_COPY" | sed 's/.pthr//g')
     done
     echo $COUNTS >> HERBICIDE_RESISTANCE_GENE_COUNTS.csv
 done
-
+```
