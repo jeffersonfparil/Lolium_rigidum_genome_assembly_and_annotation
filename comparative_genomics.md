@@ -294,6 +294,7 @@ fname_output = "ORTHOGROUPS/genes_orthogroups_families.go"
 file = open(all_orthogroups, "r")
 all_orthogroups = readlines(file)
 close(file)
+rm(all_orthogroups) # clean-up
 
 # Load orthogroup hits
 file = open(fname_orthogroup_family_hits, "r")
@@ -449,9 +450,14 @@ Number of genes in orthogroups - Number of genes in species-specific orthogroups
 Line 59 of Statistics_PerSpecies.tsv, i.e. at Row '1' label = single gene-copy
 
 # Or simply use ${DIR}/ORTHOGROUPS/orthogroups.faa
-# e.g.:
-grep "^>" ${DIR}/ORTHOGROUPS/orthogroups.faa | wc -l
-grep "^>" ${DIR}/ORTHOGROUPS/orthogroups.faa | grep ":Lolium_rigidum" | wc -l
+grep "^>" ${DIR}/ORTHOGROUPS/*__*.faa | \
+    sed -z "s/|/\t/g" > all_genes.tmp
+
+grep "^>" ${DIR}/ORTHOGROUPS/orthogroups.faa | \
+    sed "s/^>//g" | \
+    sed -z "s/:/\t/g" | \
+    sed -z "s/|/\t/g" > all_orthogroups_genes.tmp
+
 
 
 ```
