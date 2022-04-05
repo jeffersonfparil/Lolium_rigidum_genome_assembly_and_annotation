@@ -288,7 +288,7 @@ using CSV, DataFrames, ProgressMeter
 fname_orthogroup_family_hits = "ORTHOGROUPS/orthogroups.pthr"
 fname_family_GO = "PantherHMM_17.0/Panther17.0_HMM_familyIDs.txt"
 all_orthogroups = "all_orthogroups.tmp"
-fname_output = "genes_orthogroups_families.go"
+fname_output = "ORTHOGROUPS/genes_orthogroups_families.go"
 
 # Load all orthogroup IDs
 file = open(all_orthogroups, "r")
@@ -305,9 +305,11 @@ evalue = []
 pb = Progress(n)
 while !eof(file)
     line = split(readline(file), ' ')
-    column1 = split(line[1], ':')
-    push!(orthogroup, column1[1])
-    push!(gene_name, column1[2])
+    seqName = split(line[1], ':')
+    speciesAndGeneName = split(seqName[2], '|')
+    geneName = join(split(speciesAndGeneName[2], '-')[2:end], '-')
+    push!(orthogroup, seqName[1])
+    push!(gene_name, geneName)
     push!(family_ID, replace(line[2], ".orig.30.pir"=>""))
     push!(evalue, parse(Float64, line[3]))
     update!(pb, position(file))
@@ -331,30 +333,8 @@ end
 close(file)
 
 # Load gene counts orthogroup per species
-fname_orthogroup_gene_counts = "ORTHOGROUPS/OrthoFinder/Results_Apr03/Orthogroups/Orthogroups.GeneCount.tsv"
+fname_orthogroup_gene_counts = "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.GeneCount.tsv"
 df_counts = CSV.read(open(fname_orthogroup_gene_counts), DataFrames.DataFrame)
-
-# Identify unclassified orthogroups
-idx = Bool.([])
-classified = unique(orthogroup)
-for x in all_orthogroups
-    # x = all_orthogroups[1]
-    if sum(x .== classified) > 0
-        push!(idx, true)
-    else
-        push!(idx, false)
-    end
-end
-# X1 = copy(orthogroup)
-# X2 = copy(gene_name)
-# X3 = copy(family_ID)
-# X4 = copy(evalue)
-
-# Append unclassified orthogroups
-append!(orthogroup, all_orthogroups[.!idx])
-append!(gene_name, repeat(["UNCLASSIFIED"], sum(.!idx)))
-append!(family_ID, repeat(["UNCLASSIFIED"], sum(.!idx)))
-append!(evalue, repeat([1.00], sum(.!idx)))
 
 # For each gene, set the family ID as the one with the lowest E-value
 idx = sortperm(gene_name)
@@ -454,7 +434,36 @@ df_ID = DataFrames.DataFrame(Orthogroup=final_orthogroup,
 
 # Merge the orthogroup ID and orthogroup gene counts and save into a file
 df = innerjoin(df_counts, df_ID, on=:Orthogroup)
+CSV.write(open(fname_output, "w"), df, delim='\t')
+```
 
+## Simplistic preliminary assessment of the distribution of the genes, orthogroups and gene family classifications.
+```{sh}
+head -n11 ${DIR}/ORTHOGROUPS/OrthoFinder/Results_Apr05/Comparative_Genomics_Statistics/Statistics_PerSpecies.tsv
+head -n78 ${DIR}/ORTHOGROUPS/OrthoFinder/Results_Apr05/Comparative_Genomics_Statistics/Statistics_PerSpecies.tsv | tail -n 20
+
+Number of genes = total genes
+Number of genes in orthogroups = total orthologs + paralogs
+Number of genes in species-specific orthogroups = paralogs
+Number of genes in orthogroups - Number of genes in species-specific orthogroups = orthologs
+Line 59 of Statistics_PerSpecies.tsv, i.e. at Row '1' label = single gene-copy
+
+# Or simply use ${DIR}/ORTHOGROUPS/orthogroups.faa
+# e.g.:
+grep "^>" ${DIR}/ORTHOGROUPS/orthogroups.faa | wc -l
+grep "^>" ${DIR}/ORTHOGROUPS/orthogroups.faa | grep ":Lolium_rigidum" | wc -l
+
+
+```
+
+
+## Define the phylogentic relationships between species as baseline prior to assessing functional differences between species.
+
+Use single-copy gene families to build a tree and estimate the divergene times between species.
+```{julia}
+using CSV, DataFrames
+fname = "ORTHOGROUPS/genes_orthogroups_families.go"
+df = CSV.read(open(fname, "r"), DataFrames.DataFrame)
 
 idx = 
 (df[:,2] .==1) .& 
@@ -464,17 +473,20 @@ idx =
 (df[:,6] .==1) .& 
 (df[:,7] .==1) .& 
 (df[:,8] .==1)
+
 df[idx, :]
-MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
 
 grep "OG0016618" ${DIR}/ORTHOGROUPS/orthogroups.faa
 
-
 ```
 
-## What is the distribution of membership frequencies per orthogroup of each species?
+## What is the rate of gene family expansion and contraction in each species?
+
+Use CAFE? Or PAML? Likelihood ration test-based assessment of gene family expansion and contraction...
 
 ## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
+
+Identify TSR and NTSR genes..
 
 ## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
 
