@@ -83,11 +83,6 @@ PATH=${PATH}:${DIR}/mmseqs/bin
 cd -
 ```
 
-## Install HMMER for mapping CDS to PatherHMM gene family models
-```{sh}
-sudo apt install hmmer
-```
-
 ## Install OrthoFinder
 ```{sh}
 wget https://github.com/davidemms/OrthoFinder/releases/download/2.5.4/OrthoFinder.tar.gz
@@ -95,6 +90,11 @@ tar -xvzf OrthoFinder.tar.gz
 cd OrthoFinder/
 PATH=${PATH}:$(pwd)
 cd -
+```
+
+## Install HMMER for mapping CDS to PantherHMM gene family models
+```{sh}
+sudo apt install hmmer
 ```
 
 ## Install MACSE: Multiple Alignment of Coding SEquences Accounting for Frameshifts and Stop Codons
@@ -143,12 +143,12 @@ PATH=${PATH}/src
 cd -
 ```
 
-## Download PatherHMM library including 15,619 protein family HMMs and their GO terms
+## Download PantherHMM library including 15,619 protein family HMMs and their GO terms
 ```{sh}
 wget http://data.pantherdb.org/ftp/panther_library/current_release/PANTHER17.0_hmmscoring.tgz
 tar -xvzf PANTHER17.0_hmmscoring.tgz
-mv target/ PatherHMM_17.0/
-cd PatherHMM_17.0/
+mv target/ PantherHMM_17.0/
+cd PantherHMM_17.0/
 wget http://data.pantherdb.org/ftp/hmm_classifications/current_release/PANTHER17.0_HMM_classifications
 ### Isolate family codes and names, i.e. exclude subfamily info
 grep -v ':SF' PANTHER17.0_HMM_classifications > Panther17.0_HMM_familyIDs.txt
@@ -184,19 +184,26 @@ done
 ```{sh}
 mkdir ORTHOGROUPS/
 cp *.faa ORTHOGROUPS/
+for f in ORTHOGROUPS/*.faa
+do
+    # f=$(ls ORTHOGROUPS/*.faa | head -n1)
+    fname=$(basename $f)
+    species=${fname%.faa*}
+    sed -i "s/^>/>$species|/g" $f
+done
 time \
 orthofinder \
     -f ORTHOGROUPS/ \
     -t 32
 ```
 
-## Assign orthogroups into gene families (at least 1 family per orthogroup)
+## Assign orthogroups into gene families
 ```{sh}
 ### Define the location of the 15,619 protein family HMMs
-DIR_PANTHER=${DIR}/PatherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
-GOT_PATHER=${DIR}/PatherHMM_17.0/PANTHER17.0_HMM_classifications
+DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
+GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
 
-### Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
+### Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PantherHMM protein family
 
 ### Add Orthogroup name to each protein sequence name and merge so that we can be more efficient with hmmsearch
 echo '#!/bin/bash
@@ -223,8 +230,9 @@ do
 done
 
 ### Merge orthogroup sequences into a single fasta file
-MERGED_ORTHOGROUPS=ORTHOGROUPS/orthogroups.faa
+MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
 touch $MERGED_ORTHOGROUPS
+time \
 for f in $(ls | grep "^OG" | grep "tmp$")
 do
     cat $f >> ${MERGED_ORTHOGROUPS}
@@ -252,7 +260,7 @@ fi
 ' | sed "s/@/'/g" > hmmsearch_for_parallel_execution.sh
 chmod +x hmmsearch_for_parallel_execution.sh
 
-### Find PatherHMM protein families for each orthogroup
+### Find PantherHMM protein families for each orthogroup
 time \
 parallel \
 ./hmmsearch_for_parallel_execution.sh \
@@ -268,96 +276,209 @@ rm ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-*
 
 ### Check if all orthogroups have been classified to at least 1 gene family,
 ### if not then append the unclassified orthogroup names at the end of the file with 'UNCLASSIFIED' gene family.
-
 ### Then, find the best fitting gene family to each unique sequence per orthogroup.
 ### This means that each orthogroup can have multiple gene families.
 ### Next, add family name and GO terms to each gene family.
 
+grep "^>" ${MERGED_ORTHOGROUPS} | cut -d':' -f1 | sed 's/>//g' | sort | uniq > all_orthogroups.tmp
+
+julia
+using CSV, DataFrames, ProgressMeter
+
+fname_orthogroup_family_hits = "ORTHOGROUPS/orthogroups.pthr"
+fname_family_GO = "PantherHMM_17.0/Panther17.0_HMM_familyIDs.txt"
+all_orthogroups = "all_orthogroups.tmp"
+fname_output = "genes_orthogroups_families.go"
+
+# Load all orthogroup IDs
+file = open(all_orthogroups, "r")
+all_orthogroups = readlines(file)
+close(file)
+
+# Load orthogroup hits
+file = open(fname_orthogroup_family_hits, "r")
+seekend(file); n = position(file); seekstart(file)
+orthogroup = []
+gene_name = []
+family_ID = []
+evalue = []
+pb = Progress(n)
+while !eof(file)
+    line = split(readline(file), ' ')
+    column1 = split(line[1], ':')
+    push!(orthogroup, column1[1])
+    push!(gene_name, column1[2])
+    push!(family_ID, replace(line[2], ".orig.30.pir"=>""))
+    push!(evalue, parse(Float64, line[3]))
+    update!(pb, position(file))
+end
+close(file)
+
+# Load PantherHMM family description
+file = open(fname_family_GO, "r")
+seekend(file); n = position(file); seekstart(file)
+PTHR_family_ID = []
+PTHR_family_name = []
+PTHR_GO_term = []
+pb = Progress(n)
+while !eof(file)
+    line = split(readline(file), '\t')
+    push!(PTHR_family_ID, line[1])
+    push!(PTHR_family_name, line[2])
+    push!(PTHR_GO_term, line[3])
+    update!(pb, position(file))
+end
+close(file)
+
+# Load gene counts orthogroup per species
+fname_orthogroup_gene_counts = "ORTHOGROUPS/OrthoFinder/Results_Apr03/Orthogroups/Orthogroups.GeneCount.tsv"
+df_counts = CSV.read(open(fname_orthogroup_gene_counts), DataFrames.DataFrame)
+
+# Identify unclassified orthogroups
+idx = Bool.([])
+classified = unique(orthogroup)
+for x in all_orthogroups
+    # x = all_orthogroups[1]
+    if sum(x .== classified) > 0
+        push!(idx, true)
+    else
+        push!(idx, false)
+    end
+end
+# X1 = copy(orthogroup)
+# X2 = copy(gene_name)
+# X3 = copy(family_ID)
+# X4 = copy(evalue)
+
+# Append unclassified orthogroups
+append!(orthogroup, all_orthogroups[.!idx])
+append!(gene_name, repeat(["UNCLASSIFIED"], sum(.!idx)))
+append!(family_ID, repeat(["UNCLASSIFIED"], sum(.!idx)))
+append!(evalue, repeat([1.00], sum(.!idx)))
+
+# For each gene, set the family ID as the one with the lowest E-value
+idx = sortperm(gene_name)
+orthogroup = orthogroup[idx]
+gene_name = gene_name[idx]
+family_ID = family_ID[idx]
+evalue = evalue[idx]
+
+all_gene = unique(gene_name)
+all_family_ID = []
+all_orthogroup = []
+i = 1
+@showprogress for g in all_gene
+    # g = all_gene[1]
+    t = g == gene_name[i]
+    while t == false
+        i += 1
+        t = g == gene_name[i]
+    end
+    f = []
+    o = []
+    e = []
+    while t
+        push!(f, family_ID[i])
+        push!(o, orthogroup[i])
+        push!(e, evalue[i])
+        i += 1
+        t = try
+                g == gene_name[i]
+            catch
+                false
+            end
+    end
+    push!(all_family_ID, f[e .== minimum(e)][1])
+    push!(all_orthogroup, o[e .== minimum(e)][1])
+end
+
+# Identify the PantherHMM gene family names and GO terms
+all_family = []
+all_GO = []
+@showprogress for ID in all_family_ID
+    # ID = all_family_ID[1]
+    idx = ID .== PTHR_family_ID
+    if sum(idx) == 1
+        push!(all_family, PTHR_family_name[idx][1])
+        push!(all_GO, PTHR_GO_term[idx][1])
+    else
+        # for unclassified orthogroups
+        push!(all_family, "UNKNOWN")
+        push!(all_GO, "")
+    end
+end
+
+# Summarise gene families per orthogroup
+idx = sortperm(all_orthogroup)
+all_orthogroup = all_orthogroup[idx]
+all_family_ID = all_family_ID[idx]
+all_family = all_family[idx]
+all_GO = all_GO[idx]
+final_orthogroup = unique(all_orthogroup)
+sort!(final_orthogroup)
+final_family_ID = []
+final_family = []
+final_GO = []
+
+i = 1
+@showprogress for o in final_orthogroup
+    t = o == all_orthogroup[i]
+    while t == false
+        i += 1
+        t = o == all_orthogroup[i]
+    end
+    fid = []
+    fam = []
+    fgo = []
+    while t
+        push!(fid, all_family_ID[i])
+        push!(fam, all_family[i])
+        push!(fgo, all_GO[i])
+        i += 1
+        t = try
+                o == all_othogroup[i]
+            catch
+                false
+            end
+    end
+    push!(final_family_ID, join(unique(fid), ';'))
+    push!(final_family, join(unique(fam), ';'))
+    push!(final_GO, join(unique(fgo), ';'))
+end
+
+
+df_ID = DataFrames.DataFrame(Orthogroup=final_orthogroup,
+                          Family_ID=final_family_ID,
+                          Family=final_family,
+                          GO=final_GO)
+
+# Merge the orthogroup ID and orthogroup gene counts and save into a file
+df = innerjoin(df_counts, df_ID, on=:Orthogroup)
+
+
+idx = 
+(df[:,2] .==1) .& 
+(df[:,3] .==1) .& 
+(df[:,4] .==1) .& 
+(df[:,5] .==1) .& 
+(df[:,6] .==1) .& 
+(df[:,7] .==1) .& 
+(df[:,8] .==1)
+df[idx, :]
+MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
+
+grep "OG0016618" ${DIR}/ORTHOGROUPS/orthogroups.faa
+
+
 ```
 
+## What is the distribution of membership frequencies per orthogroup of each species?
 
+## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
 
+## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
 
-
-
-## Classify predicted proteins by gene families using PatherHMM database and HMMER
-```{sh}
-### Define the location of the 15,619 protein family HMMs
-DIR_PANTHER=${DIR}/PatherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
-GOT_PATHER=${DIR}/PatherHMM_17.0/PANTHER17.0_HMM_classifications
-
-### Prepare parallelisable HMMER search script
-echo '#!/bin/bash
-PROTFA=$1
-DIR_PANTHER=$2
-d=$3
-HMMODL=${DIR_PANTHER}/${d}/hmmer.hmm
-OUTEMP=${PROTFA}-hhmer_gene_family_hits-${d}.tmp
-hmmsearch -E 0.0001 --tblout ${OUTEMP} ${HMMODL} ${PROTFA}
-' > hmmsearch_for_parallel_execution.sh
-chmod +x hmmsearch_for_parallel_execution.sh
-
-### Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PatherHMM protein family
-for PROTFA in $(ls *.faa)
-do
-    # PROTFA=Lolium_rigidum.faa
-    echo ${PROTFA}
-    time \
-    parallel \
-    ./hmmsearch_for_parallel_execution.sh \
-        ${PROTFA} \
-        ${DIR_PANTHER} \
-        {} ::: $(ls $DIR_PANTHER)
-    ### Concatenate hmmsearch output for each protein family into a single output file
-    CONCAT=${PROTFA}-hhmer_gene_family_hits.txt
-    touch $CONCAT
-    for f in $(ls ${PROTFA}-hhmer_gene_family_hits-*)
-    do
-        sed "/^#/d" ${f} | awk '{print $1,$3,$5}' >> ${CONCAT}
-        rm $f
-    done
-done
-
-### Find the best fitting protein family (lowest E-value) for each predicted protein
-echo 'using CSV, DataFrames, ProgressMeter
-fname_input = ARGS[1]
-fname_codes = ARGS[2]
-fname_output = string(split(basename(fname_input), "."[1])[1], ".pthr")
-if dirname(fname_input) != ""
-    fname_output = string(dirname(fname_input), "/", fname_output)
-end
-# fname_input = "Arabidopsis_thaliana.faa-hhmer_gene_family_hits.txt"; fname_codes = "PatherHMM_17.0/Panther17.0_HMM_familyIDs.txt"
-dat = CSV.read(open(fname_input, "r"), DataFrames.DataFrame, header=false)
-### Find most likely gene family per predicted gene, i.e. first row has the best E-value
-gene_names = []
-panther_codes = []
-@showprogress for gene in levels(dat.Column1)
-    # gene = levels(dat.Column1)[2]
-    subset = dat[dat.Column1 .== gene, :]
-    sort!(subset, :Column3, rev=false)
-    push!(gene_names, subset[1,1])
-    push!(panther_codes, split(subset[1,2], "."[1])[1])
-end
-### Identify PatherHMM gene families
-gene_families = []
-cod = CSV.read(open(fname_codes), DataFrames.DataFrame, header=false)
-@showprogress for code in panther_codes
-    # code = panther_codes[1]
-    push!(gene_families, cod.Column2[code .== cod.Column1][1])
-end
-### Save gene names and their corresponding PantherHMM protein family classifications
-out = DataFrames.DataFrame(GENE_NAME=gene_names, PANTHER_CODE=panther_codes, GENE_FAMILY=gene_families)
-CSV.write(open(fname_output, "w"), out, delim="\t"[1], header=false)
-' > extrac_PantherHMM_protein_families_per_predicted_protein.jl
-
-### Parallel execution to find best fitting protein family
-PANTHER_CODES=${DIR}/PatherHMM_17.0/Panther17.0_HMM_familyIDs.txt
-time \
-parallel \
-julia extrac_PantherHMM_protein_families_per_predicted_protein.jl \
-    {} \
-    ${PANTHER_CODES} ::: $(ls *.faa-hhmer_gene_family_hits.txt)
-```
+## Phylogentic tree of stress-related genes: How did these stress-related gene which are under selection came about? 
 
 ## Estimate divergence between species times using MCMCTREE and TimeTree.org fossil record estimates
 
