@@ -83,7 +83,7 @@ PATH=${PATH}:${DIR}/mmseqs/bin
 cd -
 ```
 
-## Install OrthoFinder
+## Install OrthoFinder for classifying genes into orthologs, and paralogs, as well as to build a tree for the analysis of gene family evolution
 ```{sh}
 wget https://github.com/davidemms/OrthoFinder/releases/download/2.5.4/OrthoFinder.tar.gz
 tar -xvzf OrthoFinder.tar.gz
@@ -95,6 +95,18 @@ cd -
 ## Install HMMER for mapping CDS to PantherHMM gene family models
 ```{sh}
 sudo apt install hmmer
+```
+
+## Install CAFE to analyse gene family evolution
+```{sh}
+wget https://github.com/hahnlab/CAFE5/releases/download/v5.0/CAFE5-5.0.0.tar.gz
+tar -xvzf CAFE5-5.0.0.tar.gz
+cd CAFE5/
+./configure
+make
+bin/cafe5 -h
+PATH=${PATH}:$(pwd)/bin
+cd -
 ```
 
 ## Install MACSE: Multiple Alignment of Coding SEquences Accounting for Frameshifts and Stop Codons
@@ -274,27 +286,27 @@ PANTHER_ORTHOGROUPS=$(echo ${MERGED_ORTHOGROUPS} | sed s/.faa$//g).pthr
 cat ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-* > ${PANTHER_ORTHOGROUPS}
 rm ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-*
 
-### Check if all orthogroups have been classified to at least 1 gene family,
-### if not then append the unclassified orthogroup names at the end of the file with 'UNCLASSIFIED' gene family.
-### Then, find the best fitting gene family to each unique sequence per orthogroup.
+### Find the best fitting gene family to each unique sequence per orthogroup.
 ### This means that each orthogroup can have multiple gene families.
 ### Next, add family name and GO terms to each gene family.
 
 grep "^>" ${MERGED_ORTHOGROUPS} | cut -d':' -f1 | sed 's/>//g' | sort | uniq > all_orthogroups.tmp
 
-julia
+echo '
 using CSV, DataFrames, ProgressMeter
 
-fname_orthogroup_family_hits = "ORTHOGROUPS/orthogroups.pthr"
-fname_family_GO = "PantherHMM_17.0/Panther17.0_HMM_familyIDs.txt"
-all_orthogroups = "all_orthogroups.tmp"
-fname_output = "ORTHOGROUPS/genes_orthogroups_families.go"
+fname_orthogroup_family_hits =  ARGS[1]
+fname_family_GO =               ARGS[2]
+fname_orthogroups =             ARGS[3]
+fname_orthogroup_gene_counts =  ARGS[4]
+fname_unassigned_genes =        ARGS[5]
+fname_output =                  ARGS[6]
 
 # Load all orthogroup IDs
-file = open(all_orthogroups, "r")
+file = open(fname_orthogroups, "r")
 all_orthogroups = readlines(file)
 close(file)
-rm(all_orthogroups) # clean-up
+rm(fname_orthogroups) # clean-up
 
 # Load orthogroup hits
 file = open(fname_orthogroup_family_hits, "r")
@@ -305,10 +317,10 @@ family_ID = []
 evalue = []
 pb = Progress(n)
 while !eof(file)
-    line = split(readline(file), ' ')
-    seqName = split(line[1], ':')
-    speciesAndGeneName = split(seqName[2], '|')
-    geneName = join(split(speciesAndGeneName[2], '-')[2:end], '-')
+    line = split(readline(file), " "[1])
+    seqName = split(line[1], ":"[1])
+    speciesAndGeneName = split(seqName[2], "|"[1])
+    geneName = join(split(speciesAndGeneName[2], "-"[1])[2:end], "-"[1])
     push!(orthogroup, seqName[1])
     push!(gene_name, geneName)
     push!(family_ID, replace(line[2], ".orig.30.pir"=>""))
@@ -317,7 +329,7 @@ while !eof(file)
 end
 close(file)
 
-# Load PantherHMM family description
+# Load PantherHMM family descriptions
 file = open(fname_family_GO, "r")
 seekend(file); n = position(file); seekstart(file)
 PTHR_family_ID = []
@@ -325,7 +337,7 @@ PTHR_family_name = []
 PTHR_GO_term = []
 pb = Progress(n)
 while !eof(file)
-    line = split(readline(file), '\t')
+    line = split(readline(file), "\t"[1])
     push!(PTHR_family_ID, line[1])
     push!(PTHR_family_name, line[2])
     push!(PTHR_GO_term, line[3])
@@ -334,8 +346,10 @@ end
 close(file)
 
 # Load gene counts orthogroup per species
-fname_orthogroup_gene_counts = "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.GeneCount.tsv"
 df_counts = CSV.read(open(fname_orthogroup_gene_counts), DataFrames.DataFrame)
+
+# Load list of unassigned genes, i.e. orthogroups with a single gene specific to each species
+df_unassigned = CSV.read(open(fname_unassigned_genes), DataFrames.DataFrame)
 
 # For each gene, set the family ID as the one with the lowest E-value
 idx = sortperm(gene_name)
@@ -400,7 +414,6 @@ sort!(final_orthogroup)
 final_family_ID = []
 final_family = []
 final_GO = []
-
 i = 1
 @showprogress for o in final_orthogroup
     t = o == all_orthogroup[i]
@@ -422,73 +435,144 @@ i = 1
                 false
             end
     end
-    push!(final_family_ID, join(unique(fid), ';'))
-    push!(final_family, join(unique(fam), ';'))
-    push!(final_GO, join(unique(fgo), ';'))
+    push!(final_family_ID, join(unique(fid), ";"[1]))
+    push!(final_family, join(unique(fam), ";"[1]))
+    push!(final_GO, join(unique(fgo), ";"[1]))
 end
-
 
 df_ID = DataFrames.DataFrame(Orthogroup=final_orthogroup,
                           Family_ID=final_family_ID,
                           Family=final_family,
                           GO=final_GO)
 
+# Generate gene counts per species for the set of unassigned genes
+df_append_unassigned = Int.(.!ismissing.(df_unassigned[:, 2:end]))
+df_append_unassigned.Total = repeat([1], nrow(df_unassigned))
+df_append_unassigned.Orthogroup = df_unassigned.Orthogroup
+
+# Append unassigned orthogroups into the orthogroup gene counts dataframe
+df_counts = vcat(df_counts, df_append_unassigned)
+
 # Merge the orthogroup ID and orthogroup gene counts and save into a file
-df = innerjoin(df_counts, df_ID, on=:Orthogroup)
-CSV.write(open(fname_output, "w"), df, delim='\t')
+df = outerjoin(df_counts, df_ID, on=:Orthogroup)
+CSV.write(open(fname_output, "w"), df, delim="\t"[1])
+' > "orthogroup_classification_gene_family_GO_terms.jl"
+
+time \
+julia orthogroup_classification_gene_family_GO_terms.jl \
+        "ORTHOGROUPS/orthogroups.pthr" \
+        "PantherHMM_17.0/Panther17.0_HMM_familyIDs.txt" \
+        "all_orthogroups.tmp" \
+        "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.GeneCount.tsv" \
+        "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups_UnassignedGenes.tsv" \
+        "ORTHOGROUPS/orthogroups_gene_counts_families_go.out"
 ```
 
-## Simplistic preliminary assessment of the distribution of the genes, orthogroups and gene family classifications.
+## Preliminary assessment of the distribution of the genes, orthogroups and gene family classifications.
 ```{sh}
-head -n11 ${DIR}/ORTHOGROUPS/OrthoFinder/Results_Apr05/Comparative_Genomics_Statistics/Statistics_PerSpecies.tsv
-head -n78 ${DIR}/ORTHOGROUPS/OrthoFinder/Results_Apr05/Comparative_Genomics_Statistics/Statistics_PerSpecies.tsv | tail -n 20
+echo '
+fname = ARGS[1]
+fname_out = ARGS[2]
+using CSV, DataFrames, ProgressMeter
+file = open(fname, "r")
+df = CSV.read(file, DataFrames.DataFrame, header=true)
+close(file)
+counts = df[:, 2:(end-4)]
+species_names = names(counts)
 
-Number of genes = total genes
-Number of genes in orthogroups = total orthologs + paralogs
-Number of genes in species-specific orthogroups = paralogs
-Number of genes in orthogroups - Number of genes in species-specific orthogroups = orthologs
-Line 59 of Statistics_PerSpecies.tsv, i.e. at Row '1' label = single gene-copy
+# Unassigned gene
+function count_unassigned_genes(counts, species_names)
+    println("Count unassigned genes")
+    idx = df.Total .== 1
+    unassigned = []
+    for species in species_names
+        # species = species_names[1]
+        push!(unassigned, sum(counts[idx, species_names .== species][:,1]))
+    end
+    return(unassigned)
+end
+@time unassigned = count_unassigned_genes(counts, species_names)
 
-# Or simply use ${DIR}/ORTHOGROUPS/orthogroups.faa
-grep "^>" ${DIR}/ORTHOGROUPS/*__*.faa | \
-    sed -z "s/|/\t/g" > all_genes.tmp
+# Unique paralogs
+function count_unique_paralogs(df, counts, species_names)
+    println("Count genes belonging to unique paralogs for each species")
+    unique_paralogs = []
+    for species in species_names
+        # species = species_names[1]
+        idx = species_names .== species
+        push!(unique_paralogs, sum((counts[:, idx] .== df.Total)[:,1]))
+    end
+    return(unique_paralogs)
+end
+@time unique_paralogs = count_unique_paralogs(df, counts, species_names)
 
-grep "^>" ${DIR}/ORTHOGROUPS/orthogroups.faa | \
-    sed "s/^>//g" | \
-    sed -z "s/:/\t/g" | \
-    sed -z "s/|/\t/g" > all_orthogroups_genes.tmp
+# Single-copy gene orthologs
+function count_single_copy_gene_orthologs(count, species_names)
+    println("Count single-copy gene orthologs")
+    idx = repeat([true], nrow(counts))
+    for j in 1:ncol(counts)
+        idx = idx .& (counts[:, j] .== 1)
+    end
+    single_copy_orthologs = repeat([sum(idx)], length(species_names))
+    return(single_copy_orthologs)
+end
+@time single_copy_orthologs = count_single_copy_gene_orthologs(count, species_names)
 
+# Multiple-copy orthologs
+function count_multicopy_orthologs(counts, species_names)
+    println("Count multi-copy orthologs")
+    total_per_species = []
+    for species in species_names
+        push!(total_per_species, sum(counts[:, species.==species_names][:,1]))
+    end
+    multiple_orthologs = total_per_species - (unassigned + unique_paralogs + single_copy_orthologs)
+    return(total_per_species, multiple_orthologs)
+end
+@time total_per_species, multiple_orthologs = count_multicopy_orthologs(counts, species_names)
 
+# Merge gene count classifications per species and save
+out = DataFrames.DataFrame(Species=species_names,
+                           Total=total_per_species,
+                           Multiple_Orthologs=multiple_orthologs,
+                           Single_Copy_Orthologs=single_copy_orthologs,
+                           Unique_Paralogs=unique_paralogs,
+                           Unassigned_genes=unassigned
+                          )
+file = open(fname_out, "w")
+CSV.write(file, out)
+close(file)
+' > count_genes_per_ortholog_paralog_classes.jl
 
+time \
+julia count_genes_per_ortholog_paralog_classes.jl \
+        ORTHOGROUPS/orthogroups_gene_counts_families_go.out \
+        ORTHOGROUPS/orthogroups_summarised_gene_counts.csv
 ```
 
-
-## Define the phylogentic relationships between species as baseline prior to assessing functional differences between species.
-
-Use single-copy gene families to build a tree and estimate the divergene times between species.
-```{julia}
-using CSV, DataFrames
-fname = "ORTHOGROUPS/genes_orthogroups_families.go"
-df = CSV.read(open(fname, "r"), DataFrames.DataFrame)
-
-idx = 
-(df[:,2] .==1) .& 
-(df[:,3] .==1) .& 
-(df[:,4] .==1) .& 
-(df[:,5] .==1) .& 
-(df[:,6] .==1) .& 
-(df[:,7] .==1) .& 
-(df[:,8] .==1)
-
-df[idx, :]
-
-grep "OG0016618" ${DIR}/ORTHOGROUPS/orthogroups.faa
-
-```
-
-## What is the rate of gene family expansion and contraction in each species?
+## What is the rate of gene family expansion and contraction in each species using CAFE?
 
 Use CAFE? Or PAML? Likelihood ration test-based assessment of gene family expansion and contraction...
+
+```{sh}
+ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
+rev ${ORTHOUT} | cut -f5- | rev > col2_to_coln.tmp
+awk -F'\t' '{print $(NF-1)}' ${ORTHOUT} > col1.tmp
+paste -d'\t' col1.tmp col2_to_coln.tmp > counts.tmp
+TREE=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Species_Tree/SpeciesTree_rooted.txt
+
+# Note: run multiple times and probably try -p for Poisson distribution for the root frequency distribution instead
+time \
+cafe5 \
+    --infile counts.tmp \
+    --tree ${TREE} \
+    --cores 15 \
+    --pvalue 0.01 \
+    --output_prefix CAFE_results
+
+
+
+```
+
 
 ## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
 
@@ -500,241 +584,6 @@ Identify TSR and NTSR genes..
 
 ## Estimate divergence between species times using MCMCTREE and TimeTree.org fossil record estimates
 
-Prepare Rscript to find single-copy gene families:
-```{find_single_copy_gene_families.R}
-args = commandArgs(trailingOnly=TRUE)
-dat = read.table(args[1], header=FALSE)
-frq = as.data.frame(table(dat$V1))
-write.table(frq$Var1[frq$Freq==1], file=args[1], row.names=FALSE, col.names=FALSE, quote=FALSE)
-```
-
-Prepare Rscript to find the common single-copy gene families across the genomes:
-```{find_common_single_copy_gene_families_across_genomes.R}
-args = commandArgs(trailingOnly=TRUE)
-fnames_input = args[1:(length(args)-1)]
-fname_output = args[length(args)]
-for (f in fnames_input){
-    dat = read.table(f, header=FALSE)
-    if (exists("MERGED")==FALSE){
-        MERGED = dat
-    } else {
-        MERGED = merge(MERGED, dat, by="V1")
-    }
-}
-write.table(MERGED, file=fname_output, row.names=FALSE, col.names=FALSE, quote=FALSE)
-```
-
-Prepare a tree plotting Rscript:
-```{draw_tree.R}
-args = commandArgs(trailingOnly=TRUE)
-myTree = ape::read.tree(args[1])
-svg(args[2], width=20, height=5)
-plot(myTree)
-dev.off()
-```
-
-Create a simple sequence extractor in julia:
-```{extract_sequence_using_name_query.jl}
-using ProgressMeter
-fasta_input = ARGS[1]
-sequence_name_query = ARGS[2]
-# fasta_input = "Secale_cereale.cds"
-# sequence_name_query = "Lolium_rigidum_rna-XM_047205051.1_R0"
-# fasta_output = ""
-fasta_output = try 
-                    ARGS[3]
-                catch
-                    ""
-                end
-new_sequence_name = try 
-                    ARGS[4]
-                catch
-                    ""
-                end
-add_gene_coordinates = try 
-                    parse(Bool, ARGS[5])
-                catch
-                    true
-                end
-if fasta_output == ""
-    fasta_output = "temp.fasta"
-end
-file_input = open(fasta_input, "r")
-seekend(file_input); n = position(file_input)
-seekstart(file_input)
-pb = Progress(n)
-while !eof(file_input)
-    line = readline(file_input)
-    if line[1] == '>'
-        while match(Regex(sequence_name_query), line) != nothing
-            @show line
-            file_output = open(fasta_output, "a")
-            if (new_sequence_name != "")
-                vec_line = split(line, " ")
-                line = string(">", new_sequence_name)
-            end
-            write(file_output, string(line, '\n'))
-            line = readline(file_input)
-            while line[1] != '>'
-                write(file_output, line)
-                line = readline(file_input)
-                update!(pb, position(file_input))
-            end
-            write(file_output, '\n')
-            close(file_output)
-        end
-    end
-    update!(pb, position(file_input))
-end
-close(file_input)
-```
-
-Prepare julia script to convert fasta into phylip format:
-```{fasta_to_phylip.jl}
-filename_input = ARGS[1]
-filename_output = string(join(split(filename_input, '.')[1:(end-1)], '.'), ".phylip")
-# count number of sequences
-function COUNT_SEQUENCES(filename_input)
-    FILE = open(filename_input, "r")
-    count_sequences = 0
-    while !eof(FILE)
-        if readline(FILE)[1] == '>'
-        count_sequences += 1
-        end
-    end
-    close(FILE)
-    return(count_sequences)
-end
-count_sequences = COUNT_SEQUENCES(filename_input)
-# count sequence length
-function SEQUENCE_LENGTH(filename_input)
-    FILE = open(filename_input, "r")
-    _ = readline(FILE)
-    line = readline(FILE)
-    sequence_length = length(line)
-    while line[1] != '>'
-        line = readline(FILE)
-        sequence_length = sequence_length + length(line)
-    end
-    sequence_length = sequence_length - length(filename_input = ARGS[1]
-filename_output = string(join(split(filename_input, '.')[1:(end-1)], '.'), ".phylip")
-# count number of sequences
-function COUNT_SEQUENCES(filename_input)
-    FILE = open(filename_input, "r")
-    count_sequences = 0
-    while !eof(FILE)
-        if readline(FILE)[1] == '>'
-        count_sequences += 1
-        end
-    end
-    close(FILE)
-    return(count_sequences)
-end
-count_sequences = COUNT_SEQUENCES(filename_input)
-# count sequence length
-function SEQUENCE_LENGTH(filename_input)
-    FILE = open(filename_input, "r")
-    _ = readline(FILE)
-    line = readline(FILE)
-    sequence_length = length(line)
-    while line[1] != '>'
-        line = readline(FILE)
-        sequence_length = sequence_length + length(line)
-    end
-    sequence_length = sequence_length - length(line)
-    close(FILE)
-    return(sequence_length)
-end
-sequence_length = SEQUENCE_LENGTH(filename_input)
-# output phylip format
-function CONVERT_FASTA_TO_PHYLIP(filename_input, filename_output, count_sequences, sequence_length)
-    FILE_INPUT = open(filename_input, "r")
-    FILE_OUTPUT = open(filename_output, "a")
-    write(FILE_OUTPUT, string(count_sequences, " ", sequence_length, '\n'))
-    while !eof(FILE_INPUT)
-        line = string(readline(FILE_INPUT), '\n')
-        if line[1] == '>'
-            line = string(line[2:(end-1)], "  ")
-        end
-        write(FILE_OUTPUT, line)
-    end
-    close(FILE_INPUT)
-    close(FILE_OUTPUT)
-    return(0)
-end
-CONVERT_FASTA_TO_PHYLIP(filename_input, filename_output, count_sequences, sequence_length)
-
-    write(FILE_OUTPUT, string(count_sequences, " ", sequence_length, '\n'))
-    while !eof(FILE_INPUT)
-        line = string(readline(FILE_INPUT), '\n')
-        if line[1] == '>'
-            line = string(line[2:(end-1)], "  ")
-        end
-        write(FILE_OUTPUT, line)
-    end
-    close(FILE_INPUT)
-    close(FILE_OUTPUT)
-    return(0)
-end
-CONVERT_FASTA_TO_PHYLIP(filename_input, filename_output, count_sequences, sequence_length)
-```
-
-Identify single-copy gene families:
-**Note:** The genes for each protein family can be different for each species. We are assuming that the gene in each of these single-copy protein families represent its corresponding family solely and completely.
-```{sh}
-for PTHR in $(ls *.pthr)
-do
-    cut -f2 ${PTHR} > ${PTHR%.pthr*}.tmp
-    Rscript find_single_copy_gene_families.R \
-        ${PTHR%.pthr*}.tmp
-done
-Rscript find_common_single_copy_gene_families_across_genomes.R \
-    $(ls *.tmp) \
-    SINGLE_COPY_GENE_FAMILIES.pthr
-rm *.tmp
-```
-
-Extract gene names belonging to the single-copy protein families:
-```{sh}
-time \
-for SPECIES in $(ls *.pthr | grep -v "SINGLE_COPY_GENE_FAMILIES" | sed 's/.pthr//g')
-do
-    for FAMILY in $(cat SINGLE_COPY_GENE_FAMILIES.pthr)
-    do
-        grep ${FAMILY} ${SPECIES}.pthr | cut -f1 >> ${SPECIES}-SINGLE_COPY_GENE_NAMES.tmp
-    done
-done
-```
-
-Extract the CDS sequences from the predicted protein sequences using the gene names:
-```{sh}
-### Create parallelisable bash script
-echo '#!/bin/bash
-CDS=$1
-QUERY=$2
-SPECIES=$(basename $CDS); SPECIES=${SPECIES%.cds*}
-PANTHER_GENE_FAMILY=$(grep $QUERY ${SPECIES}.pthr | cut -f2)
-julia \
-extract_sequence_using_name_query.jl \
-    ${CDS} \
-    ${QUERY} \
-    ${CDS}-${QUERY}-SINGLE_COPY_SEQUENCE.tmp \
-    ${SPECIES}-${PANTHER_GENE_FAMILY} \
-    false
-' > extract_sequence_using_name_query_PARALLEL.sh
-chmod +x extract_sequence_using_name_query_PARALLEL.sh
-
-### Extract the CDS of the single-copy protein family genes
-time \
-for SPECIES in $(ls *.cds | grep -v "SINGLE_COPY_GENE_FAMILIES" | sed 's/.cds//g')
-do
-    parallel ./extract_sequence_using_name_query_PARALLEL.sh \
-            ${SPECIES}.cds \
-            {} ::: $(cat ${SPECIES}-SINGLE_COPY_GENE_NAMES.tmp)
-done
-cat *-SINGLE_COPY_SEQUENCE.tmp > SINGLE_COPY_GENE_FAMILIES.cds
-rm *.tmp
-```
 
 Use `MACSE` to align the CDS into codons and protein sequences, build the trees for each ortholog with `RaxML-ng`, convert fasta alignemnts into phylip format for `PAML`, and merge all trees into a single multi-tree file `temp_ALL_TREES.trees`:
 ```{sh}
