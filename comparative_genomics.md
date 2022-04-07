@@ -551,7 +551,7 @@ julia count_genes_per_ortholog_paralog_classes.jl \
 
 ## What is the rate of gene family expansion and contraction in each species using CAFE?
 
-Use CAFE? Or PAML? Likelihood ration test-based assessment of gene family expansion and contraction...
+
 
 ```{sh}
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
@@ -560,23 +560,68 @@ awk -F'\t' '{print $(NF-1)}' ${ORTHOUT} > col1.tmp
 paste -d'\t' col1.tmp col2_to_coln.tmp > counts.tmp
 TREE=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Species_Tree/SpeciesTree_rooted.txt
 
-# Note: run multiple times and probably try -p for Poisson distribution for the root frequency distribution instead
+# Run using the "Base" model where a single lambda (lambda = P(gene gain or gene loss per unit time)) is estimated.
 time \
 cafe5 \
     --infile counts.tmp \
     --tree ${TREE} \
     --cores 15 \
     --pvalue 0.01 \
-    --output_prefix CAFE_results
+    --output_prefix CAFE_Base_results
 
+# Extract gene families significantly differentially mapped
+echo $'#nexus\nbegin trees;' > Significant_trees.tre
+grep "*" CAFE_Base_results/Base_asr.tre >> Significant_trees.tre
+echo "end;" >> Significant_trees.tre
+
+# Extract the number of expanded and contracted orthogroups (gene families)
+cat CAFE_Base_results/Base_clade_results.txt
+
+# Re-run with lambda_i ~ Gamma(alpha), for each of the i_th gene family category
+time \
+cafe5 \
+    --infile counts.tmp \
+    --tree ${TREE} \
+    --n_gamma_cats 100 \
+    --cores 15 \
+    --pvalue 0.01 \
+    --output_prefix CAFE_Gamma100_results
+
+time \
+cafe5 \
+    --infile counts.tmp \
+    --tree ${TREE} \
+    --n_gamma_cats 10 \
+    --cores 15 \
+    --pvalue 0.01 \
+    --output_prefix CAFE_Gamma10_results
+
+time \
+cafe5 \
+    --infile counts.tmp \
+    --tree ${TREE} \
+    --n_gamma_cats 1000 \
+    --cores 15 \
+    --pvalue 0.01 \
+    --output_prefix CAFE_Gamma1000_results
+
+cat CAFE_Gamma100_results/Gamma_clade_results.txt
+
+batcat CAFE_*/*_clade_results.txt
+cat CAFE_Base_results/Base_results.txt
+cat CAFE_Gamma10_results/Gamma_results.txt
+cat CAFE_Gamma100_results/Gamma_results.txt
 
 
 ```
 
-
 ## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
 
 Identify TSR and NTSR genes..
+```{sh}
+
+```
+
 
 ## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
 
