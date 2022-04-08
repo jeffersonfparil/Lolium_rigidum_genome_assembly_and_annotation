@@ -207,6 +207,8 @@ time \
 orthofinder \
     -f ORTHOGROUPS/ \
     -t 32
+
+DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/
 ```
 
 ## Assign orthogroups into gene families
@@ -226,7 +228,7 @@ sed "s/^>/>${ORTHOGROUP}:/g" ${f} > ${ORTHOGROUP}.tmp
 chmod +x rename_sequences_with_orthogroup_ID.sh
 
 ### Split the large list of orthogroup filenames (too long for bash commands)
-find ${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences/ -name '*.fa' > \
+find ${DIR_ORTHOGROUPS}/Orthogroup_Sequences/ -name '*.fa' > \
     orthogroup_filenames.tmp
 split -l 10000 orthogroup_filenames.tmp orthogroup_filenames-SPLIT-
 
@@ -460,12 +462,12 @@ CSV.write(open(fname_output, "w"), df, delim="\t"[1])
 
 time \
 julia orthogroup_classification_gene_family_GO_terms.jl \
-        "ORTHOGROUPS/orthogroups.pthr" \
-        "PantherHMM_17.0/Panther17.0_HMM_familyIDs.txt" \
-        "all_orthogroups.tmp" \
-        "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.GeneCount.tsv" \
-        "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups_UnassignedGenes.tsv" \
-        "ORTHOGROUPS/orthogroups_gene_counts_families_go.out"
+        ORTHOGROUPS/orthogroups.pthr \
+        PantherHMM_17.0/Panther17.0_HMM_familyIDs.txt \
+        all_orthogroups.tmp \
+        ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.GeneCount.tsv \
+        ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups_UnassignedGenes.tsv \
+        ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 ```
 
 ## Preliminary assessment of the distribution of the genes, orthogroups and gene family classifications.
@@ -549,6 +551,85 @@ julia count_genes_per_ortholog_paralog_classes.jl \
         ORTHOGROUPS/orthogroups_summarised_gene_counts.csv
 ```
 
+## Locate paralogs in the Lolium rigidum genome for the Circos-like figure
+```{sh}
+ORT=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
+GFF=${DIR}/Lolium_rigidum.gff
+
+julia
+using ProgressMeter
+fname_orthogroups = ARGS[1]
+fname_annotations = ARGS[2]
+fname_output = ARGS[3]
+# fname_orthogroups = "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.tsv"
+# fname_annotations = "Lolium_rigidum.gff"
+# fname_output = "Lolium_rigidum.paralogs"
+
+# Load gene names and start position
+genes = []
+chromosomes = []
+positions = []
+file = open(fname_annotations, "r")
+seekend(file); n=position(file); seekstart(file)
+pb = Progress(n)
+while !eof(file)
+    line = split(readline(file), "\t"[1])
+    update!(pb, position(file))
+    if line[1][1] .!= "#"[1]
+        if match(Regex("Genbank"), line[end]) != nothing
+            desc = split(line[end], ";"[1])
+            name = split(desc[match.(Regex("Genbank"), desc) .!= nothing][1], ","[1])
+            gene = replace(name[match.(Regex("Genbank"), name) .!= nothing][1], "Genbank:" => "")
+            push!(genes, gene)
+            push!(chromosomes, line[1])
+            push!(positions, parse(Int, line[4]))
+        end
+    else
+        continue
+    end
+end
+close(file)
+
+# Add orthogroup labels
+paralogs = repeat(["None"], length(genes))
+file = open(fname_paralogs, "r")
+seekend(file); n=position(file); seekstart(file)
+pb = Progress(n)
+header = split(readline(file), "\t"[1])
+idx = header .== "Lolium_rigidum"
+while !eof(file)
+    line = split(readline(file), "\t"[1])
+    orthogroup = line[1]
+    gene_names = replace.(split(line[idx][1], ", "), "Lolium_rigidum|" => "")
+    for g in gene_names
+        # g = gene_names[1]
+        paralogs[g .== genes] .= orthogroup
+    end
+    update!(pb, position(file))
+end
+close(file)
+
+unique_paralogs = unique(paralogs)
+unique_paralog_counts = []
+@showprogress for p in unique_paralogs
+    push!(unique_paralog_counts, sum(paralogs .== p))
+end
+
+idx = unique_paralog_counts .> 1
+unique_paralogs = unique_paralogs[idx]
+unique_paralog_counts = unique_paralog_counts[idx]
+
+hcat(unique_paralogs, unique_paralog_counts)
+
+
+# Save the list of gene names, chromosome, position, and ortholog info into a file
+file = open(fname_output, "a")
+for i in 1:length(genes)
+    line = string(join([genes[i], chromosome[i], position[i], paralogs[i]], "\t"[1]), "\n")
+end
+
+```
+
 ## What is the rate of gene family expansion and contraction in each species using CAFE?
 
 
@@ -558,7 +639,7 @@ ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 rev ${ORTHOUT} | cut -f5- | rev > col2_to_coln.tmp
 awk -F'\t' '{print $(NF-1)}' ${ORTHOUT} > col1.tmp
 paste -d'\t' col1.tmp col2_to_coln.tmp > counts.tmp
-TREE=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Species_Tree/SpeciesTree_rooted.txt
+TREE=${DIR_ORTHOGROUPS}/Species_Tree/SpeciesTree_rooted.txt
 
 # Run using the "Base" model where a single lambda (lambda = P(gene gain or gene loss per unit time)) is estimated.
 time \
