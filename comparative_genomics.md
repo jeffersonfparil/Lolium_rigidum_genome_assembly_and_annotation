@@ -299,16 +299,16 @@ using CSV, DataFrames, ProgressMeter
 
 fname_orthogroup_family_hits =  ARGS[1]
 fname_family_GO =               ARGS[2]
-fname_orthogroups =             ARGS[3]
+fname_paralogs =             ARGS[3]
 fname_orthogroup_gene_counts =  ARGS[4]
 fname_unassigned_genes =        ARGS[5]
 fname_output =                  ARGS[6]
 
 # Load all orthogroup IDs
-file = open(fname_orthogroups, "r")
+file = open(fname_paralogs, "r")
 all_orthogroups = readlines(file)
 close(file)
-rm(fname_orthogroups) # clean-up
+rm(fname_paralogs) # clean-up
 
 # Load orthogroup hits
 file = open(fname_orthogroup_family_hits, "r")
@@ -556,77 +556,122 @@ julia count_genes_per_ortholog_paralog_classes.jl \
 ORT=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
 GFF=${DIR}/Lolium_rigidum.gff
 
-julia
+echo '
 using ProgressMeter
-fname_orthogroups = ARGS[1]
+fname_paralogs = ARGS[1]
 fname_annotations = ARGS[2]
 fname_output = ARGS[3]
-# fname_orthogroups = "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.tsv"
+# fname_paralogs = "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.tsv"
 # fname_annotations = "Lolium_rigidum.gff"
-# fname_output = "Lolium_rigidum.paralogs"
+# fname_output = "Lolium_rigidum.plg"
 
-# Load gene names and start position
-genes = []
-chromosomes = []
-positions = []
-file = open(fname_annotations, "r")
-seekend(file); n=position(file); seekstart(file)
-pb = Progress(n)
-while !eof(file)
-    line = split(readline(file), "\t"[1])
-    update!(pb, position(file))
-    if line[1][1] .!= "#"[1]
-        if match(Regex("Genbank"), line[end]) != nothing
-            desc = split(line[end], ";"[1])
-            name = split(desc[match.(Regex("Genbank"), desc) .!= nothing][1], ","[1])
-            gene = replace(name[match.(Regex("Genbank"), name) .!= nothing][1], "Genbank:" => "")
-            push!(genes, gene)
-            push!(chromosomes, line[1])
-            push!(positions, parse(Int, line[4]))
+# Load gene names and start position into temproray vectors
+function load_gene_names_and_coordinates(fname_annotations)
+    temp_genes = []
+    temp_chromosomes = []
+    temp_positions = []
+    file = open(fname_annotations, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    while !eof(file)
+        line = split(readline(file), "\t"[1])
+        update!(pb, position(file))
+        if line[1][1] .!= "#"[1]
+            if line[3] == "CDS"
+
+                if match(Regex("Name="), line[end]) != nothing
+                    desc = split(line[end], ";"[1])
+                    name = split(desc[match.(Regex("Name="), desc) .!= nothing][1], ","[1])[1]
+                    gene = replace(name, "Name=" => "")
+                    push!(temp_genes, gene)
+                    push!(temp_chromosomes, line[1])
+                    push!(temp_positions, parse(Int, line[4]))
+                end
+            else
+                continue
+            end
+        else
+            continue
         end
-    else
-        continue
     end
-end
-close(file)
+    close(file)
+    @time idx = sortperm(temp_genes)
+    temp_genes = temp_genes[idx]
+    temp_chromosomes = temp_chromosomes[idx]
+    temp_positions = temp_positions[idx]
 
-# Add orthogroup labels
-paralogs = repeat(["None"], length(genes))
-file = open(fname_paralogs, "r")
-seekend(file); n=position(file); seekstart(file)
-pb = Progress(n)
-header = split(readline(file), "\t"[1])
-idx = header .== "Lolium_rigidum"
-while !eof(file)
-    line = split(readline(file), "\t"[1])
-    orthogroup = line[1]
-    gene_names = replace.(split(line[idx][1], ", "), "Lolium_rigidum|" => "")
-    for g in gene_names
-        # g = gene_names[1]
-        paralogs[g .== genes] .= orthogroup
+    # Use only one CDS/gene starting position
+    genes = []
+    chromosomes = []
+    positions = []
+    n = length(temp_genes)
+    i = 1
+    pb = Progress(n)
+    while i < n
+        g = temp_genes[i]
+        c = temp_chromosomes[i]
+        p = temp_positions[i]
+        push!(genes, g)
+        push!(chromosomes, c)
+        push!(positions, p)
+        while (i < n) & (g == temp_genes[i])
+            i += 1
+        end
+        update!(pb, i)
     end
-    update!(pb, position(file))
+    if genes[end] != temp_genes[n]
+        push!(genes, temp_genes[n])
+        push!(chromosomes, temp_chromosomes[n])
+        push!(positions, temp_positions[n])
+    end
+
+    return(genes, chromosomes, positions)
 end
-close(file)
+genes, chromosomes, positions = load_gene_names_and_coordinates(fname_annotations)
 
-unique_paralogs = unique(paralogs)
-unique_paralog_counts = []
-@showprogress for p in unique_paralogs
-    push!(unique_paralog_counts, sum(paralogs .== p))
+# Add orthogroup labels, i.e. paralog classification
+function add_paralogs(fname_paralogs, genes)
+    paralogs = repeat(["None"], length(genes))
+    file = open(fname_paralogs, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    header = split(readline(file), "\t"[1])
+    idx = header .== "Lolium_rigidum"
+    while !eof(file)
+        line = split(readline(file), "\t"[1])
+        orthogroup = line[1]
+        gene_names = replace.(split(line[idx][1], ", "), "Lolium_rigidum|" => "")
+        for g in gene_names
+            # g = gene_names[1]
+            paralogs[genes .== g] .= orthogroup
+        end
+        update!(pb, position(file))
+    end
+    close(file)
+    return(paralogs)
 end
-
-idx = unique_paralog_counts .> 1
-unique_paralogs = unique_paralogs[idx]
-unique_paralog_counts = unique_paralog_counts[idx]
-
-hcat(unique_paralogs, unique_paralog_counts)
-
+paralogs = add_paralogs(fname_paralogs, genes)
 
 # Save the list of gene names, chromosome, position, and ortholog info into a file
+idx = paralogs .!= "None"
+paralogs = paralogs[idx]
+genes = genes[idx]
+chromosomes = chromosomes[idx]
+positions = positions[idx]
+
 file = open(fname_output, "a")
 for i in 1:length(genes)
-    line = string(join([genes[i], chromosome[i], position[i], paralogs[i]], "\t"[1]), "\n")
+    line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
+    write(file, line)
 end
+close(file)
+' > locate_paralogs.jl
+
+time \
+julia locate_paralogs.jl \
+    ${ORT} \
+    ${GFF} \
+    ${GFF%.gff*}.plg
 
 ```
 
