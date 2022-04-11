@@ -567,6 +567,7 @@ fname_output = ARGS[3]
 
 # Load gene names and start position into temproray vectors
 function load_gene_names_and_coordinates(fname_annotations)
+    temp_geneIDs = []
     temp_genes = []
     temp_chromosomes = []
     temp_positions = []
@@ -581,8 +582,11 @@ function load_gene_names_and_coordinates(fname_annotations)
 
                 if match(Regex("Name="), line[end]) != nothing
                     desc = split(line[end], ";"[1])
+                    id = split(desc[match.(Regex("Dbxref=GeneID:"), desc) .!= nothing][1], ","[1])[1]
+                    geneID = replace(id, "Dbxref=GeneID:" => "")
                     name = split(desc[match.(Regex("Name="), desc) .!= nothing][1], ","[1])[1]
                     gene = replace(name, "Name=" => "")
+                    push!(temp_geneIDs, geneID)
                     push!(temp_genes, gene)
                     push!(temp_chromosomes, line[1])
                     push!(temp_positions, parse(Int, line[4]))
@@ -596,6 +600,7 @@ function load_gene_names_and_coordinates(fname_annotations)
     end
     close(file)
     @time idx = sortperm(temp_genes)
+    temp_geneIDs = temp_geneIDs[idx]
     temp_genes = temp_genes[idx]
     temp_chromosomes = temp_chromosomes[idx]
     temp_positions = temp_positions[idx]
@@ -608,13 +613,14 @@ function load_gene_names_and_coordinates(fname_annotations)
     i = 1
     pb = Progress(n)
     while i < n
+        id = temp_geneIDs[i]
         g = temp_genes[i]
         c = temp_chromosomes[i]
         p = temp_positions[i]
         push!(genes, g)
         push!(chromosomes, c)
         push!(positions, p)
-        while (i < n) & (g == temp_genes[i])
+        while (i < n) & ( (g == temp_genes[i]) | (id == temp_geneIDs[i]) )
             i += 1
         end
         update!(pb, i)
@@ -652,17 +658,35 @@ function add_paralogs(fname_paralogs, genes)
 end
 paralogs = add_paralogs(fname_paralogs, genes)
 
-# Save the list of gene names, chromosome, position, and ortholog info into a file
+# Remove remove unclassified genes
 idx = paralogs .!= "None"
 paralogs = paralogs[idx]
 genes = genes[idx]
 chromosomes = chromosomes[idx]
 positions = positions[idx]
 
+# Save the list of gene names, chromosome, position, and ortholog info into a file
 file = open(fname_output, "a")
 for i in 1:length(genes)
     line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
     write(file, line)
+end
+close(file)
+
+# Save only the top 5 paralogs with the most genes
+vec_p = unique(paralogs)
+vec_p_counts = []
+@showprogress for p in vec_p
+    push!(vec_p_counts, sum(p .== paralogs))
+end
+idx = vec_p_counts .>= 10
+vec_p = vec_p[idx]
+file = open(replace(fname_output, ".plg"=>"-for_plotting.plg"), "a")
+for i in 1:length(paralogs)
+    if sum(paralogs[i] .== vec_p) > 0
+        line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
+        write(file, line)
+    end
 end
 close(file)
 ' > locate_paralogs.jl
@@ -676,9 +700,6 @@ julia locate_paralogs.jl \
 ```
 
 ## What is the rate of gene family expansion and contraction in each species using CAFE?
-
-
-
 ```{sh}
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 rev ${ORTHOUT} | cut -f5- | rev > col2_to_coln.tmp
@@ -752,9 +773,6 @@ Identify TSR and NTSR genes..
 ## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
 
 ## Phylogentic tree of stress-related genes: How did these stress-related gene which are under selection came about? 
-
-## Estimate divergence between species times using MCMCTREE and TimeTree.org fossil record estimates
-
 
 Use `MACSE` to align the CDS into codons and protein sequences, build the trees for each ortholog with `RaxML-ng`, convert fasta alignemnts into phylip format for `PAML`, and merge all trees into a single multi-tree file `temp_ALL_TREES.trees`:
 ```{sh}

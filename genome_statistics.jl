@@ -43,7 +43,7 @@ module PlotGenome
                 catch
                     nothing
                 end
-                str_sequence_name = line[2:end]
+                str_sequence_name = split(line[2:end], ' ')[1]
                 push!(vec_str_sequence_names, str_sequence_name)
                 append!(vec_int_sequence_lengths, 0)
                 append!(vec_int_sequence_GC, 0)
@@ -526,20 +526,25 @@ module PlotGenome
     # plot(x,y)
 
     ### draw chords connecting herbicide target gene paralogs
-    function fun_add_chords!(plt, str_filename_blastout, vec_str_chromosome_names, vec_int_chromosome_lengths; r=0.5, w=0.05, endpoint=1)
+    function fun_add_chords!(plt, str_filename_groupings_and_coordinates, vec_str_chromosome_names, vec_int_chromosome_lengths; delim=',', vec_idx_groups_chr_pos=[1,9,3,4], r=0.5, w=0.05, vec_colours="", endpoint=1, add_legend=false)
         ### input parameters
-        # str_filename_blastout = "test-blastout.csv"
+        # str_filename_groupings_and_coordinates = "test-blastout.csv"
         # vec_str_chromosome_names = temp_M
         # vec_int_chromosome_lengths = temp_L
+        # vec_idx_groups_chr_pos=[1,6,3,4]
         # r = 0.5
         # w = 0.1
         # endpoint = 1
+        # delim=','
+        # vec_idx_groups_chr_pos=[1,9,3,4]
+        # vec_colours=""
+        # add_legend=false
 
         ### chromosome endpoints in radians
         vec_θ_start, vec_θ_end = fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
 
         ### Load only qseqid, sstart and send
-        FILE = open(str_filename_blastout, "r")
+        FILE = open(str_filename_groupings_and_coordinates, "r")
         vec_str_seq = []
         vec_str_chr = []
         vec_int_pos1 = []
@@ -547,16 +552,20 @@ module PlotGenome
         header = readline(FILE)
         while !eof(FILE)
             line = readline(FILE)
-            vec_line = split(line, ',')
-            push!(vec_str_seq, vec_line[1])
-            push!(vec_str_chr, vec_line[end])
-            append!(vec_int_pos1, parse(Int, vec_line[3]))
-            append!(vec_int_pos2, parse(Int, vec_line[4]))
+            vec_line = split(line, delim)
+            push!(vec_str_seq, vec_line[vec_idx_groups_chr_pos[1]])
+            push!(vec_str_chr, vec_line[vec_idx_groups_chr_pos[2]])
+            append!(vec_int_pos1, parse(Int, vec_line[vec_idx_groups_chr_pos[3]]))
+            append!(vec_int_pos2, parse(Int, vec_line[vec_idx_groups_chr_pos[4]]))
         end
         close(FILE)
 
         vec_str_groups = unique(vec_str_seq)
-        vec_colours = palette(:rainbow, length(vec_str_groups))
+        if vec_colours == ""
+            vec_colours = palette(:rainbow, length(vec_str_groups))
+        else
+            vec_colours = repeat(vec_colours, Int(ceil(length(vec_str_groups)/length(vec_colours))))
+        end
         vec_str_included_groups = []
         vec_included_colours = []
         for g in 1:length(vec_str_groups)
@@ -622,22 +631,24 @@ module PlotGenome
             end
         end
         ### add legend
-        idx = sortperm(vec_str_included_groups)
-        grp = unique(vec_str_included_groups[idx])
-        col = unique(vec_included_colours[idx])
-        
-        x0 = -1.5; y0 = -0.5
-        x1 = -1.4; y1 = -1.4
-        for i in 1:length(col)
-            y = y0+(y1-y0)*((i-1)/length(col))
-            plot!(plt, [x0,x1], [y,y], color=col[i], linecolor=col[i])
-            annotate!(plt, x1+0.05, y, (grp[i], 5, :gray, :left))
+        if add_legend
+            idx = sortperm(vec_str_included_groups)
+            grp = unique(vec_str_included_groups[idx])
+            col = unique(vec_included_colours[idx])
+            
+            x0 = -1.5; y0 = -0.5
+            x1 = -1.4; y1 = -1.4
+            for i in 1:length(col)
+                y = y0+(y1-y0)*((i-1)/length(col))
+                plot!(plt, [x0,x1], [y,y], color=col[i], linecolor=col[i])
+                annotate!(plt, x1+0.05, y, (grp[i], 5, :gray, :left))
+            end
         end
 
         return(plt)
     end
-    str_filename_blastout = "test-blastout.csv"
-    FILE = open(str_filename_blastout, "w")
+    str_filename_groupings_and_coordinates = "test-blastout.csv"
+    FILE = open(str_filename_groupings_and_coordinates, "w")
     n = 10
     header = ["qseqid", "staxids", "sstart", "send", "pident", "evalue", "qcovhsp", "bitscore", "stitle"]
     write(FILE, string(join(header, ','), '\n'))
@@ -668,10 +679,10 @@ module PlotGenome
     write(FILE, string(line, '\n'))
     end
     close(FILE)
-    fun_add_chords!(plt, str_filename_blastout, temp_M, temp_L,
-                    r=0.5, w=0.05, endpoint=1)
-    fun_add_chords!(plt, str_filename_blastout, temp_M, temp_L,
-                    r=0.5, w=0.05, endpoint=2)
+    fun_add_chords!(plt, str_filename_groupings_and_coordinates, temp_M, temp_L,
+                    r=0.5, w=0.05, endpoint=1, add_legend=true)
+    fun_add_chords!(plt, str_filename_groupings_and_coordinates, temp_M, temp_L,
+                    r=0.5, w=0.05, endpoint=2, add_legend=true)
 
     ### Precompilation clean-up
     for f in readdir()[match.(r"test", readdir()) .!= nothing]
@@ -684,10 +695,11 @@ end ### PlotGenome
 ### EXECUTE ###
 ###############
 function execute()
-    str_filename_fasta = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta"
-    str_filename_LTR_COPIA = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta.out-LTR_coordinates-COPIA.csv"
-    str_filename_LTR_GYPSY = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta.out-LTR_coordinates-GYPSY.csv"
-    str_filename_blastout = "APGP_CSIRO_Lrig_flye-racon-polca-allhic-juicebox_v0.1n_clean1.fasta.out-BLASTOUT_TSR_NTSR.csv"
+    str_filename_fasta = "Lolium_rigidum.fasta"
+    str_filename_LTR_COPIA = "Lolium_rigidum-LTR_COPIA.csv"
+    str_filename_LTR_GYPSY = "Lolium_rigidum-LTR_GYPSY.csv"
+    str_filename_groupings_and_coordinates = "Lolium_rigidum-for_plotting.plg"
+    vec_idx_groups_chr_pos = [4, 2, 3, 3]
     n = 7 ## haploid chromosome number
     n_int_tick_length_bp = 100*1e+6 # make this adjustable
     n_int_tick_label_size=7
@@ -790,9 +802,12 @@ function execute()
     ### Layer 4: Chord diagram
     r = r-w; w=0.05
     PlotGenome.fun_add_chords!(plt,
-                    str_filename_blastout,
+                    str_filename_groupings_and_coordinates,
                     vec_str_chromosome_names,
                     vec_int_chromosome_lengths,
+                    delim='\t',
+                    vec_idx_groups_chr_pos=vec_idx_groups_chr_pos,
+                    vec_colours=[:gray],
                     r=r, w=w, endpoint=1)
     
     ### Save as svg
