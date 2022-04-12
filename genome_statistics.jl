@@ -524,118 +524,149 @@ module PlotGenome
     end
     # x, y = BezCurve([-1,0], [0,1], [1,0], range(0,1;length=100))
     # plot(x,y)
+    
+    ### Sort a matrix by column
+    function sortMatrix(X::Matrix{Any}; column_idx::Int64)
+        idx = sortperm(X[:, column_idx])
+        X = X[idx, :]
+        return(X)
+    end
 
     ### draw chords connecting herbicide target gene paralogs
-    function fun_add_chords!(plt, str_filename_groupings_and_coordinates, vec_str_chromosome_names, vec_int_chromosome_lengths; delim=',', vec_idx_groups_chr_pos=[1,9,3,4], r=0.5, w=0.05, vec_colours="", endpoint=1, add_legend=false)
+    function fun_add_chords!(plt, str_filename_groupings_and_coordinates, vec_str_chromosome_names, vec_int_chromosome_lengths; delim=',', vec_idx_groups_chr_pos=[1,9,3,4], r=0.5, w=0.05, vec_colours="", linewidth=3, add_legend=false, header=true)
         ### input parameters
         # str_filename_groupings_and_coordinates = "test-blastout.csv"
         # vec_str_chromosome_names = temp_M
         # vec_int_chromosome_lengths = temp_L
-        # vec_idx_groups_chr_pos=[1,6,3,4]
         # r = 0.5
         # w = 0.1
-        # endpoint = 1
         # delim=','
         # vec_idx_groups_chr_pos=[1,9,3,4]
         # vec_colours=""
+        # linewidth = 5
         # add_legend=false
-
+        # header=false
         ### chromosome endpoints in radians
         vec_θ_start, vec_θ_end = fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
-
         ### Load only qseqid, sstart and send
         FILE = open(str_filename_groupings_and_coordinates, "r")
         vec_str_seq = []
         vec_str_chr = []
-        vec_int_pos1 = []
-        vec_int_pos2 = []
-        header = readline(FILE)
+        vec_int_pos = []
+        if header
+            _ = readline(FILE)
+        end
         while !eof(FILE)
             line = readline(FILE)
             vec_line = split(line, delim)
             push!(vec_str_seq, vec_line[vec_idx_groups_chr_pos[1]])
             push!(vec_str_chr, vec_line[vec_idx_groups_chr_pos[2]])
-            append!(vec_int_pos1, parse(Int, vec_line[vec_idx_groups_chr_pos[3]]))
-            append!(vec_int_pos2, parse(Int, vec_line[vec_idx_groups_chr_pos[4]]))
+            append!(vec_int_pos, parse(Int, vec_line[vec_idx_groups_chr_pos[3]]))
         end
         close(FILE)
-
-        vec_str_groups = unique(vec_str_seq)
+        ### Merge into a matrix and sort
+        X = sortMatrix(
+                sortMatrix(
+                    sortMatrix(
+                        hcat(vec_str_seq, vec_str_chr, vec_int_pos), 
+                    column_idx=3),
+                column_idx=2),
+            column_idx=1)
+        ### Colours
         if vec_colours == ""
-            vec_colours = palette(:rainbow, length(vec_str_groups))
+            vec_colours = palette(:rainbow, length(unique(X[:,1])))
         else
-            vec_colours = repeat(vec_colours, Int(ceil(length(vec_str_groups)/length(vec_colours))))
+            if isa(vec_colours, Vector) == false
+                vec_colours = [vec_colours]
+            end
+            vec_colours = repeat(vec_colours, Int.(ceil(length(unique(X[:,1]))/length(vec_colours))))
         end
-        vec_str_included_groups = []
-        vec_included_colours = []
-        for g in 1:length(vec_str_groups)
-            str_seq = vec_str_groups[g]
-            col = vec_colours[g]
-            vec_idx_int = collect(1:length(vec_str_seq))[vec_str_seq .== str_seq]
-            for i in 1:(length(vec_idx_int)-1)
+        ### Plot arcs per group setting the chromosome with the most sequences as the root or origin and the other chromosomes harbouring the sequences as the destination
+        vec_str_root_chr = [""]
+        vec_str_groups = unique(X[:,1])
+        vec_int_idx_exclude_group = []
+        @showprogress for g in vec_str_groups
+            # g = vec_str_groups[1]
+            idx = X[:,1] .== g
+            Y = X[idx, :]
+            # Count the number of seq per chr and find the next chr root with the most seq and/or not yet used as root before
+            vec_str_chr_uniq = unique(X[:,2])
+            vec_int_chr_cnts = []
+            for c in vec_str_chr_uniq
+                push!(vec_int_chr_cnts, sum(vec_str_chr .== c))
+            end
+            _idx = sortperm(vec_int_chr_cnts)
+            vec_str_chr_uniq = vec_str_chr_uniq[_idx]
+            root_candidate = vec_str_chr_uniq[end]
+            if (sum(vec_str_root_chr .== root_candidate)==0)
+                push!(vec_str_root_chr, root_candidate)
+            elseif (length(vec_str_root_chr) < length(vec_θ_start)+1)
+                i = 0
+                while (sum(vec_str_root_chr .== root_candidate)!=0) & (i<length(vec_str_chr_uniq))
+                    root_candidate = vec_str_chr_uniq[(end-i)]  
+                    i += 1
+                end
+                push!(vec_str_root_chr, root_candidate)
+            end
+            chr1 = root_candidate
+            # Define the coordinates of the root and destinations
+            R = Y[Y[:,2].==chr1, :]
+            D = Y[Y[:,2].!=chr1, :]
+            # For each root coordinate draw an arc towards the destination
+            for i in 1:size(R,1)
                 # i = 1
-                x = vec_idx_int[i]
-                
-                if sum(vec_str_chr[x] .== vec_str_chromosome_names) == 0
-                    continue
-                end
-
-                push!(vec_str_included_groups, str_seq)
-                push!(vec_included_colours, col)
-
-                str_chr = vec_str_chr[x]
-                int_pos1 = vec_int_pos1[x]
-                int_pos2 = vec_int_pos2[x]
-
-                int_chr_len = vec_int_chromosome_lengths[str_chr .== vec_str_chromosome_names][1]
-
-                flt_arc_start = vec_θ_start[str_chr .== vec_str_chromosome_names][1]
-                flt_arc_end = vec_θ_end[str_chr .== vec_str_chromosome_names][1]
-                flt_arc_dist = flt_arc_end - flt_arc_start
-
-                θ1_x = ( (int_pos1/int_chr_len) * flt_arc_dist ) + flt_arc_start
-                θ2_x = ( (int_pos2/int_chr_len) * flt_arc_dist ) + flt_arc_start
-
-                # for j in (i+1):length(vec_idx_int)
-                for j in (i+1)
-                    # j = 2
-                    y = vec_idx_int[j]
-
-                    if sum(vec_str_chr[y] .== vec_str_chromosome_names) == 0
+                pos1 = R[i,3][1]
+                idx1 = vec_str_chromosome_names .== chr1
+                len1 = vec_int_chromosome_lengths[idx1][1]
+                arc_ini1 = vec_θ_start[idx1][1]
+                arc_fin1 = vec_θ_end[idx1][1]
+                arc_dis1 = arc_fin1 - arc_ini1
+                θ1 = ( (pos1/len1) * arc_dis1 ) + arc_ini1
+                ### Are all the sequences in a single chromosome?
+                if size(D,1) == 0
+                    ### Set the root at the first position in that chromosome
+                    R = R[1:1,:]
+                    try 
+                        ### Set the destinations at the rest of the positions in that chromosome
+                        D = R[2:end,:]
+                    catch
+                        ### If we only have a single sequence then take note and go to the next group
+                        push!(vec_int_idx_exclude_group, i)
                         continue
-                    end
-
-                    str_chr = vec_str_chr[y]
-                    int_pos1 = vec_int_pos1[y]
-                    int_pos2 = vec_int_pos2[y]
-
-                    int_chr_len = vec_int_chromosome_lengths[str_chr .== vec_str_chromosome_names][1]
-
-                    flt_arc_start = vec_θ_start[str_chr .== vec_str_chromosome_names][1]
-                    flt_arc_end = vec_θ_end[str_chr .== vec_str_chromosome_names][1]
-                    flt_arc_dist = flt_arc_end - flt_arc_start
-
-                    θ1_y = ( (int_pos1/int_chr_len) * flt_arc_dist ) + flt_arc_start
-                    θ2_y = ( (int_pos2/int_chr_len) * flt_arc_dist ) + flt_arc_start
-
-                    shape_x = fun_arcshape(θ1_x, θ2_x; r=r, w=w, n_int_points=50)
-                    shape_y = fun_arcshape(θ1_y, θ2_y; r=r, w=w, n_int_points=50)
-
-                    P0 = [shape_x.x[endpoint], shape_x.y[endpoint]]
-                    P1 = [0, 0]
-                    P2 = [shape_y.x[endpoint], shape_y.y[endpoint]]
-
-                    vec_x, vec_y = BezCurve(P0, P1, P2, range(0,1;length=100))
-                    plot!(plt, vec_x, vec_y, color=col)
+                    end   
                 end
+                for j in 1:size(D,1)
+                    # j = 1
+                    chr2 = D[j, 2]
+                    pos2 = D[j, 3]
+                    idx2 = vec_str_chromosome_names .== chr2
+                    if sum(idx2) > 0
+                        len2 = vec_int_chromosome_lengths[idx2][1]
+                        arc_ini2 = vec_θ_start[idx2][1]
+                        arc_fin2 = vec_θ_end[idx2][1]
+                        arc_dis2 = arc_fin2 - arc_ini2
+                        θ2 = ( (pos2/len2) * arc_dis2 ) + arc_ini2
+                        # plot
+                        shape1 = fun_arcshape(θ1, θ1; r=r, w=w, n_int_points=50)
+                        shape2 = fun_arcshape(θ2, θ2; r=r, w=w, n_int_points=50)
+                        P0 = [shape1.x[1], shape1.y[1]]
+                        P1 = [0, 0]
+                        P2 = [shape2.x[1], shape2.y[1]]
+                        vec1, vec2 = BezCurve(P0, P1, P2, range(0,1;length=100))
+                        plot!(plt, vec1, vec2, linewidth=linewidth, color=vec_colours[i])
+                    end
+                end    
             end
         end
         ### add legend
         if add_legend
-            idx = sortperm(vec_str_included_groups)
-            grp = unique(vec_str_included_groups[idx])
-            col = unique(vec_included_colours[idx])
-            
+            idx = try
+                collect(1:length(vec_str_groups))[collect(1:length(vec_str_groups)) .!= vec_int_idx_exclude_group]
+            catch
+                collect(1:length(vec_str_groups))
+            end
+            grp = vec_str_groups[idx]
+            col = vec_colours[idx]
             x0 = -1.5; y0 = -0.5
             x1 = -1.4; y1 = -1.4
             for i in 1:length(col)
@@ -644,12 +675,11 @@ module PlotGenome
                 annotate!(plt, x1+0.05, y, (grp[i], 5, :gray, :left))
             end
         end
-
         return(plt)
     end
     str_filename_groupings_and_coordinates = "test-blastout.csv"
     FILE = open(str_filename_groupings_and_coordinates, "w")
-    n = 10
+    n = 20
     header = ["qseqid", "staxids", "sstart", "send", "pident", "evalue", "qcovhsp", "bitscore", "stitle"]
     write(FILE, string(join(header, ','), '\n'))
     for i in 1:n
@@ -680,9 +710,7 @@ module PlotGenome
     end
     close(FILE)
     fun_add_chords!(plt, str_filename_groupings_and_coordinates, temp_M, temp_L,
-                    r=0.5, w=0.05, endpoint=1, add_legend=true)
-    fun_add_chords!(plt, str_filename_groupings_and_coordinates, temp_M, temp_L,
-                    r=0.5, w=0.05, endpoint=2, add_legend=true)
+                    r=0.5, w=0.05, add_legend=true)
 
     ### Precompilation clean-up
     for f in readdir()[match.(r"test", readdir()) .!= nothing]
@@ -718,14 +746,17 @@ function execute()
     vec_int_idx_sort_by_decreasing_size = sortperm(vec_int_chromosome_lengths, rev=true)
     vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_decreasing_size]
     vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_decreasing_size]
-    vec_int_cumsum_length = reverse(cumsum(reverse(vec_int_chromosome_lengths)))
-    vec_int_cumsum_less_median = abs.(vec_int_cumsum_length .- n_int_assembly_size/2)
+    vec_int_cumsum_length = cumsum(vec_int_chromosome_lengths)
+    vec_bool_idx_50th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.5)
+    vec_bool_idx_90th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.9)
     n_int_size_of_largest_chromosome = maximum(vec_int_chromosome_lengths)
     str_largest_chromosome = vec_str_chromosome_names[vec_int_chromosome_lengths.==maximum(vec_int_chromosome_lengths)]
     int_n_chromosomes_whole_assembly = length(vec_str_chromosome_names)
     int_size_whole_assembly = sum(vec_int_chromosome_lengths)
-    L50_whole_assembly = collect(1:length(vec_str_chromosome_names))[vec_int_cumsum_less_median .== minimum(vec_int_cumsum_less_median)][1]
-    N50_whole_assembly = vec_int_chromosome_lengths[vec_int_cumsum_less_median .== minimum(vec_int_cumsum_less_median)][1]
+    L50_whole_assembly = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_50th_percentile][1]
+    L90_whole_assembly = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_90th_percentile][1]
+    N50_whole_assembly = vec_int_chromosome_lengths[vec_bool_idx_50th_percentile][1]
+    N90_whole_assembly = vec_int_chromosome_lengths[vec_bool_idx_90th_percentile][1]
 
     ### Using only the 7 pseudo-chromosomes, i.e. 7 largest sequences
     vec_str_chromosome_names = vec_str_chromosome_names[1:n]
@@ -737,14 +768,17 @@ function execute()
     vec_int_idx_sort_by_decreasing_size = sortperm(vec_int_chromosome_lengths, rev=true)
     vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_decreasing_size]
     vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_decreasing_size]
-    vec_int_cumsum_length = reverse(cumsum(reverse(vec_int_chromosome_lengths)))
-    vec_int_cumsum_less_median = abs.(vec_int_cumsum_length .- n_int_assembly_size/2)
+    vec_int_cumsum_length = cumsum(vec_int_chromosome_lengths)
+    vec_bool_idx_50th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.5)
+    vec_bool_idx_90th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.9)
     n_int_size_of_largest_chromosome = maximum(vec_int_chromosome_lengths)
     str_largest_chromosome = vec_str_chromosome_names[vec_int_chromosome_lengths.==maximum(vec_int_chromosome_lengths)]
     int_n_chromosomes = n
     int_size = sum(vec_int_chromosome_lengths)
-    L50 = collect(1:length(vec_str_chromosome_names))[vec_int_cumsum_less_median .== minimum(vec_int_cumsum_less_median)][1]
-    N50 = vec_int_chromosome_lengths[vec_int_cumsum_less_median .== minimum(vec_int_cumsum_less_median)][1]
+    L50 = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_50th_percentile][1]
+    L90 = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_90th_percentile][1]
+    N50 = vec_int_chromosome_lengths[vec_bool_idx_50th_percentile][1]
+    N90 = vec_int_chromosome_lengths[vec_bool_idx_90th_percentile][1]
 
     ### Sort back according to chromosome names
     vec_int_idx_sort_by_name = sortperm(vec_str_chromosome_names)
@@ -808,7 +842,7 @@ function execute()
                     delim='\t',
                     vec_idx_groups_chr_pos=vec_idx_groups_chr_pos,
                     vec_colours=[:gray],
-                    r=r, w=w, endpoint=1)
+                    r=r, w=w, header=false)
     
     ### Save as svg
     savefig(plt, "Lolium_rigidum_genome.svg")
