@@ -22,7 +22,7 @@ module PlotGenome
     ### Measure the size of each pseudochromosome and contigs
     ### Retains only the 1:nth largest sequences and removes contigs split file
     ### Returns assembly size, chromosome names, and chromosome lengths
-    function fun_fasta_lengths_GC_N(str_filename_fasta, n_int_keep_top_seq=0, bool_write_files=false)
+    function fun_fasta_lengths_GC_N(str_filename_fasta, n_int_keep_top_seq=0, bool_write_files=true)
         vec_str_sequence_names = String.([])
         vec_int_sequence_lengths = Int.([])
         vec_int_sequence_GC = Int.([])
@@ -533,19 +533,20 @@ module PlotGenome
     end
 
     ### draw chords connecting herbicide target gene paralogs
-    function fun_add_chords!(plt, str_filename_groupings_and_coordinates, vec_str_chromosome_names, vec_int_chromosome_lengths; delim=',', vec_idx_groups_chr_pos=[1,9,3,4], r=0.5, w=0.05, vec_colours="", linewidth=3, add_legend=false, header=true)
+    function fun_add_chords!(plt, str_filename_groupings_and_coordinates, vec_str_chromosome_names, vec_int_chromosome_lengths; delim=',', vec_idx_groups_chr_pos=[1,9,3,4], r=0.5, w=0.05, vec_colours="", linewidth=3, colour_per_chrom=false, add_legend=false, header=true)
         ### input parameters
-        # str_filename_groupings_and_coordinates = "test-blastout.csv"
-        # vec_str_chromosome_names = temp_M
-        # vec_int_chromosome_lengths = temp_L
-        # r = 0.5
-        # w = 0.1
-        # delim=','
-        # vec_idx_groups_chr_pos=[1,9,3,4]
-        # vec_colours=""
-        # linewidth = 5
-        # add_legend=false
-        # header=false
+        str_filename_groupings_and_coordinates = "test-blastout.csv"
+        vec_str_chromosome_names = temp_M
+        vec_int_chromosome_lengths = temp_L
+        delim=','
+        vec_idx_groups_chr_pos=[1,9,3,4]
+        r=0.5
+        w=0.05
+        vec_colours=""
+        linewidth=3
+        colour_per_chrom=false
+        add_legend=false
+        header=true
         ### chromosome endpoints in radians
         vec_θ_start, vec_θ_end = fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
         ### Load only qseqid, sstart and send
@@ -559,9 +560,11 @@ module PlotGenome
         while !eof(FILE)
             line = readline(FILE)
             vec_line = split(line, delim)
-            push!(vec_str_seq, vec_line[vec_idx_groups_chr_pos[1]])
-            push!(vec_str_chr, vec_line[vec_idx_groups_chr_pos[2]])
-            append!(vec_int_pos, parse(Int, vec_line[vec_idx_groups_chr_pos[3]]))
+            if sum(match.(Regex(vec_line[vec_idx_groups_chr_pos[2]]), vec_str_chromosome_names) .!= nothing) > 0
+                push!(vec_str_seq, vec_line[vec_idx_groups_chr_pos[1]])
+                push!(vec_str_chr, vec_line[vec_idx_groups_chr_pos[2]])
+                append!(vec_int_pos, parse(Int, vec_line[vec_idx_groups_chr_pos[3]]))
+            end
         end
         close(FILE)
         ### Merge into a matrix and sort
@@ -573,42 +576,35 @@ module PlotGenome
                 column_idx=2),
             column_idx=1)
         ### Colours
+        vec_str_chroms = sort(unique(X[:,2]))
+        vec_str_groups = sort(unique(X[:,1]))
+        if colour_per_chrom
+            n = length(vec_str_chroms)
+        else
+            n = length(vec_str_groups)
+        end
         if vec_colours == ""
-            vec_colours = palette(:rainbow, length(unique(X[:,1])))
+            vec_colours = palette(:default, n)
         else
             if isa(vec_colours, Vector) == false
                 vec_colours = [vec_colours]
             end
-            vec_colours = repeat(vec_colours, Int.(ceil(length(unique(X[:,1]))/length(vec_colours))))
+            vec_colours = repeat(vec_colours, Int.(ceil(n/length(vec_colours))))
         end
         ### Plot arcs per group setting the chromosome with the most sequences as the root or origin and the other chromosomes harbouring the sequences as the destination
         vec_str_root_chr = [""]
-        vec_str_groups = unique(X[:,1])
         vec_int_idx_exclude_group = []
-        @showprogress for g in vec_str_groups
-            # g = vec_str_groups[1]
-            idx = X[:,1] .== g
+        @showprogress for grp in vec_str_groups
+            # grp = vec_str_groups[1]
+            idx = X[:,1] .== grp
             Y = X[idx, :]
             # Count the number of seq per chr and find the next chr root with the most seq and/or not yet used as root before
-            vec_str_chr_uniq = unique(X[:,2])
             vec_int_chr_cnts = []
-            for c in vec_str_chr_uniq
-                push!(vec_int_chr_cnts, sum(vec_str_chr .== c))
+            for c in vec_str_chroms
+                push!(vec_int_chr_cnts, sum(unique(Y[:,2]) .== c))
             end
             _idx = sortperm(vec_int_chr_cnts)
-            vec_str_chr_uniq = vec_str_chr_uniq[_idx]
-            root_candidate = vec_str_chr_uniq[end]
-            if (sum(vec_str_root_chr .== root_candidate)==0)
-                push!(vec_str_root_chr, root_candidate)
-            elseif (length(vec_str_root_chr) < length(vec_θ_start)+1)
-                i = 0
-                while (sum(vec_str_root_chr .== root_candidate)!=0) & (i<length(vec_str_chr_uniq))
-                    root_candidate = vec_str_chr_uniq[(end-i)]  
-                    i += 1
-                end
-                push!(vec_str_root_chr, root_candidate)
-            end
-            chr1 = root_candidate
+            chr1 = vec_str_chroms[_idx][end]
             # Define the coordinates of the root and destinations
             R = Y[Y[:,2].==chr1, :]
             D = Y[Y[:,2].!=chr1, :]
@@ -653,7 +649,12 @@ module PlotGenome
                         P1 = [0, 0]
                         P2 = [shape2.x[1], shape2.y[1]]
                         vec1, vec2 = BezCurve(P0, P1, P2, range(0,1;length=100))
-                        plot!(plt, vec1, vec2, linewidth=linewidth, color=vec_colours[i])
+                        if colour_per_chrom
+                            k = collect(1:n)[vec_str_chroms .== chr1]
+                        else
+                            k = collect(1:n)[vec_str_groups .== grp]
+                        end
+                        plot!(plt, vec1, vec2, linewidth=linewidth, color=vec_colours[k])
                     end
                 end    
             end
@@ -740,7 +741,7 @@ function execute()
         vec_str_chromosome_names,
         vec_int_chromosome_lengths,
         vec_int_chromosome_GC,
-        vec_int_chromosome_N = PlotGenome.fun_fasta_lengths_GC_N(str_filename_fasta, 0, true)
+        vec_int_chromosome_N = PlotGenome.fun_fasta_lengths_GC_N(str_filename_fasta)
 
     ### Some assembly stats including the pseudo-chromosomes and small contigs
     vec_int_idx_sort_by_decreasing_size = sortperm(vec_int_chromosome_lengths, rev=true)
@@ -841,9 +842,16 @@ function execute()
                     vec_int_chromosome_lengths,
                     delim='\t',
                     vec_idx_groups_chr_pos=vec_idx_groups_chr_pos,
-                    vec_colours=[:gray],
+                    colour_per_chrom=true,
                     r=r, w=w, header=false)
-    
+    ### Clean-up
+    vec_files = readdir()
+    idx_fasta = match.(Regex(".fasta"), vec_files) .!= nothing
+    idx_GC = match.(Regex("-GC_content.txt"), vec_files) .!= nothing
+    idx_not_input_fasta = match.(Regex(str_filename_fasta), vec_files) .== nothing
+    for f in vec_files[(idx_fasta .& idx_not_input_fasta) .| idx_GC]
+        rm(f)
+    end
     ### Save as svg
     savefig(plt, "Lolium_rigidum_genome.svg")
 end
