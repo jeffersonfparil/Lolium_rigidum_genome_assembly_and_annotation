@@ -533,20 +533,20 @@ module PlotGenome
     end
 
     ### draw chords connecting herbicide target gene paralogs
-    function fun_add_chords!(plt, str_filename_groupings_and_coordinates, vec_str_chromosome_names, vec_int_chromosome_lengths; delim=',', vec_idx_groups_chr_pos=[1,9,3,4], r=0.5, w=0.05, vec_colours="", linewidth=3, colour_per_chrom=false, add_legend=false, header=true)
+    function fun_add_chords!(plt, str_filename_groupings_and_coordinates, vec_str_chromosome_names, vec_int_chromosome_lengths; delim=',', vec_idx_groups_chr_pos=[1,9,3,4], r=0.5, w=0.05, vec_colours="", linewidth=1, colour_per_chrom=false, add_legend=false, header=true)
         ### input parameters
-        str_filename_groupings_and_coordinates = "test-blastout.csv"
-        vec_str_chromosome_names = temp_M
-        vec_int_chromosome_lengths = temp_L
-        delim=','
-        vec_idx_groups_chr_pos=[1,9,3,4]
-        r=0.5
-        w=0.05
-        vec_colours=""
-        linewidth=3
-        colour_per_chrom=false
-        add_legend=false
-        header=true
+        # str_filename_groupings_and_coordinates = "test-blastout.csv"
+        # vec_str_chromosome_names = temp_M
+        # vec_int_chromosome_lengths = temp_L
+        # delim=','
+        # vec_idx_groups_chr_pos=[1,9,3,4]
+        # r=0.5
+        # w=0.05
+        # vec_colours=""
+        # linewidth=3
+        # colour_per_chrom=true
+        # add_legend=false
+        # header=true
         ### chromosome endpoints in radians
         vec_θ_start, vec_θ_end = fun_find_chromosome_endpoints_in_radians(vec_str_chromosome_names, vec_int_chromosome_lengths)
         ### Load only qseqid, sstart and send
@@ -601,9 +601,9 @@ module PlotGenome
             # Count the number of seq per chr and find the next chr root with the most seq and/or not yet used as root before
             vec_int_chr_cnts = []
             for c in vec_str_chroms
-                push!(vec_int_chr_cnts, sum(unique(Y[:,2]) .== c))
+                push!(vec_int_chr_cnts, sum(Y[:,2] .== c))
             end
-            _idx = sortperm(vec_int_chr_cnts)
+            @show _idx = sortperm(vec_int_chr_cnts)
             chr1 = vec_str_chroms[_idx][end]
             # Define the coordinates of the root and destinations
             R = Y[Y[:,2].==chr1, :]
@@ -654,7 +654,8 @@ module PlotGenome
                         else
                             k = collect(1:n)[vec_str_groups .== grp]
                         end
-                        plot!(plt, vec1, vec2, linewidth=linewidth, color=vec_colours[k])
+                        # plot!(plt, vec1, vec2, linewidth=linewidth, color=k)
+                        plot!(plt, vec1, vec2, color=k)
                     end
                 end    
             end
@@ -680,7 +681,7 @@ module PlotGenome
     end
     str_filename_groupings_and_coordinates = "test-blastout.csv"
     FILE = open(str_filename_groupings_and_coordinates, "w")
-    n = 20
+    n = 50
     header = ["qseqid", "staxids", "sstart", "send", "pident", "evalue", "qcovhsp", "bitscore", "stitle"]
     write(FILE, string(join(header, ','), '\n'))
     for i in 1:n
@@ -711,7 +712,7 @@ module PlotGenome
     end
     close(FILE)
     fun_add_chords!(plt, str_filename_groupings_and_coordinates, temp_M, temp_L,
-                    r=0.5, w=0.05, add_legend=true)
+                    r=0.5, w=0.05, add_legend=false, colour_per_chrom=true)
 
     ### Precompilation clean-up
     for f in readdir()[match.(r"test", readdir()) .!= nothing]
@@ -843,6 +844,7 @@ function execute()
                     delim='\t',
                     vec_idx_groups_chr_pos=vec_idx_groups_chr_pos,
                     colour_per_chrom=true,
+                    linewidth=1,
                     r=r, w=w, header=false)
     ### Clean-up
     vec_files = readdir()
