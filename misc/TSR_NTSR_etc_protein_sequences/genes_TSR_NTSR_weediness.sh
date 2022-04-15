@@ -1,15 +1,94 @@
+DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
+mkdir ${DIR}/TSR_NTSR_GENES
+cd ${DIR}/TSR_NTSR_GENES
+
+
+
+
+wget https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz
+wget https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
+gunzip -c uniprot_sprot.dat.gz   > uniprot.txt
+gunzip -c uniprot_sprot.fasta.gz > uniprot.faa
+rm uniprot_sprot.dat.gz
+rm uniprot_sprot.fasta.gz
+
+grep -i "acetyl-coenzyme A carboxylase" uniprot.txt
+Mesangiospermae [1437183] acetyl-coenzyme A carboxylase
+
+julia
+
+using ProgressMeter
+
+function SPLIT(x::String)::Vector{String}
+    y = split(x, " ")
+    y[y .!= ""]
+end
+
+function EXTRACT_SEQ(filename, query)
+    file = open(filename, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    SEQUENCES = []
+    while !eof(file)
+        line = SPLIT(readline(file))
+        update!(pb, position(file))
+        if (line[1] == "ID")
+            ID = try 
+                    line[2]
+                catch
+                    "Unknown"
+                end
+            LEN = try
+                    line[end-1]
+                catch
+                    "Unknown"
+                end
+            if !isa(query, Vector)
+                query = [query]
+            end
+            bool = zeros(Bool, length(query))
+            while line[1] != "SQ"
+                line = SPLIT(readline(file))
+                for i in 1:length(query)
+                    bool[i] = bool[i] | (sum(match.(Regex(query[i]), line) .!= nothing) > 0)
+                end
+            end
+            if prod(bool)
+                sequence = string(">", ID, ":", LEN, "\n")
+                while line[1] != "//"
+                    line = SPLIT(readline(file))
+                    sequence = string(sequence, join(line))
+                end
+                SEQUENCES = push!(SEQUENCES, sequence[1:(end-2)])
+            end
+        end
+    end
+    close(file)
+    return(SEQUENCES)
+end
+
+x = EXTRACT_SEQ("test.tmp", "virus")
+
+filename = "uniprot.txt"
+query = ["acetyl", "coenzyme A", "carboxylase"]
+seq = EXTRACT_SEQ(filename, query)
+
+
+
+
+
 #################
 ### CLETHODIM ###
 #################
 ### TARGET: Acetyle Co-A carboxylase
-###         Synonyms: 
-###             - ACCase
-###             - 
-###             - 
-### UNIPROT QUERY (https://www.uniprot.org/uniprot/?query=taxonomy%3A%22Mesangiospermae+%5B1437183%5D%22+accase&sort=score):
-echo 'taxonomy:"Mesangiospermae [1437183]" accase'
-### Downloaded all 10,446 matches, and rename as:
-echo 'Clethodim-target_ACCase_UniProt_Mesangiospermae.fasta'
+echo 'taxonomy:"Mesangiospermae [1437183]" acetyl-coenzyme A carboxylase'
+echo 'LINK: https://www.uniprot.org/uniprot/?query=taxonomy%3A%22Mesangiospermae%20%5B1437183%5D%22%20acetyl-coenzyme%20A%20carboxylase&columns=id%2Centry%20name%2Creviewed%2Cprotein%20names%2Cgenes%2Corganism%2Clength&sort=score'
+wget https://www.uniprot.org/uniprot/?query=taxonomy%3A%22Mesangiospermae+%5B1437183%5D%22+acetyl-coenzyme+a+carboxylase+database%3A%28type%3Aensemblplants%29&sort=score#
+gunzip -c uniprot_sprot.fasta.gz > ACCase.faa
+
+
+
+
 
 ##################
 ### GLYPHOSATE ###
@@ -23,6 +102,8 @@ echo 'Clethodim-target_ACCase_UniProt_Mesangiospermae.fasta'
 echo 'taxonomy:"Mesangiospermae [1437183]" epsp'
 ### Downloaded all 923 matches, and rename as:
 echo 'Glyphosate-target_EPSPS_UniProt_Mesangiospermae.fasta'
+
+wget https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
 
 #################
 ### INTERCEPT ### Imazamox, and
