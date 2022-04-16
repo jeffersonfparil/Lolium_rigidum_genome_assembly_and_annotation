@@ -312,18 +312,6 @@ module PlotGenome
                                     (dx0, y1)))
             plot!(plt, shp_rectangle, color=vec_colours_GC[i], linecolor=vec_colours_GC[i])
         end
-        ### ticks
-        vec_flt_legend_ticks = round.(collect(range(n_flt_min_GC_perc_genomewide, n_flt_max_GC_perc_genomewide, length=5)), digits=2)
-        for i in 1:5
-            dx0 = x0+(x1-x0)*((i-1)/4)
-            shp_tick = Shape(vcat((dx0, y1),
-                                (dx0, y1+(y1*0.03))))
-            plot!(plt, shp_tick, color=:gray, linecolor=:gray)
-            annotate!(plt,
-                    dx0,
-                    y1+(y1*0.05),
-                    (vec_flt_legend_ticks[i], n_int_tick_label_size, :gray, :center))
-        end
         ### GC content label
         annotate!(plt,
                 x0+((x1-x0)/2),
@@ -603,7 +591,6 @@ module PlotGenome
             for c in vec_str_chroms
                 push!(vec_int_chr_cnts, sum(Y[:,2] .== c))
             end
-            @show _idx = sortperm(vec_int_chr_cnts)
             chr1 = vec_str_chroms[_idx][end]
             # Define the coordinates of the root and destinations
             R = Y[Y[:,2].==chr1, :]
@@ -932,15 +919,16 @@ function execute2()
     ### Base plot
     l = @layout [a b]
     plt1 = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), size=(700,700), axis=([], false), title="")
-    r=1.00; w=0.001
+    ### Plot 1 for the tick alone, i.e. will be occluded by the GC layer
+    r=1.00; w=0.15
     PlotGenome.fun_plot_chrom_length_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths;
                                 r=r, w=w,
                                 n_int_tick_length_bp=n_int_tick_length_bp,
                                 n_int_tick_label_size=n_int_tick_label_size,
                                 n_int_chrom_name_size=n_int_chrom_name_size)
-    ### Layer 1: GC content
+    ### Plot 1 layer 1: GC content
     r=1.00; w=0.15
-    annotate!(plt1, 0.0, (r-w/2), ("b", 10, :gray, :center))
+    annotate!(plt1, 0.0, (r-w/2), ("a", 10, :gray, :center))
     PlotGenome.fun_plot_GC_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths;
                     r=r, w=w,
                     n_int_total_chunks_across_genome=1000,
@@ -962,25 +950,25 @@ function execute2()
                                     "\n  N50=", N50, " bp",
                                     "\n  L90=", L90, " chromosomes",
                                     "\n  N90=", N90, " bp"), 8, :gray, :left))
-    ### Layer 3: Ty1-Copia LTR histogram
+    ### Plot 1 layer 2: Ty1-Copia LTR histogram
     r=0.75; w=0.15
-    annotate!(plt1, 0.0, (r-w/2), ("c", 10, :gray, :center))
+    annotate!(plt1, 0.0, (r-w/2), ("b", 10, :gray, :center))
     PlotGenome.fun_plot_hits_histogram_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths,
                                 str_filename_LTR_COPIA,
                                 r=r, w=w,
                                 n_int_window_size = 1e6,
                                 col=:black,
                                 col_background=:lightgray)
-    ### Layer 3: Ty1-Gypsy LTR histogram
+    ### Plot 1 layer 3: Ty1-Gypsy LTR histogram
     r=0.50; w=0.15
-    annotate!(plt1, 0.0, (r-w/2), ("d", 10, :gray, :center))
+    annotate!(plt1, 0.0, (r-w/2), ("c", 10, :gray, :center))
     PlotGenome.fun_plot_hits_histogram_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths,
                                 str_filename_LTR_GYPSY,
                                 r=r, w=w,
                                 n_int_window_size = 1e6,
                                 col=:gray,
                                 col_background=:lightgray)
-    ### Layer 4: Chord diagram
+    ### Plot 2: Chord diagram
     plt2 = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), size=(700,700), axis=([], false), title="")
     r = 1.0; w=0.10
     PlotGenome.fun_plot_chrom_length_layer!(plt2, vec_str_chromosome_names, vec_int_chromosome_lengths;
