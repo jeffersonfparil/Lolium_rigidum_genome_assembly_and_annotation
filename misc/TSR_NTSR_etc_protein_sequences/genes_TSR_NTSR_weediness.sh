@@ -47,14 +47,22 @@ function EXTRACT_SEQ(filename, query)
                 query = [query]
             end
             bool = zeros(Bool, length(query))
+            vec_matches = []
             while line[1] != "SQ"
                 line = SPLIT(readline(file))
                 for i in 1:length(query)
-                    bool[i] = bool[i] | (sum(match.(Regex(query[i]), line) .!= nothing) > 0)
+                    matches = match.(Regex(query[i]), line)
+                    matched = sum(matches .!= nothing) > 0
+                    bool[i] = bool[i] | matched
+                    if matched
+                        @show line
+                        push!(vec_matches, join(line[matches .!= nothing], "-"))
+                    end
                 end
             end
             if prod(bool)
-                sequence = string(">", ID, ":", LEN, "\n")
+                sequence = string(">", ID, ":", LEN, "-", join(vec_matches, "-"), "\n")
+                # sequence = string(">", ID, ":", LEN, "\n")
                 while line[1] != "//"
                     line = SPLIT(readline(file))
                     sequence = string(sequence, join(line))
@@ -67,11 +75,12 @@ function EXTRACT_SEQ(filename, query)
     return(SEQUENCES)
 end
 
-x = EXTRACT_SEQ("test.tmp", "virus")
 
 filename = "uniprot.txt"
 query = ["acetyl", "coenzyme A", "carboxylase"]
 seq = EXTRACT_SEQ(filename, query)
+
+seq = EXTRACT_SEQ("test.tmp", "chlorophyll")
 
 
 

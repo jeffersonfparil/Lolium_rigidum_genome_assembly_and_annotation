@@ -4,14 +4,14 @@ println("### Lolium rigidum genome assembly statistics ###")
 println("###                                           ###")
 println("#################################################")
 
-using Plots
-Plots.gr()
+using JLD2
+using Plots; Plots.gr()
 
 ### Load plotting library and set backend to gr(): GKS and openGL
 module PlotGenome
 
     println("Pre-compiling genome statistics plotting module:")
-
+    using JLD2
     using Random; Random.seed!(123)
     using ProgressMeter
     using Plots
@@ -360,6 +360,7 @@ module PlotGenome
 
     ### Plot histogram layer
     function fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths, str_filename_coor;
+                                        vec_idx_chr_pos=[1,2],
                                         r=0.60, w=0.10,
                                         n_int_window_size = 10,
                                         col=:black,
@@ -382,7 +383,7 @@ module PlotGenome
             FILE = open(str_filename_coor, "r")
             vec_int_position = []
             while !eof(FILE)
-                str_chrom, str_pos = split(readline(FILE), ',')[[1,2]]
+                str_chrom, str_pos = split(readline(FILE), ',')[vec_idx_chr_pos]
                 if str_chrom == vec_str_chromosome_names[i]
                     append!(vec_int_position, parse(Int, str_pos))
                 end
@@ -397,7 +398,7 @@ module PlotGenome
             for j in 1:n_int_windows_count
                 # j = 1
                 n_int_start = ((j-1)*n_int_window_size)+1
-                n_int_end = ((j-0)*n_int_window_size)+0 
+                n_int_end   = ((j-0)*n_int_window_size)+0 
                 n_int_hit_count = sum((vec_int_position .>= n_int_start) .& (vec_int_position .<= n_int_end))
                 n_int_max_hit_count<n_int_hit_count ? n_int_max_hit_count=n_int_hit_count : nothing
             end
@@ -414,7 +415,7 @@ module PlotGenome
             FILE = open(str_filename_coor, "r")
             vec_int_position = []
             while !eof(FILE)
-                str_chrom, str_pos = split(readline(FILE), ',')[[1,2]]
+                str_chrom, str_pos = split(readline(FILE), ',')[vec_idx_chr_pos]
                 if str_chrom == vec_str_chromosome_names[i]
                     append!(vec_int_position, parse(Int, str_pos))
                 end
@@ -586,11 +587,12 @@ module PlotGenome
             # grp = vec_str_groups[1]
             idx = X[:,1] .== grp
             Y = X[idx, :]
-            # Count the number of seq per chr and find the next chr root with the most seq and/or not yet used as root before
+            # Count the number of seq per chr and find the next chr root with the most seq
             vec_int_chr_cnts = []
             for c in vec_str_chroms
                 push!(vec_int_chr_cnts, sum(Y[:,2] .== c))
             end
+            _idx = sortperm(vec_int_chr_cnts)
             chr1 = vec_str_chroms[_idx][end]
             # Define the coordinates of the root and destinations
             R = Y[Y[:,2].==chr1, :]
@@ -711,70 +713,123 @@ end ### PlotGenome
 ###############
 ### EXECUTE ###
 ###############
-function execute()
+function execute(;recompute=false, cleanup=false)
     str_filename_fasta = "Lolium_rigidum.fasta"
     str_filename_LTR_COPIA = "Lolium_rigidum-LTR_COPIA.csv"
     str_filename_LTR_GYPSY = "Lolium_rigidum-LTR_GYPSY.csv"
+    vec_idx_chr_pos = [1, 2] ### for plotting the hits histogram, i.e. LTR files: specify the columns of chromosome ID, and the start or end position
     str_filename_groupings_and_coordinates = "Lolium_rigidum-for_plotting.plg"
-    vec_idx_groups_chr_pos = [4, 2, 3, 3]
+    vec_idx_groups_chr_pos = [4, 2, 3, 3] ### for drawing the chords, i.e. paralog positions: specify the columns of orthogroup ID, chromosome ID and start or end position
     n = 7 ## haploid chromosome number
     n_int_tick_length_bp = 100*1e+6 # make this adjustable
     n_int_tick_label_size=7
     n_int_chrom_name_size=7
 
-    ### Split into chromosomes, count assembly size, GC content, Ns, and GC fractiopn per line
-    @time n_int_assembly_size,
+    ### To (re)run the genome statistics computation or to use the saved genome statistics data
+    str_filename_output_jld2 = string(join(split(str_filename_fasta, ".")[1:(end-1)], "."), "-statistics.jld2")
+    if recompute
+        ### Split into chromosomes, count assembly size, GC content, Ns, and GC fractiopn per line
+        @time n_int_assembly_size,
+            n_int_assembly_GC,
+            n_int_assembly_N,
+            vec_str_chromosome_names,
+            vec_int_chromosome_lengths,
+            vec_int_chromosome_GC,
+            vec_int_chromosome_N = PlotGenome.fun_fasta_lengths_GC_N(str_filename_fasta)
+
+        ### Some assembly stats including the pseudo-chromosomes and small contigs
+        vec_int_idx_sort_by_decreasing_size = sortperm(vec_int_chromosome_lengths, rev=true)
+        vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_decreasing_size]
+        vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_decreasing_size]
+        vec_int_cumsum_length = cumsum(vec_int_chromosome_lengths)
+        vec_bool_idx_50th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.5)
+        vec_bool_idx_90th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.9)
+        n_int_size_of_largest_chromosome = maximum(vec_int_chromosome_lengths)
+        str_largest_chromosome = vec_str_chromosome_names[vec_int_chromosome_lengths.==maximum(vec_int_chromosome_lengths)]
+        int_n_chromosomes_whole_assembly = length(vec_str_chromosome_names)
+        int_size_whole_assembly = sum(vec_int_chromosome_lengths)
+        L50_whole_assembly = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_50th_percentile][1]
+        L90_whole_assembly = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_90th_percentile][1]
+        N50_whole_assembly = vec_int_chromosome_lengths[vec_bool_idx_50th_percentile][1]
+        N90_whole_assembly = vec_int_chromosome_lengths[vec_bool_idx_90th_percentile][1]
+
+        ### Using only the 7 pseudo-chromosomes, i.e. 7 largest sequences
+        vec_str_chromosome_names = vec_str_chromosome_names[1:n]
+        vec_int_chromosome_lengths = vec_int_chromosome_lengths[1:n]
+        vec_int_chromosome_GC = vec_int_chromosome_GC[1:n]
+        vec_int_chromosome_N = vec_int_chromosome_N[1:n]
+
+        ### Some assembly stats after excluding the small contigs
+        vec_int_idx_sort_by_decreasing_size = sortperm(vec_int_chromosome_lengths, rev=true)
+        vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_decreasing_size]
+        vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_decreasing_size]
+        vec_int_cumsum_length = cumsum(vec_int_chromosome_lengths)
+        vec_bool_idx_50th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.5)
+        vec_bool_idx_90th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.9)
+        n_int_size_of_largest_chromosome = maximum(vec_int_chromosome_lengths)
+        str_largest_chromosome = vec_str_chromosome_names[vec_int_chromosome_lengths.==maximum(vec_int_chromosome_lengths)]
+        int_n_chromosomes = n
+        int_size = sum(vec_int_chromosome_lengths)
+        L50 = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_50th_percentile][1]
+        L90 = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_90th_percentile][1]
+        N50 = vec_int_chromosome_lengths[vec_bool_idx_50th_percentile][1]
+        N90 = vec_int_chromosome_lengths[vec_bool_idx_90th_percentile][1]
+
+        ### Sort back according to chromosome names
+        vec_int_idx_sort_by_name = sortperm(vec_str_chromosome_names)
+        vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_name]
+        vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_name]
+
+        ### Save the genome statistics variables
+        if save_temp_files_and_data
+            vec_stats = [n_int_assembly_size,
+                         n_int_assembly_GC,
+                         n_int_assembly_N,
+                         int_n_chromosomes_whole_assembly,
+                         int_size_whole_assembly,
+                         L50_whole_assembly,
+                         L90_whole_assembly,
+                         N50_whole_assembly,
+                         N90_whole_assembly,
+                         vec_str_chromosome_names,
+                         vec_int_chromosome_lengths,
+                         vec_int_chromosome_GC,
+                         vec_int_chromosome_N,
+                         str_largest_chromosome,
+                         int_n_chromosomes,
+                         int_size,
+                         L50,
+                         L90,
+                         N50,
+                         N90]
+            jldsave(str_filename_output_jld2; vec_stats)
+        end
+    else
+        ### If we're not rerunning the statistics computation, then just load the save statistics
+        n_int_assembly_size,
         n_int_assembly_GC,
         n_int_assembly_N,
+        int_n_chromosomes_whole_assembly,
+        int_size_whole_assembly,
+        L50_whole_assembly,
+        L90_whole_assembly,
+        N50_whole_assembly,
+        N90_whole_assembly,
         vec_str_chromosome_names,
         vec_int_chromosome_lengths,
         vec_int_chromosome_GC,
-        vec_int_chromosome_N = PlotGenome.fun_fasta_lengths_GC_N(str_filename_fasta)
+        vec_int_chromosome_N,
+        str_largest_chromosome,
+        int_n_chromosomes,
+        int_size,
+        L50,
+        L90,
+        N50,
+        N90 = load_object(str_filename_output_jld2)
+    end
 
-    ### Some assembly stats including the pseudo-chromosomes and small contigs
-    vec_int_idx_sort_by_decreasing_size = sortperm(vec_int_chromosome_lengths, rev=true)
-    vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_decreasing_size]
-    vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_decreasing_size]
-    vec_int_cumsum_length = cumsum(vec_int_chromosome_lengths)
-    vec_bool_idx_50th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.5)
-    vec_bool_idx_90th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.9)
-    n_int_size_of_largest_chromosome = maximum(vec_int_chromosome_lengths)
-    str_largest_chromosome = vec_str_chromosome_names[vec_int_chromosome_lengths.==maximum(vec_int_chromosome_lengths)]
-    int_n_chromosomes_whole_assembly = length(vec_str_chromosome_names)
-    int_size_whole_assembly = sum(vec_int_chromosome_lengths)
-    L50_whole_assembly = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_50th_percentile][1]
-    L90_whole_assembly = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_90th_percentile][1]
-    N50_whole_assembly = vec_int_chromosome_lengths[vec_bool_idx_50th_percentile][1]
-    N90_whole_assembly = vec_int_chromosome_lengths[vec_bool_idx_90th_percentile][1]
 
-    ### Using only the 7 pseudo-chromosomes, i.e. 7 largest sequences
-    vec_str_chromosome_names = vec_str_chromosome_names[1:n]
-    vec_int_chromosome_lengths = vec_int_chromosome_lengths[1:n]
-    vec_int_chromosome_GC = vec_int_chromosome_GC[1:n]
-    vec_int_chromosome_N = vec_int_chromosome_N[1:n]
-
-    ### Some assembly stats after excluding the small contigs
-    vec_int_idx_sort_by_decreasing_size = sortperm(vec_int_chromosome_lengths, rev=true)
-    vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_decreasing_size]
-    vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_decreasing_size]
-    vec_int_cumsum_length = cumsum(vec_int_chromosome_lengths)
-    vec_bool_idx_50th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.5)
-    vec_bool_idx_90th_percentile = vec_int_cumsum_length .>= (n_int_assembly_size*0.9)
-    n_int_size_of_largest_chromosome = maximum(vec_int_chromosome_lengths)
-    str_largest_chromosome = vec_str_chromosome_names[vec_int_chromosome_lengths.==maximum(vec_int_chromosome_lengths)]
-    int_n_chromosomes = n
-    int_size = sum(vec_int_chromosome_lengths)
-    L50 = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_50th_percentile][1]
-    L90 = collect(1:length(vec_str_chromosome_names))[vec_bool_idx_90th_percentile][1]
-    N50 = vec_int_chromosome_lengths[vec_bool_idx_50th_percentile][1]
-    N90 = vec_int_chromosome_lengths[vec_bool_idx_90th_percentile][1]
-
-    ### Sort back according to chromosome names
-    vec_int_idx_sort_by_name = sortperm(vec_str_chromosome_names)
-    vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_name]
-    vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_name]
-
-    ### Base plot
+    ### Base plotsave_temp_files_and_data
     plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), size=(700,700), axis=([], false), title="Lolium rigidum genome")
     ### Layer 1: chromosome lengths
     r=1.00; w=0.10
@@ -802,14 +857,14 @@ function execute()
                                     "\n  L90=", L90, " chromosomes",
                                     "\n  N90=", N90, " bp"), 8, :gray, :left))
     ### Layer 2: GC content
-    r=0.80; w=0.10
+    r=0.85; w=0.10
     annotate!(plt, 0.0, (r-w/2), ("b", 10, :gray, :center))
     PlotGenome.fun_plot_GC_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths;
                     r=r, w=w,
                     n_int_total_chunks_across_genome=1000,
                     vec_colours_GC=palette(:thermometer, 7))
     ### Layer 3: Ty1-Copia LTR histogram
-    r=0.60; w=0.10
+    r=0.70; w=0.10
     annotate!(plt, 0.0, (r-w/2), ("c", 10, :gray, :center))
     PlotGenome.fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths,
                                 str_filename_LTR_COPIA,
@@ -818,7 +873,7 @@ function execute()
                                 col=:black,
                                 col_background=:lightgray)
     ### Layer 3: Ty1-Gypsy LTR histogram
-    r=0.40; w=0.10
+    r=0.55; w=0.10
     annotate!(plt, 0.0, (r-w/2), ("d", 10, :gray, :center))
     PlotGenome.fun_plot_hits_histogram_layer!(plt, vec_str_chromosome_names, vec_int_chromosome_lengths,
                                 str_filename_LTR_GYPSY,
@@ -838,18 +893,21 @@ function execute()
                     linewidth=1,
                     r=r, w=w, header=false)
     ### Clean-up
-    vec_files = readdir()
-    idx_fasta = match.(Regex(".fasta"), vec_files) .!= nothing
-    idx_GC = match.(Regex("-GC_content.txt"), vec_files) .!= nothing
-    idx_not_input_fasta = match.(Regex(str_filename_fasta), vec_files) .== nothing
-    for f in vec_files[(idx_fasta .& idx_not_input_fasta) .| idx_GC]
-        rm(f)
+    if cleanup
+        vec_files = readdir()
+        idx_fasta = match.(Regex(".fasta"), vec_files) .!= nothing
+        idx_GC = match.(Regex("-GC_content.txt"), vec_files) .!= nothing
+        idx_not_input_fasta = match.(Regex(str_filename_fasta), vec_files) .== nothing
+        for f in vec_files[(idx_fasta .& idx_not_input_fasta) .| idx_GC]
+            rm(f)
+        end
     end
     ### Save as svg
     savefig(plt, "Lolium_rigidum_genome.svg")
 end
 
-# @time execute()
+# @time execute(recompute=true)
+@time execute(recompute=false)
 
 
 ### MISC TEST
@@ -999,4 +1057,4 @@ function execute2()
     savefig(plt3, "Lolium_rigidum_genome.svg")    
 end
 
-@time execute2()
+# @time execute2()
