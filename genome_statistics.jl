@@ -312,7 +312,23 @@ module PlotGenome
                                     (dx0, y1)))
             plot!(plt, shp_rectangle, color=vec_colours_GC[i], linecolor=vec_colours_GC[i])
         end
-        ### GC content label
+        ### ticks
+        vec_flt_legend_ticks = round.(collect(range(n_flt_min_GC_perc_genomewide, n_flt_max_GC_perc_genomewide, length=(n_int_colours+2))), digits=2)
+        for i in 1:(n_int_colours+2)
+            dx0 = x0+(x1-x0)*((i-1)/4)
+            shp_tick = Shape(vcat((dx0, y1),
+                                (dx0, y1+(y1*0.03))))
+            plot!(plt, shp_tick, color=:gray, linecolor=:gray)
+            annotate!(plt,
+                    dx0,
+                    y1+(y1*0.05),
+                    (vec_flt_legend_ticks[i], n_int_tick_label_size, :gray, :center))
+        end
+        ### GC content labels
+        annotate!(plt,
+                x0+((x1-x0)/2),
+                -1.2,
+                ("Lane b legend:", n_int_tick_label_size, :gray, :bottom))
         annotate!(plt,
                 x0+((x1-x0)/2),
                 -1.5,

@@ -3,6 +3,22 @@ mkdir ${DIR}/TSR_NTSR_GENES
 cd ${DIR}/TSR_NTSR_GENES
 
 
+### Prepare list of names per gene
+echo "EPSP
+EPSPS
+enolpyruvylshikimate phosphate
+enolpyruvylshikimate phosphate synthase
+5-enolpyruvylshikimate-3-phosphate synthase" > glyphosate_greppable_names.txt
+echo "ALS
+AHAS
+acetolactate synthase
+acetohydoxy acid synthase" > DIMSFOPS_greppable_names.txt
+
+
+### Extract cds sequeces of genes with labels matching the list of TSR and NTSR gene query names
+SPECIES=Lolium_rigidum
+grep -f DIMSFOPS_greppable_names.txt ${DIR}/${SPECIES}.cds > ${SPECIES}-ALS.tmp
+
 
 
 wget https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz
