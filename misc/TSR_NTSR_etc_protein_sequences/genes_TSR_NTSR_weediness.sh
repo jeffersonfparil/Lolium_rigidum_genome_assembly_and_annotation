@@ -4,20 +4,31 @@ cd ${DIR}/TSR_NTSR_GENES
 
 
 ### Prepare list of names per gene
-echo "EPSP
-EPSPS
-enolpyruvylshikimate phosphate
+echo "enolpyruvylshikimate phosphate
 enolpyruvylshikimate phosphate synthase
-5-enolpyruvylshikimate-3-phosphate synthase" > glyphosate_greppable_names.txt
-echo "ALS
-AHAS
-acetolactate synthase
-acetohydoxy acid synthase" > DIMSFOPS_greppable_names.txt
+5-enolpyruvylshikimate-3-phosphate synthase" > GLYPH.txt
+echo "acetolactate synthase
+acetohydoxy acid synthase" > ALS.txt
 
 
 ### Extract cds sequeces of genes with labels matching the list of TSR and NTSR gene query names
 SPECIES=Lolium_rigidum
-grep -f DIMSFOPS_greppable_names.txt ${DIR}/${SPECIES}.cds > ${SPECIES}-ALS.tmp
+GENES_FILE=ALS.txt
+grep -f ${GENES_FILE} ${DIR}/${SPECIES}.cds | sed "s/^>//g" | cut -d' ' -f1 > ${SPECIES}-${GENES_FILE%.txt*}.tmp
+
+for i in $(seq 1 $(cat ${SPECIES}-${GENES_FILE%.txt*}.tmp | wc -l))
+do
+# i=1
+QUERY=$(head -n${i} ${SPECIES}-${GENES_FILE%.txt*}.tmp | tail -n1 | sed 's/|/:/g')
+echo $QUERY
+julia extract_sequence_using_name_query.jl \
+    ${DIR}/${SPECIES}.cds \
+    ${QUERY}
+done
+
+cat ${DIR}/${SPECIES}-*.out > ${SPECIES}-${GENES_FILE%.txt*}.cds
+rm ${DIR}/${SPECIES}-*.out
+
 
 
 
