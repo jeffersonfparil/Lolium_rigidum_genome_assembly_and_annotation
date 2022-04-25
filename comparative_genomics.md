@@ -218,13 +218,10 @@ wget https://github.com/iqtree/iqtree2/releases/download/v2.2.0/iqtree-2.2.0-Lin
 tar -xvzf iqtree-2.0.6-Linux.tar.gz
 PATH=${PATH}:$(pwd)/iqtree-2.0.6-Linux/bin
 
-udo apt install libeigen3-dev
-git clone https://github.com/iqtree/iqtree2.git
-cd iqtree2
-mkdir build
-cd build
-cmake ..
-make -j
+sudo apt install libeigen3-dev
+wget https://github.com/Cibiv/IQ-TREE/releases/download/v2.0.7/iqtree-2.0.7-Linux.tar.gz
+tar -xvzf iqtree-2.0.7-Linux.tar.gz
+PATH=${PATH}:$(pwd)/iqtree-2.0.7-Linux/bin
 ```
 
 ## Assign orthogroups into gene families
@@ -900,14 +897,16 @@ julia fasta_to_phylip.jl ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln
 ### Build tree
 echo 'Arabidopsis_thaliana,Oryza_sativa     -160.00
 Oryza_sativa,Zea_mays                        -50.00
+Sorghum_bicolor,Zea_mays                     -12.19
 Secale_cereale,Lolium_rigidum                -24.10
 Lolium_perenne,Lolium_rigidum                 -1.65' > dates.txt
 
 time \
-iqtree \
+iqtree2 \
     -s ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln \
     --date dates.txt \
-    --date-tip 0
+    --date-tip 0 \
+    --redo
 
 done
 ```
