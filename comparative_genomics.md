@@ -211,6 +211,22 @@ orthofinder \
 DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/
 ```
 
+## Install IQ-TREE for building trees with fossil root dates
+```{sh}
+# sudo apt install iqtree
+wget https://github.com/iqtree/iqtree2/releases/download/v2.2.0/iqtree-2.2.0-Linux.tar.gz
+tar -xvzf iqtree-2.0.6-Linux.tar.gz
+PATH=${PATH}:$(pwd)/iqtree-2.0.6-Linux/bin
+
+udo apt install libeigen3-dev
+git clone https://github.com/iqtree/iqtree2.git
+cd iqtree2
+mkdir build
+cd build
+cmake ..
+make -j
+```
+
 ## Assign orthogroups into gene families
 ```{sh}
 ### Define the location of the 15,619 protein family HMMs
@@ -758,9 +774,145 @@ batcat CAFE_*/*_clade_results.txt
 cat CAFE_Base_results/Base_results.txt
 cat CAFE_Gamma10_results/Gamma_results.txt
 cat CAFE_Gamma100_results/Gamma_results.txt
-
-
 ```
+
+## Build tree using single-gene orthogroups
+
+1. Identify single-copy orthogroups and their respective gene names across all 7 species:
+```{sh}
+awk '($2 == 1) && ($3 == 1) && ($4 == 1) && ($5 == 1) && ($6 == 1) && ($7 == 1) && ($8 == 1)'  $ORTHOUT | cut -f1 > single_gene_list.grep
+grep -f single_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > single_gene_list.geneNames
+```
+
+2. Extract the CDS of these genes:
+
+Outputs:
+- ${ORTHONAME}-${SPECIES}.fasta
+
+```{sh}
+echo '#!/bin/bash
+i=$1
+line=$(head -n${i} single_gene_list.geneNames | tail -n1)
+ORTHONAME=$(echo $line | cut -d" " -f1)
+for name in $(echo $line | cut -d" " -f2-)
+do
+    SPECIES=$(echo $name | cut -d"|" -f1)
+    GENE_NAME=$(echo $name | cut -d"|" -f2)
+    julia extract_sequence_using_name_query.jl \
+        ${SPECIES}.cds \
+        ${GENE_NAME} \
+        ${ORTHONAME}-${SPECIES}.fasta \
+        ${SPECIES} \
+        false
+done
+if [ $(ls ${ORTHONAME}-*.fasta | wc -l) -eq 7 ]
+then
+    cat ${ORTHONAME}-*.fasta > ${ORTHONAME}.fasta
+fi
+rm ${ORTHONAME}-*.fasta
+' > parallel_extract_sing_gene_orthogroups.sh
+chmod +x parallel_extract_sing_gene_orthogroups.sh
+time \
+parallel \
+./parallel_extract_sing_gene_orthogroups.sh {} \
+::: $(seq 1 $(cat single_gene_list.geneNames | wc -l))
+```
+
+3. Generate parallelisable MACSE alignement script. NOTES: Set the final stop codons as "---", and internal stop codons as "NNN" so that PAML programs won't ask you to press enter to continue; also set frameshifts from "!" into "-". Also sort the alignment sequences, because MACSE jumbles them u for some reason with no option to return input order:
+
+Outputs:
+- ${ORTHOLOG}.NT.cds
+- ${ORTHOLOG}.AA.prot
+
+```{sh}
+echo '#!/bin/bash
+f=$1
+ORTHOLOG=${f%.fasta*}
+# Align the CDS across species
+java -Xmx8G \
+    -jar macse_v2.06.jar \
+    -prog alignSequences \
+    -seq ${f} \
+    -out_NT ${ORTHOLOG}.aligned.unsorted.cds.tmp \
+    -out_AA ${ORTHOLOG}.aligned.unsorted.prot.tmp
+# Convert stop codons and frameshifts as "---" for compatibility with downstream tools
+java -Xmx8G \
+    -jar macse_v2.06.jar \
+    -prog exportAlignment \
+    -align ${ORTHOLOG}.aligned.unsorted.cds.tmp \
+    -codonForFinalStop --- \
+    -codonForInternalStop NNN \
+    -codonForExternalFS --- \
+    -codonForInternalFS --- \
+    -out_NT ${ORTHOLOG}.NT.cds \
+    -out_AA ${ORTHOLOG}.AA.prot
+# Clean-up
+rm ${ORTHOLOG}*.tmp
+' > parallel_align_cds.sh
+chmod +x parallel_align_cds.sh
+time \
+parallel \
+./parallel_align_cds.sh {} \
+::: $(ls OG*.fasta)
+```
+
+Extract sequences per species, concatenate alignments per species, concatenate species alignments, and convert codon and amino acid sequences from fasta into phylip format::
+
+Outputs:
+- 
+
+```{sh}
+
+time \
+for TYPE in NT.cds AA.prot
+do
+
+### Extract sequences per species (Outputs: ${ORTHONAME}-${SPECIES}.fasta --> overwrites number 2 outputs)
+parallel -j 10 \
+julia extract_sequence_using_name_query.jl \
+    {1}.${TYPE} \
+    {2} \
+    {1}-{2}.fasta \
+    {1}-{2} \
+    false \
+::: $(ls *.NT.cds | sed 's/.NT.cds//g') \
+::: $(grep "^>" $(ls *.NT.cds | head -n1) | sed 's/^>//g')
+
+### Concatenate alignments per species (Outputs: ${SPECIES}.aln)
+for SPECIES in $(grep "^>" $(ls *.NT.cds | head -n1) | sed 's/^>//g')
+do
+    echo $SPECIES
+    echo ">${SPECIES}" > ${SPECIES}.aln.tmp
+    cat *-${SPECIES}.fasta | sed '/^>/d' | sed -z 's/\n//g' >> ${SPECIES}.aln.tmp
+    echo "" >> ${SPECIES}.aln.tmp
+    julia reformat_fasta_sequence.jl ${SPECIES}.aln.tmp 50 ${SPECIES}.aln
+    rm ${SPECIES}.aln.tmp
+done
+
+### Concatenate species alignments (Output: ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln)
+cat *.aln > ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln.tmp
+# rm *.aln
+mv ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln.tmp ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln
+
+### Convert codon and amino acid sequences from fasta into phylip format (Output: ${ORTHOLOG}.${TYPE%.*}.phylip)
+julia fasta_to_phylip.jl ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln
+
+### Build tree
+echo 'Arabidopsis_thaliana,Oryza_sativa     -160.00
+Oryza_sativa,Zea_mays                        -50.00
+Secale_cereale,Lolium_rigidum                -24.10
+Lolium_perenne,Lolium_rigidum                 -1.65' > dates.txt
+
+time \
+iqtree \
+    -s ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln \
+    --date dates.txt \
+    --date-tip 0
+
+done
+```
+
+
 
 ## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
 
@@ -773,6 +925,9 @@ Identify TSR and NTSR genes..
 ## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
 
 ## Phylogentic tree of stress-related genes: How did these stress-related gene which are under selection came about? 
+
+cd
+
 
 Use `MACSE` to align the CDS into codons and protein sequences, build the trees for each ortholog with `RaxML-ng`, convert fasta alignemnts into phylip format for `PAML`, and merge all trees into a single multi-tree file `temp_ALL_TREES.trees`:
 ```{sh}

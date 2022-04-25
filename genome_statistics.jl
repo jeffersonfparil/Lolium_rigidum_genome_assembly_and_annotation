@@ -1187,3 +1187,7 @@ function execute2(;recompute=false, cleanup=false)
 end
 
 # @time execute2(recompute=false)
+
+### MISC: C-value into bp
+_2C_in_pg_ = 5.494
+0.978e9 * (_2C_in_pg_/2)

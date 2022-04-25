@@ -1,4 +1,7 @@
 using ProgressMeter
+
+### BE SURE TO REPLACE "|" in the sequence_name_query input
+
 fasta_input = ARGS[1]
 sequence_name_query = ARGS[2]
 fasta_output = try 
@@ -20,10 +23,16 @@ add_gene_coordinates = try
 if fasta_output == ""
     fasta_output = string(join(split(fasta_input, ".")[1:(end-1)], "."), "-", sequence_name_query, ".out")
 end
-@show fasta_output
+
+### Add escape characters in front of "."
 if match(Regex("\\."), sequence_name_query) != nothing
     sequence_name_query = replace(sequence_name_query, "."=> "\\.")
 end
+### Remove return character "\r"
+if match(Regex("\\r"), sequence_name_query) != nothing
+    sequence_name_query = replace(sequence_name_query, "\r"=> "")
+end
+
 file_input = open(fasta_input, "r")
 seekend(file_input); n = position(file_input)
 seekstart(file_input)
@@ -39,9 +48,15 @@ while !eof(file_input)
             end
             write(file_output, string(line, '\n'))
             line = readline(file_input)
-            while line[1] != '>'
+            bool_test = line[1] != '>'
+            while bool_test
                 write(file_output, line)
                 line = readline(file_input)
+                bool_test = try
+                    line[1] != '>'
+                catch
+                    false
+                end
                 update!(pb, position(file_input))
             end
             write(file_output, '\n')
