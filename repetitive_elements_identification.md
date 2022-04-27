@@ -146,6 +146,7 @@
    cd ..
    sudo mv RepeatModeler-2.0.2a/ /usr/local/
    ```
+
 ## Build the BLAST database using our genome sequence
 ```{sh}
 DIR=/data-weedomics-3
@@ -177,7 +178,6 @@ RepeatMasker/RepeatMasker \
 ```
 - **Summary output**: ${REF}.tbl
 - **List of repeats and their locations**: ${REF}.out
-
 
 ## Find Copia and Gypsy LTR (2 out of 3 known LTR families, where the 3rd one BEL/pa family have only been found in animals)
 - Copia (order of protein coding domains: *protease*, *integrase*, *reverse transcriptase*, and *ribonuclease H*)

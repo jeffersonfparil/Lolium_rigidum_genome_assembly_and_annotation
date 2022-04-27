@@ -1,8 +1,13 @@
 # Comparative genomics
 
-## Set working directory
+## Set working directories and the main orthogroup output filename (these variables and reiterated in their respective sections where they were used)
 ```sh}
 DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
+DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*
+DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
+GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
+MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
+ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 cd $DIR
 ```
 
@@ -115,43 +120,13 @@ wget https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar
 java -Xmx250G -jar macse_v2.06.jar -h
 ```
 
-## Install Gblocks to remove poorly aligned sequences
+## Install KaKs_Calculator2.0 to assess signatures of selection
 ```{sh}
-wget http://molevol.cmima.csic.es/castresana/Gblocks/Gblocks_Linux64_0.91b.tar.Z
-tar -xvzf Gblocks_Linux64_0.91b.tar.Z
-cd Gblocks_0.91b/
-PATH=${PATH}:$(pwd)
-cd -
-```
-
-## Install RaxML-ng for building trees
-```{sh}
-wget https://github.com/amkozlov/raxml-ng/releases/download/1.1.0/raxml-ng_v1.1.0_linux_x86_64.zip
-unzip raxml-ng_v1.1.0_linux_x86_64.zip -d raxml-ng_v1.1.0
-cd raxml-ng_v1.1.0/
-PATH=${PATH}:$(pwd)
-cd -
-```
-
-## Install Clann for merging trees
-```{sh}
-wget https://github.com/ChrisCreevey/clann/archive/refs/tags/v4.2.4.tar.gz
-tar -xvzf v4.2.4.tar.gz
-rm v4.2.4.tar.gz
-cd clann-4.2.4/
-./configure
+wget https://github.com/kullrich/kakscalculator2/archive/refs/tags/v2.0.1.tar.gz
+tar -xvzf v2.0.1.tar.gz
+cd kakscalculator2-2.0.1/src
 make
 PATH=${PATH}:$(pwd)
-cd -
-```
-
-## Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
-```{sh}
-wget http://abacus.gene.ucl.ac.uk/software/paml4.9j.tgz
-tar -xvzf paml4.9j.tgz
-cd paml4.9j/
-PATH=${PATH}/bin
-PATH=${PATH}/src
 cd -
 ```
 
@@ -776,11 +751,7 @@ awk '($2 == 1) && ($3 == 1) && ($4 == 1) && ($5 == 1) && ($6 == 1) && ($7 == 1) 
 grep -f single_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > single_gene_list.geneNames
 ```
 
-2. Extract the CDS of these genes:
-
-Outputs:
-- ${ORTHONAME}-${SPECIES}.fasta
-
+2. Extract the CDS of these genes (Outputs: ${ORTHONAME}.fasta [includes sequences from each species]):
 ```{sh}
 echo '#!/bin/bash
 i=$1
@@ -810,12 +781,7 @@ parallel \
 ::: $(seq 1 $(cat single_gene_list.geneNames | wc -l))
 ```
 
-3. Generate parallelisable MACSE alignement script. NOTES: Set the final stop codons as "---", and internal stop codons as "NNN" so that PAML programs won't ask you to press enter to continue; also set frameshifts from "!" into "-". Also sort the alignment sequences, because MACSE jumbles them u for some reason with no option to return input order:
-
-Outputs:
-- ${ORTHOLOG}.NT.cds
-- ${ORTHOLOG}.AA.prot
-
+3. Align CDS. NOTES: Set the final stop codons as "---", and internal stop codons as "NNN" so that PAML programs won't ask you to press enter to continue; also set frameshifts from "!" into "-". Also sort the alignment sequences, because MACSE jumbles them u for some reason with no option to return input order (Outputs: ${ORTHOLOG}.NT.cds [nucleotide alignments] and ${ORTHOLOG}.AA.prot [amino acid alignments])
 ```{sh}
 echo '#!/bin/bash
 f=$1
@@ -848,21 +814,13 @@ parallel \
 ::: $(ls OG*.fasta)
 ```
 
-Extract sequences per species, concatenate alignments per species, concatenate species alignments, and convert codon and amino acid sequences from fasta into phylip format::
-
-Outputs:
-- 
-
+4. Build the tree (Outputs: ORTHOGROUPS_SINGLE_GENE.[NT AA].timetree.nex)
 ```{sh}
-
 time \
 for TYPE in NT.cds AA.prot
 do
-# TYPE=NT.cds
-# TYPE=AA.prot
-
-
-### Extract sequences per species (Outputs: ${ORTHONAME}-${SPECIES}.fasta --> overwrites number 2 outputs)
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+### Extract sequences per species (Outputs: ${ORTHONAME}-${SPECIES}.fasta)
 parallel \
 julia extract_sequence_using_name_query.jl \
     {1}.${TYPE} \
@@ -903,7 +861,7 @@ done
 echo 'end;' >> alignment_parition.nex
 
 ### Concatenate species alignments (Output: ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln)
-cat *.aln > ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln.tmp
+cat *-${TYPE%.*}.aln > ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln.tmp
 mv ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln.tmp ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln
 rm *-${TYPE%.*}.aln
 
@@ -931,27 +889,123 @@ iqtree2 \
     --date-tip ${TIP_DATE} \
     --prefix ORTHOGROUPS_SINGLE_GENE.${TYPE%.*} \
     --redo
-
-
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 done
 
 ### Clean-up
+rm OG*.fasta
+rm OG*.NT.cds
+rm OG*.AA.prot
 for SPECIES in $(grep "^>" $(ls *.${TYPE} | head -n1) | sed 's/^>//g')
 do
     rm *-${SPECIES}.fasta
 done
 ```
 
+## Estimate Ka/Ks (dN/dS) using pairs of paralogs per species (using maximum likelihood via "MS" or model selection method)
+```{sh}
+### Prepare parallelisable script
+echo '#!/bin/bash
+SPECIES=$1
+COLUMN=$2
+ORTHOGROUPS=$3
+group=$4
+# SPECIES=Lolium_rigidum
+# COLUMN=4
+# ORTHOGROUPS=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
+# group=$(cat orthogroups.tmp | head -n10 | tail -n1)
+grep "^$group" $ORTHOGROUPS | \
+    cut -f${COLUMN} | \
+    sed "/^$/d" | \
+    sed "s/$SPECIES|//g" > ${group}-gene_names.tmp
+# set the first gene as the focal gene
+focal_gene=$(cut -d"," -f1 ${group}-gene_names.tmp)
+julia extract_sequence_using_name_query.jl \
+    ${SPECIES}.cds \
+    ${focal_gene} \
+    ${group}.cds.tmp
+# extract the rest of the sequences and concatenate into a single file together with the focal gene sequence
+for gene in $(sed -z "s/, /\n/g" ${group}-gene_names.tmp | tail -n+2)
+do
+    # gene=$(sed -z "s/, /\n/g" ${group}-gene_names.tmp | tail -n+2 | head -n1)
+    julia extract_sequence_using_name_query.jl \
+        ${SPECIES}.cds \
+        ${gene} \
+        ${group}-Gi.cds.tmp
+    cat ${group}-Gi.cds.tmp >> ${group}.cds.tmp
+    rm ${group}-Gi.cds.tmp
+done
+# align
+java -Xmx8G \
+    -jar macse_v2.06.jar \
+    -prog alignSequences \
+    -seq ${group}.cds.tmp \
+    -out_NT ${group}.NT.aln.tmp \
+    -out_AA ${group}.AA.aln.tmp
+rm ${group}.AA.aln.tmp
+# pairwise Ka/Ks (dN/dS) estimation
+touch ${group}.aln.tmp
+g0=$(head -n2 ${group}.NT.aln.tmp | tail -n1)
+for line in $(seq 4 2 $(cat ${group}.NT.aln.tmp | wc -l))
+do
+    echo ${group}-$(echo "($line / 2) - 1" | bc) >> ${group}.aln.tmp
+    echo ${g0} >> ${group}.aln.tmp
+    head -n${line} ${group}.NT.aln.tmp | tail -n1 >> ${group}.aln.tmp
+    echo "" >> ${group}.aln.tmp
+done
+rm ${group}.NT.aln.tmp
+KaKs_Calculator \
+    -m MS \
+    -i ${group}.aln.tmp \
+    -o ${group}.kaks.out
+# clean-up
+rm ${group}*tmp
+' > pairwise_within_species_KaKs_estimation.sh
+chmod +x pairwise_within_species_KaKs_estimation.sh
+
+### Run across gene families in parallel per species
+time \
+for SPECIES in $(head -n1 $ORTHOUT | cut -f2- | rev | cut -f5- | rev)
+do
+    # SPECIES=Lolium_rigidum
+    COLUMN=$(head -n1 $ORTHOUT | sed -z "s/\t/\n/g" | grep -n $SPECIES - | cut -d":" -f1)
+    awk -v col=${COLUMN} '($col > 9) && ($col <= 10)' $ORTHOUT | cut -f1 > orthogroups.tmp
+    parallel ./pairwise_within_species_KaKs_estimation.sh \
+        ${SPECIES} \
+        ${COLUMN} \
+        ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv \
+        {} ::: $(cat orthogroups.tmp) ### Outputs: ${group}.kaks.out
+    head -n1 $(ls *.kaks.out | head -n1) > ${SPECIES}.kaks
+    for f in $(ls *.kaks.out)
+    do
+        ncol=$(head -n1 $f | awk '{print NF}')
+        nrow=$(cat $f | wc -l)
+        if [ $ncol -eq 22 ] && [ $nrow -gt 1 ]
+        then
+            tail -n+2 $f >> ${SPECIES}.kaks
+        fi
+    done
+    rm *.kaks.out orthogroups.tmp
+done
+
+
+
+```
+
+
 ## Figure 2 plotting
 
 ```{R}
 args = commandArgs(trailingOnly=TRUE)
-# args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv")
+# args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv", "ORTHOGROUPS/orthogroups_gene_counts_families_go.out")
+# args = c("ORTHOGROUPS_SINGLE_GENE.AA.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv", "ORTHOGROUPS/orthogroups_gene_counts_families_go.out")
 fname_tree = args[1]
 fname_conex = args[2]
 fname_gene_groups = args[3]
+fname_gene_counts = args[4]
 
 library(ape)
+library(gplots)
 
 par(mfrow=c(2,2))
 
@@ -961,8 +1015,8 @@ tree = ladderize(tree, right=FALSE)
 par(mar=c(5,2,5,1))
 plt = plot.phylo(tree, cex=1.2)
 x_axis = round(seq(0, max(tree$edge.length), by=20))
-axis(side=1, at=max(x_axis)-x_axis, lab=x_axis)
-mtext(text="Million years ago", side=1, line=2, at=median(x_axis))
+axis(side=1, line=1.5, at=max(x_axis)-x_axis, lab=x_axis)
+mtext(text="Million years ago", side=1, line=4.5, at=median(x_axis))
 
 ### Expansion / Contraction: middle area text
 adj_frac = 0.04
@@ -973,7 +1027,7 @@ conex = conex[order(conex$order), ]
 conex$Expansion = formatC(conex$Expansion, format="d", big.mark=",")
 conex$Contraction = formatC(conex$Contraction, format="d", big.mark=",")
 conex_lab = paste0(conex$Expansion, " : ", conex$Contraction)
-text(x=(plt$x.lim[2]-(adj_frac*plt$x.lim[2])), y=seq(plt$y.lim[1], plt$y.lim[2]), adj=0.5, lab=conex_lab)
+text(x=(plt$x.lim[2]-(adj_frac*plt$x.lim[2])), y=seq(plt$y.lim[1], plt$y.lim[2]), adj=0.5, lab=conex_lab, cex=1.2)
 mtext(side=3, line=1, at=(plt$x.lim[2]-(adj_frac*plt$x.lim[2])), adj=0.5, text="Expansion : Contraction")
 
 ### Gene classifications: bar plot
@@ -982,15 +1036,26 @@ m = ncol(gene_groups)
 gene_groups = gene_groups[order(gene_groups$Species), ]
 gene_groups$order = c(1, 6, 7, 2, 5, 3, 4)
 gene_groups = gene_groups[order(gene_groups$order), ]
-
-
 X = t(as.matrix(gene_groups[, 3:m]))
-rownames(X) = gsub("_", " "colnames(gene_groups)[3:m])
+rownames(X) = gsub("_", " ", colnames(gene_groups)[3:m])
 colnames(X) = gene_groups$Species
 colors = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c")
 par(mar=c(3.5,1,3.5,15))
-barplot(X, col=colors, bord=NA, horiz=TRUE, yaxt="n",
+barplot(X, col=colors, bord=NA, horiz=TRUE, yaxt="n", xaxt="n", xlim=c(0, signif(max(gene_groups$Total),0)),
         legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.15, +0.05), bty="n", cex=1.2))
+x_axis = seq(0, signif(max(gene_groups$Total),0), length=5)
+axis(side=1, at=x_axis, lab=formatC(x_axis, format="d", big.mark=","))
+mtext(text="Gene counts", side=1, line=3, at=median(x_axis))
+
+### Venn diagram of shared gene families
+gene_counts = read.delim(fname_gene_counts, header=TRUE)
+X = gene_counts[, 1:(ncol(gene_counts)-4)]
+X$Orthogroup = as.numeric(gsub("OG", "", X$Orthogroup))+1
+X[,2:ncol(X)] = X[,2:ncol(X)] > 0
+colnames(X) = gsub("_", " ", colnames(X))
+par(mar=c(1,5,3,5))
+venn(X[,c(3,4,5,6,8)]) ### picking only 5 species (maximum number of sets to draw a Venn diagram so far)
+
 
 ```
 
