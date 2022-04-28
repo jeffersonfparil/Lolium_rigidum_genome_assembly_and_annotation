@@ -120,13 +120,21 @@ wget https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar
 java -Xmx250G -jar macse_v2.06.jar -h
 ```
 
-## Install KaKs_Calculator2.0 to assess signatures of selection
+## Install IQ-TREE for building trees with fossil root dates
 ```{sh}
-wget https://github.com/kullrich/kakscalculator2/archive/refs/tags/v2.0.1.tar.gz
-tar -xvzf v2.0.1.tar.gz
-cd kakscalculator2-2.0.1/src
-make
-PATH=${PATH}:$(pwd)
+sudo apt install libeigen3-dev
+wget https://github.com/Cibiv/IQ-TREE/releases/download/v2.0.7/iqtree-2.0.7-Linux.tar.gz
+tar -xvzf iqtree-2.0.7-Linux.tar.gz
+PATH=${PATH}:$(pwd)/iqtree-2.0.7-Linux/bin
+```
+
+## Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
+```{sh}
+wget http://abacus.gene.ucl.ac.uk/software/paml4.9j.tgz
+tar -xvzf paml4.9j.tgz
+cd paml4.9j/
+PATH=${PATH}/bin
+PATH=${PATH}/src
 cd -
 ```
 
@@ -184,14 +192,6 @@ orthofinder \
     -t 32
 
 DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/
-```
-
-## Install IQ-TREE for building trees with fossil root dates
-```{sh}
-sudo apt install libeigen3-dev
-wget https://github.com/Cibiv/IQ-TREE/releases/download/v2.0.7/iqtree-2.0.7-Linux.tar.gz
-tar -xvzf iqtree-2.0.7-Linux.tar.gz
-PATH=${PATH}:$(pwd)/iqtree-2.0.7-Linux/bin
 ```
 
 ## Assign orthogroups into gene families
@@ -781,7 +781,7 @@ parallel \
 ::: $(seq 1 $(cat single_gene_list.geneNames | wc -l))
 ```
 
-3. Align CDS. NOTES: Set the final stop codons as "---", and internal stop codons as "NNN" so that PAML programs won't ask you to press enter to continue; also set frameshifts from "!" into "-". Also sort the alignment sequences, because MACSE jumbles them u for some reason with no option to return input order (Outputs: ${ORTHOLOG}.NT.cds [nucleotide alignments] and ${ORTHOLOG}.AA.prot [amino acid alignments])
+3. Align CDS (Outputs: ${ORTHOLOG}.NT.cds [nucleotide alignments] and ${ORTHOLOG}.AA.prot [amino acid alignments])
 ```{sh}
 echo '#!/bin/bash
 f=$1
@@ -805,7 +805,7 @@ java -Xmx8G \
     -out_NT ${ORTHOLOG}.NT.cds \
     -out_AA ${ORTHOLOG}.AA.prot
 # Clean-up
-rm ${ORTHOLOG}*.tmp
+rm ${ORTHOLOG}*.tmp ${ORTHOLOG}.AA.prot # we are not using the amino acid sequences
 ' > parallel_align_cds.sh
 chmod +x parallel_align_cds.sh
 time \
@@ -814,12 +814,9 @@ parallel \
 ::: $(ls OG*.fasta)
 ```
 
-4. Build the tree (Outputs: ORTHOGROUPS_SINGLE_GENE.[NT AA].timetree.nex)
+4. Build the tree (Outputs: ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex; ORTHOGROUPS_SINGLE_GENE.NT.aln; and alignment_parition.NT.nex)
 ```{sh}
-time \
-for TYPE in NT.cds AA.prot
-do
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+TYPE=NT.cds
 ### Extract sequences per species (Outputs: ${ORTHONAME}-${SPECIES}.fasta)
 parallel \
 julia extract_sequence_using_name_query.jl \
@@ -843,10 +840,10 @@ do
     rm ${SPECIES}.aln.tmp
 done
 
-# Extract sequence lengths to build the sequence partitioning nexus file (Output: alignment_parition.nex)
+# Extract sequence lengths to build the sequence partitioning nexus file (Output: alignment_parition.${TYPE%.*}.nex)
 SPECIES=$(grep "^>" $(ls *.${TYPE} | head -n1) | sed 's/^>//g' | head -n1)
 echo '#nexus
-begin sets;' > alignment_parition.nex
+begin sets;' > alignment_parition.${TYPE%.*}.nex
 N0=0
 for f in $(ls *-${SPECIES}.fasta)
 do
@@ -855,18 +852,15 @@ do
     N1=$(cat $f | sed '/^>/d' | sed -z 's/\n//g' | wc -c)
     START=$(echo "$N0 + 1" | bc)
     END=$(echo "$N0 + $N1" | bc)
-    echo "charset $NAME = $START-$END;" >> alignment_parition.nex
+    echo "charset $NAME = $START-$END;" >> alignment_parition.${TYPE%.*}.nex
     N0=$END
 done
-echo 'end;' >> alignment_parition.nex
+echo 'end;' >> alignment_parition.${TYPE%.*}.nex
 
 ### Concatenate species alignments (Output: ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln)
 cat *-${TYPE%.*}.aln > ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln.tmp
 mv ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln.tmp ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln
 rm *-${TYPE%.*}.aln
-
-# ### Convert codon and amino acid sequences from fasta into phylip format (Output: ${ORTHOLOG}.${TYPE%.*}.phylip)
-# julia fasta_to_phylip.jl ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln
 
 ### Lookup divergence times between species (Output: dates.txt)
 echo 'Arabidopsis_thaliana,Oryza_sativa     -160.00
@@ -882,114 +876,109 @@ TIP_DATE=0
 time \
 iqtree2 \
     -s ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.aln \
-    -p alignment_parition.nex \
+    -p alignment_parition.${TYPE%.*}.nex \
     -B ${BOOTSTRAP_REPS} \
     -T ${THREADS} \
     --date dates.txt \
     --date-tip ${TIP_DATE} \
     --prefix ORTHOGROUPS_SINGLE_GENE.${TYPE%.*} \
     --redo
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-done
-
-### Clean-up
-rm OG*.fasta
-rm OG*.NT.cds
-rm OG*.AA.prot
-for SPECIES in $(grep "^>" $(ls *.${TYPE} | head -n1) | sed 's/^>//g')
-do
-    rm *-${SPECIES}.fasta
-done
 ```
 
-## Estimate Ka/Ks (dN/dS) using pairs of paralogs per species (using maximum likelihood via "MS" or model selection method)
+5. Clean-up (Output: ${ORTHOLOG}.NT.cds is left for the next step, i.e. Ka/Ks estimation)
 ```{sh}
-### Prepare parallelisable script
-echo '#!/bin/bash
-SPECIES=$1
-COLUMN=$2
-ORTHOGROUPS=$3
-group=$4
-# SPECIES=Lolium_rigidum
-# COLUMN=4
-# ORTHOGROUPS=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
-# group=$(cat orthogroups.tmp | head -n10 | tail -n1)
-grep "^$group" $ORTHOGROUPS | \
-    cut -f${COLUMN} | \
-    sed "/^$/d" | \
-    sed "s/$SPECIES|//g" > ${group}-gene_names.tmp
-# set the first gene as the focal gene
-focal_gene=$(cut -d"," -f1 ${group}-gene_names.tmp)
-julia extract_sequence_using_name_query.jl \
-    ${SPECIES}.cds \
-    ${focal_gene} \
-    ${group}.cds.tmp
-# extract the rest of the sequences and concatenate into a single file together with the focal gene sequence
-for gene in $(sed -z "s/, /\n/g" ${group}-gene_names.tmp | tail -n+2)
+rm OG*.fasta
+rm OG*.NT.cds
+rm single_gene_list.*
+rm dates.txt
+```
+
+## Assess Ka/Ks (dN/dS) across species using single-gene orthogroups
+1. Convert alignments from fasta into phylip format (Output: ORTHOGROUPS_SINGLE_GENE.NT.phylip)
+```{sh}
+TYPE=NT
+### Convert from fasta into phylip format
+julia fasta_to_phylip.jl ORTHOGROUPS_SINGLE_GENE.${TYPE}.aln
+mv ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip ORTHOGROUPS_SINGLE_GENE.${TYPE}.tmp
+
+### Append gene delineation
+echo "$(head -n1 ORTHOGROUPS_SINGLE_GENE.${TYPE}.tmp) G" > ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
+cut -d"=" -f2 alignment_parition.${TYPE}.nex | grep -v "#" | grep -v "begin" | grep -v "end" | sed -z "/^$/d" | sed "s/;//g" > gene_coordinates.tmp
+echo "G $(cat gene_coordinates.tmp | wc -l)" > row_2_gene_lengths.tmp
+for diff in $(cat gene_coordinates.tmp)
 do
-    # gene=$(sed -z "s/, /\n/g" ${group}-gene_names.tmp | tail -n+2 | head -n1)
-    julia extract_sequence_using_name_query.jl \
-        ${SPECIES}.cds \
-        ${gene} \
-        ${group}-Gi.cds.tmp
-    cat ${group}-Gi.cds.tmp >> ${group}.cds.tmp
-    rm ${group}-Gi.cds.tmp
+    # diff=$(cut -d"=" -f2 alignment_parition.${TYPE}.nex | grep -v "#" | grep -v "begin" | grep -v "end" | sed -z "/^$/d" | sed "s/;//g" | head -n10 | tail -n1)
+    echo "$diff - 1" | bc | sed "s/-//g" >> row_2_gene_lengths.tmp
 done
-# align
-java -Xmx8G \
-    -jar macse_v2.06.jar \
-    -prog alignSequences \
-    -seq ${group}.cds.tmp \
-    -out_NT ${group}.NT.aln.tmp \
-    -out_AA ${group}.AA.aln.tmp
-rm ${group}.AA.aln.tmp
-# pairwise Ka/Ks (dN/dS) estimation
-touch ${group}.aln.tmp
-g0=$(head -n2 ${group}.NT.aln.tmp | tail -n1)
-for line in $(seq 4 2 $(cat ${group}.NT.aln.tmp | wc -l))
-do
-    echo ${group}-$(echo "($line / 2) - 1" | bc) >> ${group}.aln.tmp
-    echo ${g0} >> ${group}.aln.tmp
-    head -n${line} ${group}.NT.aln.tmp | tail -n1 >> ${group}.aln.tmp
-    echo "" >> ${group}.aln.tmp
-done
-rm ${group}.NT.aln.tmp
-KaKs_Calculator \
-    -m MS \
-    -i ${group}.aln.tmp \
-    -o ${group}.kaks.out
-# clean-up
-rm ${group}*tmp
-' > pairwise_within_species_KaKs_estimation.sh
-chmod +x pairwise_within_species_KaKs_estimation.sh
+sed -z "s/\n/ /g" row_2_gene_lengths.tmp >> ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
+sed -i -z "s/ $/\n/g" ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
+tail -n+2 ORTHOGROUPS_SINGLE_GENE.${TYPE}.tmp >> ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
 
-### Run across gene families in parallel per species
-time \
-for SPECIES in $(head -n1 $ORTHOUT | cut -f2- | rev | cut -f5- | rev)
-do
-    # SPECIES=Lolium_rigidum
-    COLUMN=$(head -n1 $ORTHOUT | sed -z "s/\t/\n/g" | grep -n $SPECIES - | cut -d":" -f1)
-    awk -v col=${COLUMN} '($col > 9) && ($col <= 10)' $ORTHOUT | cut -f1 > orthogroups.tmp
-    parallel ./pairwise_within_species_KaKs_estimation.sh \
-        ${SPECIES} \
-        ${COLUMN} \
-        ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv \
-        {} ::: $(cat orthogroups.tmp) ### Outputs: ${group}.kaks.out
-    head -n1 $(ls *.kaks.out | head -n1) > ${SPECIES}.kaks
-    for f in $(ls *.kaks.out)
-    do
-        ncol=$(head -n1 $f | awk '{print NF}')
-        nrow=$(cat $f | wc -l)
-        if [ $ncol -eq 22 ] && [ $nrow -gt 1 ]
-        then
-            tail -n+2 $f >> ${SPECIES}.kaks
-        fi
-    done
-    rm *.kaks.out orthogroups.tmp
-done
+### Clean-up
+rm *.tmp
+```
 
+2. Prepare the codeml control file
+```{sh}
+echo '
+**************
+*** INPUTS ***
+**************
+      seqfile = ORTHOGROUPS_SINGLE_GENE.NT.phylip       * sequence data file name
+     treefile = ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex * tree structure file name
+**************
+*** OUPUTS ***
+**************
+      outfile = ORTHOGROUPS_SINGLE_GENE.NT.codeml   * main result file
+        noisy = 0                                   * 0,1,2,3: how much rubbish on the screen
+      verbose = 0                                   * 1: detailed output, 0: concise output
+      runmode = 0                                   * 0: user tree; 1: semi-automatic; 2: automatic; 3: StepwiseAddition; (4,5):PerturbationNNI
+********************************
+*** PROPERTIES OF THE INPUTS ***
+********************************
+        ndata = 1                                   * number of datasets
+      seqtype = 1                                   * 1:codons; 2:AAs; 3:codons-->AAs 
+    CodonFreq = 2                                   * 0:1/61 each, 1:F1X4, 2:F3X4, 3:codon table, 4:F1x4MG, 5:F3x4MG, 6:FMutSel0, 7:FMutSel
+********************************
+*** CODON SUBSTITUTION MODEL ***
+********************************
+        model = 1                                   * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
+      NSsites = 0                                   * 0: M0 (one ratio), 1: M1a (neutral), 2: M2a (selection), ...
+        icode = 0                                   * 0:universal code, 1:mammalian mt, ...
+        Mgene = 0                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
+********************************************
+*** TRANSITION / TRANSVERSION RATE RATIO ***
+********************************************
+    fix_kappa = 0                                   * 0: estimate kappa, 1: fix kappa, 2: kappa for branches
+        kappa = 1.6                                 * initial or fixed kappa
+*********************************************************
+*** dN/dS: NONSYNONYNOUS / SYNONYNOUS VARIATION RATIO ***
+*********************************************************
+    fix_omega = 0                                   * 0: estimate omega, 1: fix omega
+        omega = .9                                  * initial or fixed omega
+******************************************
+*** GAMMA DISTRIBUTION SHAPE PARAMETER ***
+******************************************
+    fix_alpha = 0                                   * 0: estimate alpha; 1: fix alpha
+        alpha = 1                                   * initial or fixed alpha or is equal 0:infinity (constant rate)
+       Malpha = 0                                   * 0: one alpha, 1: different alphas for genes
+        ncatG = 10                                  * number of categories in the dG, AdG, or nparK models of rates
+**********************
+*** CLOCK SETTINGS ***
+**********************
+        clock = 1                                   * 0:no clock, 1:global clock; 2:local clock; 3:CombinedAnalysis
+        getSE = 0
+ RateAncestor = 0
+*********************
+*** MISCELLANEOUS ***
+*********************
+   Small_Diff = .1e-6
+    cleandata = 1
+       method = 0
+  fix_blength = 0                                  * 0: ignore, -1: random, 1: initial, 2: fixed
+' > SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
 
-
+time codeml SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
 ```
 
 
@@ -997,12 +986,13 @@ done
 
 ```{R}
 args = commandArgs(trailingOnly=TRUE)
-# args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv", "ORTHOGROUPS/orthogroups_gene_counts_families_go.out")
-# args = c("ORTHOGROUPS_SINGLE_GENE.AA.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv", "ORTHOGROUPS/orthogroups_gene_counts_families_go.out")
+# args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv", "ORTHOGROUPS/orthogroups_gene_counts_families_go.out", ".kaks")
+# args = c("ORTHOGROUPS_SINGLE_GENE.AA.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv", "ORTHOGROUPS/orthogroups_gene_counts_families_go.out", ".kaks")
 fname_tree = args[1]
 fname_conex = args[2]
 fname_gene_groups = args[3]
 fname_gene_counts = args[4]
+extension_name_KaKs = args[5]
 
 library(ape)
 library(gplots)
@@ -1056,8 +1046,120 @@ colnames(X) = gsub("_", " ", colnames(X))
 par(mar=c(1,5,3,5))
 venn(X[,c(3,4,5,6,8)]) ### picking only 5 species (maximum number of sets to draw a Venn diagram so far)
 
+### Ka/Ks (or dN/dS using gene families with 10 genes each)
+par(mar=c(5,5,5,5))
+alpha = 0.05
+kaks_files = list.files(path=".", pattern=extension_name_KaKs)
+for (f in kaks_files){
+    # f = kaks_files[3]
+    kaks = read.delim(f, header=TRUE, na.string="NA")
+    idx = !is.na(kaks$Ka.Ks) & !is.na(kaks$P.Value.Fisher) & !is.na(kaks$Model)
+    kaks = droplevels(kaks[idx, ])
+    kaks = kaks[order(kaks$Ka.Ks, decreasing=TRUE), ]
+    idx = (kaks$P.Value.Fisher < alpha) & (kaks$Ka.Ks > 1)
+    
+    hist(kaks$Ka.Ks)
+}
+
+
 
 ```
+
+
+## [PROBABLY WRONG!!!] Estimate Ka/Ks (dN/dS) using pairs of paralogs per species (using maximum likelihood via "MS" or model selection method)
+```{sh}
+### Prepare parallelisable script
+echo '#!/bin/bash
+SPECIES=$1
+COLUMN=$2
+ORTHOGROUPS=$3
+group=$4
+# SPECIES=Lolium_rigidum
+# COLUMN=4
+# ORTHOGROUPS=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
+# group=$(cat orthogroups.tmp | head -n10 | tail -n1)
+grep "^$group" $ORTHOGROUPS | \
+    cut -f${COLUMN} | \
+    sed "/^$/d" | \
+    sed "s/$SPECIES|//g" > ${group}-gene_names.tmp
+# set the first gene as the focal gene
+focal_gene=$(cut -d"," -f1 ${group}-gene_names.tmp)
+julia extract_sequence_using_name_query.jl \
+    ${SPECIES}.cds \
+    ${focal_gene} \
+    ${group}.cds.tmp
+# extract the rest of the sequences and concatenate into a single file together with the focal gene sequence
+for gene in $(sed -z "s/, /\n/g" ${group}-gene_names.tmp | tail -n+2)
+do
+    # gene=$(sed -z "s/, /\n/g" ${group}-gene_names.tmp | tail -n+2 | head -n1)
+    julia extract_sequence_using_name_query.jl \
+        ${SPECIES}.cds \
+        ${gene} \
+        ${group}-Gi.cds.tmp
+    cat ${group}-Gi.cds.tmp >> ${group}.cds.tmp
+    rm ${group}-Gi.cds.tmp
+done
+# align
+java -Xmx8G \
+    -jar macse_v2.06.jar \
+    -prog alignSequences \
+    -seq ${group}.cds.tmp \
+    -out_NT ${group}.NT.aln.tmp \
+    -out_AA ${group}.AA.aln.tmp
+rm ${group}.cds.tmp ${group}.AA.aln.tmp
+
+
+
+# pairwise Ka/Ks (dN/dS) estimation
+touch ${group}.aln.tmp
+g0=$(head -n2 ${group}.NT.aln.tmp | tail -n1)
+for line in $(seq 4 2 $(cat ${group}.NT.aln.tmp | wc -l))
+do
+    echo ${group}-$(echo "($line / 2) - 1" | bc) >> ${group}.aln.tmp
+    echo ${g0} >> ${group}.aln.tmp
+    head -n${line} ${group}.NT.aln.tmp | tail -n1 >> ${group}.aln.tmp
+    echo "" >> ${group}.aln.tmp
+done
+rm ${group}.NT.aln.tmp
+KaKs_Calculator \
+    -m MS \
+    -i ${group}.aln.tmp \
+    -o ${group}.kaks.out
+# clean-up
+rm ${group}*tmp
+' > pairwise_within_species_KaKs_estimation.sh
+chmod +x pairwise_within_species_KaKs_estimation.sh
+
+### Run across gene families in parallel per species
+time \
+for SPECIES in $(head -n1 $ORTHOUT | cut -f2- | rev | cut -f5- | rev)
+do
+    # SPECIES=Lolium_rigidum
+    COLUMN=$(head -n1 $ORTHOUT | sed -z "s/\t/\n/g" | grep -n $SPECIES - | cut -d":" -f1)
+    awk -v col=${COLUMN} '($col > 9) && ($col <= 10)' $ORTHOUT | cut -f1 > orthogroups.tmp
+    parallel ./pairwise_within_species_KaKs_estimation.sh \
+        ${SPECIES} \
+        ${COLUMN} \
+        ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv \
+        {} ::: $(cat orthogroups.tmp) ### Outputs: ${group}.kaks.out
+    head -n1 $(ls *.kaks.out | head -n1) > ${SPECIES}.kaks
+    for f in $(ls *.kaks.out)
+    do
+        ncol=$(head -n1 $f | awk '{print NF}')
+        nrow=$(cat $f | wc -l)
+        if [ $ncol -eq 22 ] && [ $nrow -gt 1 ]
+        then
+            tail -n+2 $f >> ${SPECIES}.kaks
+        fi
+    done
+    rm *.kaks.out orthogroups.tmp
+done
+
+
+
+```
+
+
 
 
 ## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
