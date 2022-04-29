@@ -12,10 +12,10 @@ end
 
 function write_per_line(file_output, line, c)
     file_output = open(fasta_output, "a")
-    x = split(line, "")
+    x = collect(line)
     for i in 1:c:length(x)
         try 
-            write(file_output, string(join(x[i:(i+c)], ""), "\n"))
+            write(file_output, string(join(x[i:(i+c-1)], ""), "\n"))
         catch
             write(file_output, string(join(x[i:end], ""), "\n"))
         end

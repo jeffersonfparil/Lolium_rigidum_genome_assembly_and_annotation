@@ -18,12 +18,12 @@ function SEQUENCE_LENGTH(filename_input)
     FILE = open(filename_input, "r")
     _ = readline(FILE)
     line = readline(FILE)
-    sequence_length = length(line)
+    sequence_length = length(collect(line))
     while line[1] != '>'
         line = readline(FILE)
-        sequence_length = sequence_length + length(line)
+        sequence_length = sequence_length + length(collect(line))
     end
-    sequence_length = sequence_length - length(line)
+    sequence_length = sequence_length - length(collect(line))
     close(FILE)
     return(sequence_length)
 end

@@ -8,7 +8,8 @@ DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/
 GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
 MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
-cd $DIR
+DIR_GENES=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/TSR_NTSR_GENES
+ $DIR
 ```
 
 ## Download genomes, genome annotations, and predicted CDS sequences
@@ -814,7 +815,7 @@ parallel \
 ::: $(ls OG*.fasta)
 ```
 
-4. Build the tree (Outputs: ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex; ORTHOGROUPS_SINGLE_GENE.NT.aln; and alignment_parition.NT.nex)
+4. Build the tree (Outputs: ORTHOGROUPS_SINGLE_GENE.NT.treefile [for PAML::codeml], ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex [for plotting]; ORTHOGROUPS_SINGLE_GENE.NT.aln [for prepping PAML::codeml input]; and alignment_parition.NT.nex [for prepping PAML::codeml input])
 ```{sh}
 TYPE=NT.cds
 ### Extract sequences per species (Outputs: ${ORTHONAME}-${SPECIES}.fasta)
@@ -834,7 +835,10 @@ do
     echo $SPECIES
     # Concatenate sequences
     echo ">${SPECIES}" > ${SPECIES}.aln.tmp
-    cat *-${SPECIES}.fasta | sed '/^>/d' | sed -z 's/\n//g' >> ${SPECIES}.aln.tmp
+    for f in $(ls *-${SPECIES}.fasta)
+    do
+        sed '/^>/d' $f | sed -z 's/\n//g' >> ${SPECIES}.aln.tmp
+    done
     echo "" >> ${SPECIES}.aln.tmp
     julia reformat_fasta_sequence.jl ${SPECIES}.aln.tmp 50 ${SPECIES}-${TYPE%.*}.aln
     rm ${SPECIES}.aln.tmp
@@ -907,8 +911,8 @@ cut -d"=" -f2 alignment_parition.${TYPE}.nex | grep -v "#" | grep -v "begin" | g
 echo "G $(cat gene_coordinates.tmp | wc -l)" > row_2_gene_lengths.tmp
 for diff in $(cat gene_coordinates.tmp)
 do
-    # diff=$(cut -d"=" -f2 alignment_parition.${TYPE}.nex | grep -v "#" | grep -v "begin" | grep -v "end" | sed -z "/^$/d" | sed "s/;//g" | head -n10 | tail -n1)
-    echo "$diff - 1" | bc | sed "s/-//g" >> row_2_gene_lengths.tmp
+    # diff=$(head -n10 gene_coordinates.tmp | tail -n1)
+    echo "($diff - 1) / 3" | bc | sed "s/-//g" >> row_2_gene_lengths.tmp
 done
 sed -z "s/\n/ /g" row_2_gene_lengths.tmp >> ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
 sed -i -z "s/ $/\n/g" ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
@@ -924,13 +928,13 @@ echo '
 **************
 *** INPUTS ***
 **************
-      seqfile = ORTHOGROUPS_SINGLE_GENE.NT.phylip       * sequence data file name
-     treefile = ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex * tree structure file name
+      seqfile = ORTHOGROUPS_SINGLE_GENE.NT.phylip   * sequence data file name
+     treefile = ORTHOGROUPS_SINGLE_GENE.NT.treefile * tree structure file name
 **************
 *** OUPUTS ***
 **************
       outfile = ORTHOGROUPS_SINGLE_GENE.NT.codeml   * main result file
-        noisy = 0                                   * 0,1,2,3: how much rubbish on the screen
+        noisy = 3                                   * 0,1,2,3: how much rubbish on the screen
       verbose = 0                                   * 1: detailed output, 0: concise output
       runmode = 0                                   * 0: user tree; 1: semi-automatic; 2: automatic; 3: StepwiseAddition; (4,5):PerturbationNNI
 ********************************
@@ -942,10 +946,10 @@ echo '
 ********************************
 *** CODON SUBSTITUTION MODEL ***
 ********************************
-        model = 1                                   * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
+        model = 0                                   * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
       NSsites = 0                                   * 0: M0 (one ratio), 1: M1a (neutral), 2: M2a (selection), ...
         icode = 0                                   * 0:universal code, 1:mammalian mt, ...
-        Mgene = 0                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
+        Mgene = 4                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
 ********************************************
 *** TRANSITION / TRANSVERSION RATE RATIO ***
 ********************************************
@@ -955,13 +959,13 @@ echo '
 *** dN/dS: NONSYNONYNOUS / SYNONYNOUS VARIATION RATIO ***
 *********************************************************
     fix_omega = 0                                   * 0: estimate omega, 1: fix omega
-        omega = .9                                  * initial or fixed omega
+        omega = 0.1                                 * initial or fixed omega
 ******************************************
 *** GAMMA DISTRIBUTION SHAPE PARAMETER ***
 ******************************************
     fix_alpha = 0                                   * 0: estimate alpha; 1: fix alpha
         alpha = 1                                   * initial or fixed alpha or is equal 0:infinity (constant rate)
-       Malpha = 0                                   * 0: one alpha, 1: different alphas for genes
+       Malpha = 1                                   * 0: one alpha, 1: different alphas for genes
         ncatG = 10                                  * number of categories in the dG, AdG, or nparK models of rates
 **********************
 *** CLOCK SETTINGS ***
@@ -976,198 +980,378 @@ echo '
     cleandata = 1
        method = 0
   fix_blength = 0                                  * 0: ignore, -1: random, 1: initial, 2: fixed
-' > SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
+' > ORTHOGROUPS_SINGLE_GENE-CODEML.ctl
 
-time codeml SINGLE_COPY_GENE_FAMILIES-CODEML.ctl
+time codeml ORTHOGROUPS_SINGLE_GENE-CODEML.ctl
 ```
-
-
-## Figure 2 plotting
-
-```{R}
-args = commandArgs(trailingOnly=TRUE)
-# args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv", "ORTHOGROUPS/orthogroups_gene_counts_families_go.out", ".kaks")
-# args = c("ORTHOGROUPS_SINGLE_GENE.AA.timetree.nex", "CONTRACTION_EXPANSION.txt", "ORTHOGROUPS/orthogroups_summarised_gene_counts.csv", "ORTHOGROUPS/orthogroups_gene_counts_families_go.out", ".kaks")
-fname_tree = args[1]
-fname_conex = args[2]
-fname_gene_groups = args[3]
-fname_gene_counts = args[4]
-extension_name_KaKs = args[5]
-
-library(ape)
-library(gplots)
-
-par(mfrow=c(2,2))
-
-### Tree: dendrogram
-tree = read.nexus(fname_tree)
-tree = ladderize(tree, right=FALSE)
-par(mar=c(5,2,5,1))
-plt = plot.phylo(tree, cex=1.2)
-x_axis = round(seq(0, max(tree$edge.length), by=20))
-axis(side=1, line=1.5, at=max(x_axis)-x_axis, lab=x_axis)
-mtext(text="Million years ago", side=1, line=4.5, at=median(x_axis))
-
-### Expansion / Contraction: middle area text
-adj_frac = 0.04
-conex = read.table(fname_conex, header=TRUE)
-conex = conex[order(conex$Species), ]
-conex$order = c(1, 6, 7, 2, 5, 3, 4)
-conex = conex[order(conex$order), ]
-conex$Expansion = formatC(conex$Expansion, format="d", big.mark=",")
-conex$Contraction = formatC(conex$Contraction, format="d", big.mark=",")
-conex_lab = paste0(conex$Expansion, " : ", conex$Contraction)
-text(x=(plt$x.lim[2]-(adj_frac*plt$x.lim[2])), y=seq(plt$y.lim[1], plt$y.lim[2]), adj=0.5, lab=conex_lab, cex=1.2)
-mtext(side=3, line=1, at=(plt$x.lim[2]-(adj_frac*plt$x.lim[2])), adj=0.5, text="Expansion : Contraction")
-
-### Gene classifications: bar plot
-gene_groups = read.csv(fname_gene_groups)
-m = ncol(gene_groups)
-gene_groups = gene_groups[order(gene_groups$Species), ]
-gene_groups$order = c(1, 6, 7, 2, 5, 3, 4)
-gene_groups = gene_groups[order(gene_groups$order), ]
-X = t(as.matrix(gene_groups[, 3:m]))
-rownames(X) = gsub("_", " ", colnames(gene_groups)[3:m])
-colnames(X) = gene_groups$Species
-colors = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c")
-par(mar=c(3.5,1,3.5,15))
-barplot(X, col=colors, bord=NA, horiz=TRUE, yaxt="n", xaxt="n", xlim=c(0, signif(max(gene_groups$Total),0)),
-        legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.15, +0.05), bty="n", cex=1.2))
-x_axis = seq(0, signif(max(gene_groups$Total),0), length=5)
-axis(side=1, at=x_axis, lab=formatC(x_axis, format="d", big.mark=","))
-mtext(text="Gene counts", side=1, line=3, at=median(x_axis))
-
-### Venn diagram of shared gene families
-gene_counts = read.delim(fname_gene_counts, header=TRUE)
-X = gene_counts[, 1:(ncol(gene_counts)-4)]
-X$Orthogroup = as.numeric(gsub("OG", "", X$Orthogroup))+1
-X[,2:ncol(X)] = X[,2:ncol(X)] > 0
-colnames(X) = gsub("_", " ", colnames(X))
-par(mar=c(1,5,3,5))
-venn(X[,c(3,4,5,6,8)]) ### picking only 5 species (maximum number of sets to draw a Venn diagram so far)
-
-### Ka/Ks (or dN/dS using gene families with 10 genes each)
-par(mar=c(5,5,5,5))
-alpha = 0.05
-kaks_files = list.files(path=".", pattern=extension_name_KaKs)
-for (f in kaks_files){
-    # f = kaks_files[3]
-    kaks = read.delim(f, header=TRUE, na.string="NA")
-    idx = !is.na(kaks$Ka.Ks) & !is.na(kaks$P.Value.Fisher) & !is.na(kaks$Model)
-    kaks = droplevels(kaks[idx, ])
-    kaks = kaks[order(kaks$Ka.Ks, decreasing=TRUE), ]
-    idx = (kaks$P.Value.Fisher < alpha) & (kaks$Ka.Ks > 1)
-    
-    hist(kaks$Ka.Ks)
-}
-
-
-
-```
-
-
-## [PROBABLY WRONG!!!] Estimate Ka/Ks (dN/dS) using pairs of paralogs per species (using maximum likelihood via "MS" or model selection method)
-```{sh}
-### Prepare parallelisable script
-echo '#!/bin/bash
-SPECIES=$1
-COLUMN=$2
-ORTHOGROUPS=$3
-group=$4
-# SPECIES=Lolium_rigidum
-# COLUMN=4
-# ORTHOGROUPS=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
-# group=$(cat orthogroups.tmp | head -n10 | tail -n1)
-grep "^$group" $ORTHOGROUPS | \
-    cut -f${COLUMN} | \
-    sed "/^$/d" | \
-    sed "s/$SPECIES|//g" > ${group}-gene_names.tmp
-# set the first gene as the focal gene
-focal_gene=$(cut -d"," -f1 ${group}-gene_names.tmp)
-julia extract_sequence_using_name_query.jl \
-    ${SPECIES}.cds \
-    ${focal_gene} \
-    ${group}.cds.tmp
-# extract the rest of the sequences and concatenate into a single file together with the focal gene sequence
-for gene in $(sed -z "s/, /\n/g" ${group}-gene_names.tmp | tail -n+2)
-do
-    # gene=$(sed -z "s/, /\n/g" ${group}-gene_names.tmp | tail -n+2 | head -n1)
-    julia extract_sequence_using_name_query.jl \
-        ${SPECIES}.cds \
-        ${gene} \
-        ${group}-Gi.cds.tmp
-    cat ${group}-Gi.cds.tmp >> ${group}.cds.tmp
-    rm ${group}-Gi.cds.tmp
-done
-# align
-java -Xmx8G \
-    -jar macse_v2.06.jar \
-    -prog alignSequences \
-    -seq ${group}.cds.tmp \
-    -out_NT ${group}.NT.aln.tmp \
-    -out_AA ${group}.AA.aln.tmp
-rm ${group}.cds.tmp ${group}.AA.aln.tmp
-
-
-
-# pairwise Ka/Ks (dN/dS) estimation
-touch ${group}.aln.tmp
-g0=$(head -n2 ${group}.NT.aln.tmp | tail -n1)
-for line in $(seq 4 2 $(cat ${group}.NT.aln.tmp | wc -l))
-do
-    echo ${group}-$(echo "($line / 2) - 1" | bc) >> ${group}.aln.tmp
-    echo ${g0} >> ${group}.aln.tmp
-    head -n${line} ${group}.NT.aln.tmp | tail -n1 >> ${group}.aln.tmp
-    echo "" >> ${group}.aln.tmp
-done
-rm ${group}.NT.aln.tmp
-KaKs_Calculator \
-    -m MS \
-    -i ${group}.aln.tmp \
-    -o ${group}.kaks.out
-# clean-up
-rm ${group}*tmp
-' > pairwise_within_species_KaKs_estimation.sh
-chmod +x pairwise_within_species_KaKs_estimation.sh
-
-### Run across gene families in parallel per species
-time \
-for SPECIES in $(head -n1 $ORTHOUT | cut -f2- | rev | cut -f5- | rev)
-do
-    # SPECIES=Lolium_rigidum
-    COLUMN=$(head -n1 $ORTHOUT | sed -z "s/\t/\n/g" | grep -n $SPECIES - | cut -d":" -f1)
-    awk -v col=${COLUMN} '($col > 9) && ($col <= 10)' $ORTHOUT | cut -f1 > orthogroups.tmp
-    parallel ./pairwise_within_species_KaKs_estimation.sh \
-        ${SPECIES} \
-        ${COLUMN} \
-        ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv \
-        {} ::: $(cat orthogroups.tmp) ### Outputs: ${group}.kaks.out
-    head -n1 $(ls *.kaks.out | head -n1) > ${SPECIES}.kaks
-    for f in $(ls *.kaks.out)
-    do
-        ncol=$(head -n1 $f | awk '{print NF}')
-        nrow=$(cat $f | wc -l)
-        if [ $ncol -eq 22 ] && [ $nrow -gt 1 ]
-        then
-            tail -n+2 $f >> ${SPECIES}.kaks
-        fi
-    done
-    rm *.kaks.out orthogroups.tmp
-done
-
-
-
-```
-
-
-
 
 ## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
 
-Identify TSR and NTSR genes..
+1. Download protein sequences of genes from UniProt (https://www.uniprot.org)
 ```{sh}
+#############################
+### SET WORKING DIRECTORY ###
+#############################
+DIR_GENES=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/TSR_NTSR_GENES
+cd $DIR_GENES
 
+#################
+### CLETHODIM ###
+#################
+### TARGET: Acetyle Co-A carboxylase
+echo 'acetyl-coenzyme a carboxylase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]" '
+wget https://www.uniprot.org/uniprot/Q38970.fasta
+wget https://www.uniprot.org/uniprot/Q9LD43.fasta
+echo 'acetyl-coenzyme a carboxylase AND organism:"Oryza sativa (Rice) [4530]"'
+wget https://www.uniprot.org/uniprot/P0C2Y2.fasta
+echo 'acetyl-coenzyme a carboxylase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/Q41743.fasta
+wget https://www.uniprot.org/uniprot/A0A1D6J3Q3.fasta
+echo 'acetyl-coenzyme a carboxylase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+wget https://www.uniprot.org/uniprot/Q3HWZ8.fasta
+wget https://www.uniprot.org/uniprot/A5JJU5.fasta
+wget https://www.uniprot.org/uniprot/Q7XHK2.fasta
+echo 'acetyl-coenzyme a carboxylase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+wget https://www.uniprot.org/uniprot/A0A4D6X5K8.fasta
+wget https://www.uniprot.org/uniprot/Q8VWG1.fasta
+cat *.fasta > ACCase.faa
+rm *.fasta
+
+##################
+### GLYPHOSATE ###
+##################
+### TARGET: 5-enolpyruvylshikimate-3-phosphate synthase
+echo 'enolpyruvylshikimate phosphate synthase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/P05466.fasta
+wget https://www.uniprot.org/uniprot/P57720.fasta
+echo 'enolpyruvylshikimate phosphate synthase AND organism:"Oryza sativa (Rice) [4530]"'
+echo "NONE"
+echo 'enolpyruvylshikimate phosphate synthase AND organism:"Zea mays (Maize) [4577]"'
+echo "NONE"
+echo 'enolpyruvylshikimate phosphate synthase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+wget https://www.uniprot.org/uniprot/F4YBG5.fasta
+wget https://www.uniprot.org/uniprot/F4YBG4.fasta
+wget https://www.uniprot.org/uniprot/B1P936.fasta
+wget https://www.uniprot.org/uniprot/B1P932.fasta
+wget https://www.uniprot.org/uniprot/Q2PT59.fasta
+wget https://www.uniprot.org/uniprot/Q2PT49.fasta
+echo 'enolpyruvylshikimate phosphate synthase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+wget https://www.uniprot.org/uniprot/A0A2D2AP30.fasta
+wget https://www.uniprot.org/uniprot/A0A2D2AP54.fasta
+cat *.fasta > EPSPS.faa
+rm *.fasta
+
+#################
+### INTERCEPT ### Imazamox, and
+################# Imazapyr
+### TARGET: Acetolactate synthase a.k.a. acetohydroxy acid synthase
+echo 'acetolactate synthase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/A0A178VL64.fasta
+wget https://www.uniprot.org/uniprot/P17597.fasta
+echo 'acetolactate synthase AND organism:"Oryza sativa (Rice) [4530]"'
+wget https://www.uniprot.org/uniprot/A0A5J6D4R6.fasta
+wget https://www.uniprot.org/uniprot/Q01LD9.fasta
+echo 'acetolactate synthase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/Q41769.fasta
+wget https://www.uniprot.org/uniprot/K7TWQ8.fasta
+echo 'acetolactate synthase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+wget https://www.uniprot.org/uniprot/A0A5B9T5W5.fasta
+wget https://www.uniprot.org/uniprot/A7XBQ0.fasta
+echo 'acetolactate synthase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+wget https://www.uniprot.org/uniprot/Q9FUD0.fasta
+wget https://www.uniprot.org/uniprot/A0A2R4NC54.fasta
+cat *.fasta > ALS.faa
+rm *.fasta
+
+###############
+### LUXIMAX ###
+############### Cinmethylin
+### TARGET: acyl-acp thioesterase
+echo 'acyl-acp thioesterase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/Q42561.fasta
+wget https://www.uniprot.org/uniprot/Q9SJE2.fasta
+wget https://www.uniprot.org/uniprot/Q9SV64.fasta
+wget https://www.uniprot.org/uniprot/Q8W583.fasta
+wget https://www.uniprot.org/uniprot/F4HX80.fasta
+echo 'acyl-acp thioesterase AND organism:"Oryza sativa (Rice) [4530]"'
+echo "NONE!"
+echo 'acyl-acp thioesterase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/A0A3L6FUI9.fasta
+wget https://www.uniprot.org/uniprot/A0A077D597.fasta
+wget https://www.uniprot.org/uniprot/A0A3L6FVN3.fasta
+wget https://www.uniprot.org/uniprot/A0A3L6E7J9.fasta
+wget https://www.uniprot.org/uniprot/K7V747.fasta
+echo 'acyl-acp thioesterase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'acyl-acp thioesterase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > AACPT.faa
+rm *.fasta
+
+#################
+### OVERWATCH ###
+################# Bixlozone
+### TARGET: deoxyxylulose 5-phosphate synthase (DXS)
+echo 'deoxyxylulose 5-phosphate synthase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/Q38854.fasta
+wget https://www.uniprot.org/uniprot/Q8LAD0.fasta
+wget https://www.uniprot.org/uniprot/Q9XFS9.fasta
+wget https://www.uniprot.org/uniprot/Q0WUB4.fasta
+echo 'deoxyxylulose 5-phosphate synthase AND organism:"Oryza sativa (Rice) [4530]"'
+echo "NONE!"
+echo 'deoxyxylulose 5-phosphate synthase AND organism:"Zea mays (Maize) [4577]"'
+echo "NONE!"
+echo 'deoxyxylulose 5-phosphate synthase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'deoxyxylulose 5-phosphate synthase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > DXS.faa
+rm *.fasta
+
+#################
+### BOXERGOLD ### S-metolachlor, and
+################# Prosulfocarb
+##############
+### SAKURA ###
+############## Pyroxasulfone
+#################
+### TRIALLATE ###
+#################
+### TARGET: fatty acid elongase (FAE)
+echo 'fatty acid elongase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/Q38860.fasta
+wget https://www.uniprot.org/uniprot/V9Z5W3.fasta
+wget https://www.uniprot.org/uniprot/Q5XEP9.fasta
+wget https://www.uniprot.org/uniprot/Q9MAM3.fasta
+wget https://www.uniprot.org/uniprot/Q570B4.fasta
+echo 'fatty acid elongase AND organism:"Oryza sativa (Rice) [4530]"'
+echo "NONE!"
+echo 'fatty acid elongase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/A0A1D6MV48.fasta
+wget https://www.uniprot.org/uniprot/A0A1D6L0Y4.fasta
+wget https://www.uniprot.org/uniprot/A0A3L6FEW8.fasta
+wget https://www.uniprot.org/uniprot/Q6A4M2.fasta
+wget https://www.uniprot.org/uniprot/A0A1D6P2P8.fasta
+echo 'fatty acid elongase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'fatty acid elongase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > FAE.faa
+rm *.fasta
+
+################
+### ATRAZINE ###
+################
+### TARGET: Photosystem II protein D1
+echo 'Photosystem II protein D1 AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/P83755.fasta
+wget https://www.uniprot.org/uniprot/A0A1B1W4S7.fasta
+echo 'Photosystem II protein D1 AND organism:"Oryza sativa (Rice) [4530]"'
+wget https://www.uniprot.org/uniprot/P0C432.fasta
+wget https://www.uniprot.org/uniprot/A0A0K0LK42.fasta
+echo 'Photosystem II protein D1 AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/P48183.fasta
+wget https://www.uniprot.org/uniprot/A0A3L6DET6.fasta
+echo 'Photosystem II protein D1 AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'Photosystem II protein D1 AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+wget https://www.uniprot.org/uniprot/B8Q684.fasta
+cat *.fasta > psbA.faa
+rm *.fasta
+
+################
+### PARAQUAT ###
+################
+############################
+### DETOXIFICATION GENES ###
+############################
+
+##################################
+### 1.) superoxide dismutase (SOD)
+echo 'superoxide dismutase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/P24704.fasta
+wget https://www.uniprot.org/uniprot/O78310.fasta
+echo 'superoxide dismutase AND organism:"Oryza sativa (Rice) [4530]"'
+wget https://www.uniprot.org/uniprot/Q43803.fasta
+wget https://www.uniprot.org/uniprot/Q01JW6.fasta
+echo 'superoxide dismutase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/P09233.fasta
+wget https://www.uniprot.org/uniprot/P23346.fasta
+echo 'superoxide dismutase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'superoxide dismutase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > SOD.faa
+rm *.fasta
+
+##################################
+### 2.) ascorbate peroxidase (APX)
+echo 'ascorbate peroxidase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/Q42593.fasta
+wget https://www.uniprot.org/uniprot/Q42564.fasta
+echo 'ascorbate peroxidase AND organism:"Oryza sativa (Rice) [4530]"'
+wget https://www.uniprot.org/uniprot/Q9ST81.fasta
+wget https://www.uniprot.org/uniprot/Q25AM6.fasta
+echo 'ascorbate peroxidase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/B4G031.fasta
+wget https://www.uniprot.org/uniprot/C0HEE6.fasta
+echo 'ascorbate peroxidase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'ascorbate peroxidase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > APX.faa
+rm *.fasta
+
+#######################################
+### 3.) glutathione S-transferase (GST)
+echo 'glutathione S-transferase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/Q96266.fasta
+wget https://www.uniprot.org/uniprot/Q9FRL8.fasta
+echo 'glutathione S-transferase AND organism:"Oryza sativa (Rice) [4530]"'
+echo "NONE!"
+echo 'glutathione S-transferase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/P12653.fasta
+wget https://www.uniprot.org/uniprot/P46420.fasta
+wget https://www.uniprot.org/uniprot/P04907.fasta
+wget https://www.uniprot.org/uniprot/Q9ZP62.fasta
+wget https://www.uniprot.org/uniprot/C0PG07.fasta
+wget https://www.uniprot.org/uniprot/Q9FQC6.fasta
+wget https://www.uniprot.org/uniprot/A0A3L6E9E2.fasta
+wget https://www.uniprot.org/uniprot/A0A1D6LVU5.fasta
+echo 'glutathione S-transferase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'glutathione S-transferase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > GST.faa
+rm *.fasta
+
+#############################################
+### 4.) monodehydroascorbate reductase (MDAR)
+echo 'monodehydroascorbate reductase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/P92947.fasta
+wget https://www.uniprot.org/uniprot/Q9LK94.fasta
+wget https://www.uniprot.org/uniprot/Q9LFA3.fasta
+wget https://www.uniprot.org/uniprot/F4J849.fasta
+echo 'monodehydroascorbate reductase AND organism:"Oryza sativa (Rice) [4530]"'
+echo "NONE!"
+echo 'monodehydroascorbate reductase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/C4J4E4.fasta
+wget https://www.uniprot.org/uniprot/B8A028.fasta
+wget https://www.uniprot.org/uniprot/A0A3L6G1K4.fasta
+wget https://www.uniprot.org/uniprot/B4FQK0.fasta
+wget https://www.uniprot.org/uniprot/A0A3L6ESY8.fasta
+wget https://www.uniprot.org/uniprot/C0P4M0.fasta
+echo 'monodehydroascorbate reductase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'monodehydroascorbate reductase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > MDAR.faa
+rm *.fasta
+
+####################################
+### 5.) glutathione peroxidase (GPX)
+echo 'glutathione peroxidase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/O22850.fasta
+wget https://www.uniprot.org/uniprot/Q9LYB4.fasta
+echo 'glutathione peroxidase AND organism:"Oryza sativa (Rice) [4530]"'
+wget https://www.uniprot.org/uniprot/Q259Q9.fasta
+wget https://www.uniprot.org/uniprot/Q9FEV2.fasta
+wget https://www.uniprot.org/uniprot/Q8L8G3.fasta
+echo 'glutathione peroxidase AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/Q6JAH6.fasta
+wget https://www.uniprot.org/uniprot/B4FRF0.fasta
+wget https://www.uniprot.org/uniprot/B6T5N2.fasta
+wget https://www.uniprot.org/uniprot/A0A1D6K2F9.fasta
+wget https://www.uniprot.org/uniprot/A0A3L6DIL3.fasta
+echo 'glutathione peroxidase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'glutathione peroxidase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > GPX.faa
+rm *.fasta
+
+################################
+### 7.) cytochrome P450 (CYP450)
+echo 'cytochrome P450 AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/O65782.fasta
+wget https://www.uniprot.org/uniprot/Q9SMP5.fasta
+echo 'cytochrome P450 AND organism:"Oryza sativa (Rice) [4530]"'
+wget https://www.uniprot.org/uniprot/Q712G4.fasta
+wget https://www.uniprot.org/uniprot/Q8S3F7.fasta
+echo 'cytochrome P450 AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/Q43246.fasta
+wget https://www.uniprot.org/uniprot/A0A1D6IZ40.fasta
+echo 'cytochrome P450 AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+wget https://www.uniprot.org/uniprot/A5LFV4.fasta
+wget https://www.uniprot.org/uniprot/Q6F4F2.fasta
+wget https://www.uniprot.org/uniprot/Q6F4F4.fasta
+wget https://www.uniprot.org/uniprot/A0A858NLU3.fasta
+echo 'cytochrome P450 AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > CYP450.faa
+rm *.fasta
 ```
+
+2. Generate BLAST database for each orthogroup
+```{sh}
+echo '#!/bin/bash
+f=$1
+# f=$(find $DIR_ORTHOGROUPS -name "*fa" | head -n1)
+makeblastdb \
+    -in $f \
+    -dbtype prot
+' > prepare_blastdb_per_orthogroup.sh
+chmod +x prepare_blastdb_per_orthogroup.sh
+
+find $DIR_ORTHOGROUPS -name "*.fa" > orthogroup_faa_list.tmp
+split --additional-suffix=".tmp" --lines 10000 orthogroup_faa_list.tmp
+
+time \
+for f in $(ls x*.tmp)
+do
+parallel ./prepare_blastdb_per_orthogroup.sh {} ::: $(cat $f)
+done
+```
+
+3. Blastp
+```{sh}
+echo '#!/bin/bash
+GENE=$1
+f=$2
+# GENE=EPSPS
+# f=$(find $DIR_ORTHOGROUPS -name "*.fa" | head -n10 | tail -n1)
+ortname=$(basename $f)
+blastp \
+    -db $f \
+    -query ${GENE}.faa \
+    -out ${GENE}-${ortname%.fa*}.blastout \
+    -evalue 1e-10 \
+    -max_hsps 1 \
+    -outfmt "6 qseqid sseqid slen qlen length evalue bitscore qcovs qcovhsp"
+if [ $(cat ${GENE}-${ortname%.fa*}.blastout | wc -l) -eq 0 ]
+then
+rm ${GENE}-${ortname%.fa*}.blastout
+fi
+' > blastp_and_remove_no_hits.sh
+chmod +x blastp_and_remove_no_hits.sh
+
+time \
+for f in $(ls x*.tmp)
+do
+parallel ./blastp_and_remove_no_hits.sh \
+    {1} \
+    {2} \
+    ::: $(ls *.faa | sed 's/.faa$//g') \
+    ::: $(cat $f)
+done
+
+rm *.tmp
+```
+
+4. Extract gene sequences per gene (i.e. all orthologs and paralogs within blast-hit orthologs)
+```{sh}
+```
+
 
 
 ## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
