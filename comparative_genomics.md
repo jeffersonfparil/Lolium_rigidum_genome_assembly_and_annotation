@@ -8,8 +8,9 @@ DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/
 GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
 MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
+TREE=${DIR_ORTHOGROUPS}/Species_Tree/SpeciesTree_rooted.txt
 DIR_GENES=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/TSR_NTSR_GENES
- $DIR
+cd $DIR
 ```
 
 ## Download genomes, genome annotations, and predicted CDS sequences
@@ -683,7 +684,7 @@ julia locate_paralogs.jl \
 
 ```
 
-## What is the rate of gene family expansion and contraction in each species using CAFE?
+## Infer gene family expansion and contraction in each species using CAFE
 ```{sh}
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 rev ${ORTHOUT} | cut -f5- | rev > col2_to_coln.tmp
@@ -987,7 +988,7 @@ time codeml ORTHOGROUPS_SINGLE_GENE-CODEML.ctl
 
 ## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
 
-1. Download protein sequences of genes from UniProt (https://www.uniprot.org)
+1. Download protein sequences of genes from UniProt (https://www.uniprot.org) (Outputs: ${GENE}.faa)
 ```{sh}
 #############################
 ### SET WORKING DIRECTORY ###
@@ -1292,7 +1293,7 @@ cat *.fasta > CYP450.faa
 rm *.fasta
 ```
 
-2. Generate BLAST database for each orthogroup
+2. Generate BLAST database for each orthogroup (Outputs: ${ORTHOGROUP}.*)
 ```{sh}
 echo '#!/bin/bash
 f=$1
@@ -1313,7 +1314,7 @@ parallel ./prepare_blastdb_per_orthogroup.sh {} ::: $(cat $f)
 done
 ```
 
-3. Blastp
+3. Blastp (Outputs: ${GENE}-${ORTHOGROUP}.blastout)
 ```{sh}
 echo '#!/bin/bash
 GENE=$1
@@ -1348,12 +1349,87 @@ done
 rm *.tmp
 ```
 
-4. Extract gene sequences per gene (i.e. all orthologs and paralogs within blast-hit orthologs)
+4. Extract orthologs per gene (Outputs: ${GENE}.ortho)
 ```{sh}
+echo 'args = commandArgs(trailingOnly=TRUE)
+# args = c("EPSPS")
+gene = args[1]
+fnames = list.files()
+fnames = fnames[grep(paste0(gene, "-"), fnames)]
+fnames = fnames[grep("blastout$", fnames)]
+orthoout = c()
+for (f in fnames){
+    # f = fnames[1]
+    orthogroup = unlist(strsplit(unlist(strsplit(f, "-"))[2], "[.]"))[1]
+    df = read.delim(f, header=FALSE)
+    if (mean(df[,ncol(df)]) >= 50){
+        orthoout = c(orthoout, orthogroup)
+    }
+}
+out = data.frame(gene=rep(gene, times=length(orthoout)), orthogroup=orthoout)
+write.table(out, file=paste0(gene, ".ortho"), col.names=FALSE, row.names=FALSE, quote=FALSE, sep="\t")
+' > extract_orthogroups_per_gene.R
+
+time \
+parallel Rscript extract_orthogroups_per_gene.R \
+    {} ::: $(ls *.blastout | cut -d"-" -f1 | sort | uniq)
+
+mkdir BLASTOUT/
+mv *.blastout BLASTOUT/
+```
+
+5. Infer gene family expansion and contraction
+```{sh}
+### Input files
+ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
+TREE=${DIR_ORTHOGROUPS}/Species_Tree/SpeciesTree_rooted.txt
+
+### Extract TSR and NTSR gene families (Output: ${GENE}.orthocounts)
+rev ${ORTHOUT} | cut -f5- | rev > coln.tmp
+awk -F'\t' '{print $(NF-1)}' ${ORTHOUT} > col1.tmp
+paste -d'\t' col1.tmp coln.tmp > counts.tmp
+
+### Infer expansion and contraction of gene families
+time \
+for GENE in $(ls *.ortho | sed 's/.ortho//g')
+do
+# GENE=$(ls *.ortho | sed 's/.ortho//g' | head -n1)
+### Extract gene family counts
+cat ${GENE}.ortho | cut -f2 > ${GENE}.ortho.tmp
+head -n1 counts.tmp > ${GENE}.orthocounts
+grep -f ${GENE}.ortho.tmp counts.tmp >> ${GENE}.orthocounts
+### Run with lambda_i ~ Gamma(alpha), for each of the i_th gene family category (Output: ${GENE}_CAFE_Gamma100_results/)
+cafe5 \
+    --infile ${GENE}.orthocounts \
+    --tree ${TREE} \
+    --n_gamma_cats 100 \
+    --cores 31 \
+    --pvalue 0.01 \
+    --output_prefix ${GENE}_CAFE_Gamma100_results
+### Output(Output: ${GENE}.conex)
+echo -e "Species\tExpansion\tContraction" > ${GENE}.conex
+grep -v "^#" ${GENE}_CAFE_Gamma100_results/Gamma_clade_results.txt | \
+    grep -v "^<" | \
+    sed 's/<..>//g' | \
+    sed 's/<.>//g' >> ${GENE}.conex
+### Clean-up
+rm *.tmp
+done
 ```
 
 
 
+
+
+
+
 ## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
+
+1. Extract CDS per gene (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${GENE}.cds)
+
+2. KaKs_calculator3 for pairs and PAML::codeml for more than 2 sequences (more than 2 species) per sequence
+
+
+
 
 ## Phylogentic tree of stress-related genes: How did these stress-related gene which are under selection came about? 
