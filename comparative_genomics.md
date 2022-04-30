@@ -1461,35 +1461,52 @@ do
             fi
             rm ${species}-${gene}-${ortho}-list_gene_names.tmp
         done
+        rm ${gene}-${ortho}-list_gene_names.tmp
     done
+done
+rm *.tmp
+```
+
+2. Merge per orthogropup prior to alignment
+```{sh}
+for ortho in $(ls *.cds | cut -d"-" -f3 | cut -d"." -f1 | sort | uniq)
+do
+    # ortho=$(ls *.cds | cut -d"-" -f3 | cut -d"." -f1 | sort | uniq | head -n13 | tail -n1)
+    fname_output=$(ls *-${ortho}.cds | cut -d"-" -f2 | sort | uniq | sed -z "s/\n/-/g")${ortho}.cds.tmp
+    cat *-${ortho}.cds > ${fname_output}
+    rm *-${ortho}.cds
+    mv ${fname_output} ${fname_output%.tmp*}
 done
 ```
 
-2. Align CDS per orthogroup per gene
+3. Align CDS per orthogroup per gene
 ```{sh}
 echo '#!/bin/bah
-gene=$1
-ortho=$2
+f=$1
+ext=$2
+# f=Zea_mays-SOD-OG0026358.cds; ext=cds
 java -Xmx8G \
     -jar ${DIR}/macse_v2.06.jar \
     -prog alignSequences \
-    -seq ${gene}-${ortho}.cds \
-    -out_NT ${gene}-${ortho}.aligned.unsorted.cds.tmp \
-    -out_AA ${gene}-${ortho}.aligned.unsorted.prot.tmp
+    -seq ${f} \
+    -out_NT ${f%.${ext}*}.aligned.unsorted.cds.tmp \
+    -out_AA ${f%.${ext}*}.aligned.unsorted.prot.tmp
 # Convert stop codons and frameshifts as "---" for compatibility with downstream tools
 java -Xmx8G \
     -jar ${DIR}/macse_v2.06.jar \
     -prog exportAlignment \
-    -align ${gene}-${ortho}.aligned.unsorted.cds.tmp \
+    -align ${f%.${ext}*}.aligned.unsorted.cds.tmp \
     -codonForFinalStop --- \
     -codonForInternalStop NNN \
     -codonForExternalFS --- \
     -codonForInternalFS --- \
-    -out_NT ${gene}-${ortho}.NT.cds \
-    -out_AA ${gene}-${ortho}.AA.prot
+    -out_NT ${f%.${ext}*}.NT.cds \
+    -out_AA ${f%.${ext}*}.AA.prot
 ' > align_in_parallel.sh
 chmod +x align_in_parallel.sh
-
+time \
+parallel ./align_in_parallel.sh {} \
+    ::: $(ls *.cds)
 ```
 
 3. KaKs_calculator3 for pairs and PAML::codeml for more than 2 sequences (more than 2 species) per sequence
