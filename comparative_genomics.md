@@ -1424,47 +1424,74 @@ rm *.tmp
 
 1. Extract CDS per gene (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${GENE}.cds)
 ```{sh}
+### Extract species names and number of species
 head -n1 ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f2- > \
     species_names.tmp
 NSPECIES=$(awk -F"\t" "{print NF}" species_names.tmp)
 
-for f in $(ls *.ortho)
+### Extract gene names
+echo '#!/bin/bash
+f=$1
+DIR_ORTHOGROUPS=$2
+NSPECIES=$3
+# f=$(ls *.ortho | head -n13 | tail -n1)
+gene=$(echo ${f%.ortho*})
+for ortho in $(cut -f2 $f)
 do
-    # f=$(ls *.ortho | head -n13 | tail -n1)
-    gene=$(echo ${f%.ortho*})
-    for ortho in $(cut -f2 $f)
+    # ortho=$(cut -f2 $f | head -n1 | tail -n1)
+    grep "$ortho" ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > \
+        ${gene}-${ortho}-list_gene_names.tmp
+    for i in $(seq 1 $NSPECIES)
     do
-        # ortho=$(cut -f2 $f | head -n1 | tail -n1)
-        grep "$ortho" ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > \
-            ${gene}-${ortho}-list_gene_names.tmp
-        for i in $(seq 1 $NSPECIES)
-        do
-            # i=1
-            species=$(cut -f$i species_names.tmp | sed -z "s/\r//g" | sed -z "s/\n//g")
-            col=$(echo $i + 1 | bc)
-            cut -f${col} ${gene}-${ortho}-list_gene_names.tmp | \
-                sed -z "s/, /\n/g" | \
-                sed "s/$species|//g" > \
-                ${species}-${gene}-${ortho}-list_gene_names.tmp
-            if [ $(cat ${species}-${gene}-${ortho}-list_gene_names.tmp | wc -l) -gt 1 ]
-            then
-                time \
-                parallel \
-                julia ${DIR}/extract_sequence_using_name_query.jl \
-                                ${DIR}/${species}.cds \
-                                {1} \
-                                ${species}-${gene}-${ortho}-{1}.cds.tmp \
-                                ${species}-${gene}-${ortho}-{1} \
-                                false ::: $(cat ${species}-${gene}-${ortho}-list_gene_names.tmp)
-            cat ${species}-${gene}-${ortho}-*.cds.tmp > ${species}-${gene}-${ortho}.cds
-            rm ${species}-${gene}-${ortho}-*.cds.tmp
-            fi
+        # i=1
+        species=$(cut -f$i species_names.tmp | sed -z "s/\r//g" | sed -z "s/\n//g")
+        col=$(echo $i + 1 | bc)
+        cut -f${col} ${gene}-${ortho}-list_gene_names.tmp | \
+            sed -z "s/, /\n/g" | \
+            sed "s/$species|//g" > \
+            ${species}-${gene}-${ortho}-list_gene_names.tmp
+        if [ $(cat ${species}-${gene}-${ortho}-list_gene_names.tmp | wc -l) -lt 2 ]
+        then
             rm ${species}-${gene}-${ortho}-list_gene_names.tmp
-        done
-        rm ${gene}-${ortho}-list_gene_names.tmp
+        fi
     done
+    rm  ${gene}-${ortho}-list_gene_names.tmp
 done
-rm *.tmp
+' > extract_gene_names.sh
+chmod +x extract_gene_names.sh
+time \
+parallel ./extract_gene_names.sh \
+    {} \
+    ${DIR_ORTHOGROUPS} \
+    ${NSPECIES} \
+    ::: $(ls *.ortho)
+
+### Extract gene sequences
+echo '#!/bin/bash
+f=$1
+DIR=$2
+species=$(echo $f | cut -d"-" -f1)
+gene=$(echo $f | cut -d"-" -f2)
+ortho=$(echo $f | cut -d"-" -f3)
+for query in $(cat $f)
+do
+    julia ${DIR}/extract_sequence_using_name_query.jl \
+                    ${DIR}/${species}.cds \
+                    ${query} \
+                    ${species}-${gene}-${ortho}-${query}.cds.tmp \
+                    ${species}-${gene}-${ortho}-${query} \
+                    false
+done
+cat ${species}-${gene}-${ortho}-*.cds.tmp > ${species}-${gene}-${ortho}.cds
+rm ${species}-${gene}-${ortho}-*.cds.tmp
+rm $f
+' > extract_sequences_in_parallel.sh
+chmod +x extract_sequences_in_parallel.sh
+time \
+parallel ./extract_sequences_in_parallel.sh \
+    {} \
+    ${DIR} \
+    ::: $(ls *-list_gene_names.tmp)
 ```
 
 2. Merge per orthogropup prior to alignment
@@ -1481,9 +1508,10 @@ done
 
 3. Align CDS per orthogroup per gene
 ```{sh}
-echo '#!/bin/bah
+echo '#!/bin/bash
 f=$1
 ext=$2
+DIR=$3
 # f=Zea_mays-SOD-OG0026358.cds; ext=cds
 java -Xmx8G \
     -jar ${DIR}/macse_v2.06.jar \
@@ -1505,11 +1533,11 @@ java -Xmx8G \
 ' > align_in_parallel.sh
 chmod +x align_in_parallel.sh
 time \
-parallel ./align_in_parallel.sh {} \
+parallel ./align_in_parallel.sh {} cds ${DIR} \
     ::: $(ls *.cds)
 ```
 
-3. KaKs_calculator3 for pairs and PAML::codeml for more than 2 sequences (more than 2 species) per sequence
+4. KaKs_calculator3 for pairs and PAML::codeml for more than 2 sequences (more than 2 species) per sequence
 
 
 
