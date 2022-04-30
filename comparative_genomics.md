@@ -4,6 +4,7 @@
 ```sh}
 DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
 DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*
+DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences
 DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
 GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
 MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
@@ -986,13 +987,13 @@ echo '
 time codeml ORTHOGROUPS_SINGLE_GENE-CODEML.ctl
 ```
 
-## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
-
+## Identify herbicide TSR and NTSR genes
 1. Download protein sequences of genes from UniProt (https://www.uniprot.org) (Outputs: ${GENE}.faa)
 ```{sh}
-#############################
-### SET WORKING DIRECTORY ###
-#############################
+###############################
+### SET WORKING DIRECTORIES ###
+###############################
+DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences
 DIR_GENES=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS/TSR_NTSR_GENES
 cd $DIR_GENES
 
@@ -1297,14 +1298,14 @@ rm *.fasta
 ```{sh}
 echo '#!/bin/bash
 f=$1
-# f=$(find $DIR_ORTHOGROUPS -name "*fa" | head -n1)
+# f=$(find $DIR_ORTHOGROUP_SEQS -name "*fa" | head -n1)
 makeblastdb \
     -in $f \
     -dbtype prot
 ' > prepare_blastdb_per_orthogroup.sh
 chmod +x prepare_blastdb_per_orthogroup.sh
 
-find $DIR_ORTHOGROUPS -name "*.fa" > orthogroup_faa_list.tmp
+find $DIR_ORTHOGROUP_SEQS -name "*.fa" > orthogroup_faa_list.tmp
 split --additional-suffix=".tmp" --lines 10000 orthogroup_faa_list.tmp
 
 time \
@@ -1320,7 +1321,7 @@ echo '#!/bin/bash
 GENE=$1
 f=$2
 # GENE=EPSPS
-# f=$(find $DIR_ORTHOGROUPS -name "*.fa" | head -n10 | tail -n1)
+# f=$(find $DIR_ORTHOGROUP_SEQS -name "*.fa" | head -n10 | tail -n1)
 ortname=$(basename $f)
 blastp \
     -db $f \
@@ -1349,7 +1350,8 @@ done
 rm *.tmp
 ```
 
-4. Extract orthologs per gene (Outputs: ${GENE}.ortho)
+## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
+1. Extract orthologs per gene (Outputs: ${GENE}.ortho)
 ```{sh}
 echo 'args = commandArgs(trailingOnly=TRUE)
 # args = c("EPSPS")
@@ -1378,7 +1380,7 @@ mkdir BLASTOUT/
 mv *.blastout BLASTOUT/
 ```
 
-5. Infer gene family expansion and contraction
+2. Infer gene family expansion and contraction
 ```{sh}
 ### Input files
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
@@ -1412,22 +1414,85 @@ grep -v "^#" ${GENE}_CAFE_Gamma100_results/Gamma_clade_results.txt | \
     grep -v "^<" | \
     sed 's/<..>//g' | \
     sed 's/<.>//g' >> ${GENE}.conex
+done
+
 ### Clean-up
 rm *.tmp
-done
 ```
-
-
-
-
-
-
 
 ## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
 
 1. Extract CDS per gene (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${GENE}.cds)
+```{sh}
+head -n1 ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f2- > \
+    species_names.tmp
+NSPECIES=$(awk -F"\t" "{print NF}" species_names.tmp)
 
-2. KaKs_calculator3 for pairs and PAML::codeml for more than 2 sequences (more than 2 species) per sequence
+for f in $(ls *.ortho)
+do
+    # f=$(ls *.ortho | head -n13 | tail -n1)
+    gene=$(echo ${f%.ortho*})
+    for ortho in $(cut -f2 $f)
+    do
+        # ortho=$(cut -f2 $f | head -n1 | tail -n1)
+        grep "$ortho" ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > \
+            ${gene}-${ortho}-list_gene_names.tmp
+        for i in $(seq 1 $NSPECIES)
+        do
+            # i=1
+            species=$(cut -f$i species_names.tmp | sed -z "s/\r//g" | sed -z "s/\n//g")
+            col=$(echo $i + 1 | bc)
+            cut -f${col} ${gene}-${ortho}-list_gene_names.tmp | \
+                sed -z "s/, /\n/g" | \
+                sed "s/$species|//g" > \
+                ${species}-${gene}-${ortho}-list_gene_names.tmp
+            if [ $(cat ${species}-${gene}-${ortho}-list_gene_names.tmp | wc -l) -gt 1 ]
+            then
+                time \
+                parallel \
+                julia ${DIR}/extract_sequence_using_name_query.jl \
+                                ${DIR}/${species}.cds \
+                                {1} \
+                                ${species}-${gene}-${ortho}-{1}.cds.tmp \
+                                ${species}-${gene}-${ortho}-{1} \
+                                false ::: $(cat ${species}-${gene}-${ortho}-list_gene_names.tmp)
+            cat ${species}-${gene}-${ortho}-*.cds.tmp > ${species}-${gene}-${ortho}.cds
+            rm ${species}-${gene}-${ortho}-*.cds.tmp
+            fi
+            rm ${species}-${gene}-${ortho}-list_gene_names.tmp
+        done
+    done
+done
+```
+
+2. Align CDS per orthogroup per gene
+```{sh}
+echo '#!/bin/bah
+gene=$1
+ortho=$2
+java -Xmx8G \
+    -jar ${DIR}/macse_v2.06.jar \
+    -prog alignSequences \
+    -seq ${gene}-${ortho}.cds \
+    -out_NT ${gene}-${ortho}.aligned.unsorted.cds.tmp \
+    -out_AA ${gene}-${ortho}.aligned.unsorted.prot.tmp
+# Convert stop codons and frameshifts as "---" for compatibility with downstream tools
+java -Xmx8G \
+    -jar ${DIR}/macse_v2.06.jar \
+    -prog exportAlignment \
+    -align ${gene}-${ortho}.aligned.unsorted.cds.tmp \
+    -codonForFinalStop --- \
+    -codonForInternalStop NNN \
+    -codonForExternalFS --- \
+    -codonForInternalFS --- \
+    -out_NT ${gene}-${ortho}.NT.cds \
+    -out_AA ${gene}-${ortho}.AA.prot
+' > align_in_parallel.sh
+chmod +x align_in_parallel.sh
+
+```
+
+3. KaKs_calculator3 for pairs and PAML::codeml for more than 2 sequences (more than 2 species) per sequence
 
 
 
