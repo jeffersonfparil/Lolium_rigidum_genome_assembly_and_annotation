@@ -141,6 +141,16 @@ PATH=${PATH}/src
 cd -
 ```
 
+## Install KaKs_Calculator2.0 to assess signatures of selection
+```{sh}
+wget https://github.com/kullrich/kakscalculator2/archive/refs/tags/v2.0.1.tar.gz
+tar -xvzf v2.0.1.tar.gz
+cd kakscalculator2-2.0.1/src
+make
+PATH=${PATH}:$(pwd)
+cd -
+```
+
 ## Download PantherHMM library including 15,619 protein family HMMs and their GO terms
 ```{sh}
 wget http://data.pantherdb.org/ftp/panther_library/current_release/PANTHER17.0_hmmscoring.tgz
@@ -1421,8 +1431,9 @@ rm *.tmp
 ```
 
 ## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
+Note: we use "gene" to refer to TSR and NTSR genes, and alignments even genes again for the genes within orthogroups within TSR/NTSR genes per species. Apologies for any misunderstandings.
 
-1. Extract CDS per gene (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${GENE}.cds)
+1. Extract CDS per gene (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${species}-${gene}-${ortho}.cds)
 ```{sh}
 ### Extract species names and number of species
 head -n1 ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f2- > \
@@ -1494,7 +1505,7 @@ parallel ./extract_sequences_in_parallel.sh \
     ::: $(ls *-list_gene_names.tmp)
 ```
 
-2. Merge per orthogropup prior to alignment
+2. Merge per orthogropup prior to alignment (Outputs: ${gene}-${ortho}.cds)
 ```{sh}
 for ortho in $(ls *.cds | cut -d"-" -f3 | cut -d"." -f1 | sort | uniq)
 do
@@ -1506,7 +1517,7 @@ do
 done
 ```
 
-3. Align CDS per orthogroup per gene
+3. Align CDS per orthogroup per gene (Outputs: ${gene}-${ortho}.aln)
 ```{sh}
 echo '#!/bin/bash
 f=$1
@@ -1528,18 +1539,82 @@ java -Xmx8G \
     -codonForInternalStop NNN \
     -codonForExternalFS --- \
     -codonForInternalFS --- \
-    -out_NT ${f%.${ext}*}.NT.cds \
+    -out_NT ${f%.${ext}*}.aln \
     -out_AA ${f%.${ext}*}.AA.prot
 ' > align_in_parallel.sh
 chmod +x align_in_parallel.sh
 time \
 parallel ./align_in_parallel.sh {} cds ${DIR} \
     ::: $(ls *.cds)
+
+rm *.tmp *.AA.prot
 ```
 
-4. KaKs_calculator3 for pairs and PAML::codeml for more than 2 sequences (more than 2 species) per sequence
+4. Remove alignments (also the corresponding cds) without Lolium rigidum genes (Outputs: ${gene}-${ortho}.aln)
+```{sh}
+for f in $(ls *.aln)
+do
+    # f=$(ls *.aln | head -n1 | tail -n1)
+    x=$(grep "^>Lolium_rigidum" $f | wc -l)
+    if [ $x -eq 0 ]
+    then
+        rm $f
+        rm ${f%.aln*}.cds
+    fi
+done
+```
+
+5. Create pairwise cds alignments using the first Lolium rigidum alignment as the focal alignment per orthogroup per gene (Outputs: ${gene}-${ortho}.aln.pw)
+```{sh}
+echo '#!/bin/bash
+f=$1
+# f=$(ls *.aln | head -n1 | tail -n1)
+focal_aln=$(grep -A1 "^>Lolium_rigidum" $f | head -n1 | sed "s/^>//g")
+grep -A1 "^>Lolium_rigidum" $f | head -n2 | tail -n1 > ${f}.FOCAL_SEQ.tmp
+touch ${f}.pw.tmp
+### temp file without the focal alignment
+sed -e "/$focal_aln/,+1d" $f > ${f}.tmp
+for line in $(seq 4 2 $(cat ${f}.tmp | wc -l))
+do
+    # line=4
+    curr_aln_name=$(head -n$(echo $line -1 | bc) ${f}.tmp | tail -n1 | sed "s/>//g")
+    name=${focal_aln}--:--${curr_aln_name}
+    echo $name >> ${f}.pw.tmp                           ### alignment pair name
+    cat ${f}.FOCAL_SEQ.tmp >> ${f}.pw.tmp               ### focal alignment
+    head -n${line} ${f}.tmp | tail -n1 >> ${f}.pw.tmp   ### current alignment
+    echo "" >> ${f}.pw.tmp
+done
+### Clean-up
+mv ${f}.pw.tmp ${f}.pw
+rm ${f}.FOCAL_SEQ.tmp ${f}.tmp
+### Remove single alignments
+if [ $(cat ${f}.pw | wc -l) -eq 0 ]
+then
+    rm ${f}.pw
+fi
+' > prepare_pairwise_alignments_with_Lolium_rigidum_as_focus_in_parallel.sh
+chmod +x prepare_pairwise_alignments_with_Lolium_rigidum_as_focus_in_parallel.sh
+time \
+parallel ./prepare_pairwise_alignments_with_Lolium_rigidum_as_focus_in_parallel.sh \
+    {} ::: $(ls *.aln)
+```
+
+6. KaKs_calculator2 for pairwise orthogroup gene comparisons
+```{sh}
+time \
+parallel \
+KaKs_Calculator \
+    -m MS \
+    -i {1} \
+    -o {1}.kaks.tmp \
+    ::: $(ls *.aln.pw)
+```
+
+### NOTE: If we find high dN/dS between a pair of sequences in Lolium rigidum 
+### while the focal alignment if not that different from those of other species,
+### then we have to change the focal alignment to that gene,
+### and re-run KaKs_calculator!
 
 
 
-
-## Phylogentic tree of stress-related genes: How did these stress-related gene which are under selection came about? 
+## Evolutionary tree of stress-related genes: How did these stress-related gene which are under selection came about? 
