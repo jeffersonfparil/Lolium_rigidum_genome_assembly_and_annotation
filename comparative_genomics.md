@@ -934,7 +934,7 @@ tail -n+2 ORTHOGROUPS_SINGLE_GENE.${TYPE}.tmp >> ORTHOGROUPS_SINGLE_GENE.${TYPE}
 rm *.tmp
 ```
 
-2. Prepare the codeml control file
+2. Prepare the codeml control file and run PAML::codeml
 ```{sh}
 echo '
 **************
@@ -1610,11 +1610,96 @@ KaKs_Calculator \
     ::: $(ls *.aln.pw)
 ```
 
+7. Find kaks file with significant (p<= 0.001) Ka/Ks > 1.0
+```{sh}
+echo 'args = commandArgs(trailingOnly=TRUE)
+# args = c("GPX-OG0000728.aln.pw.kaks.tmp")
+f = args[1]
+p = 0.001
+dNdS = 1.00
+dat = read.delim(f, header=TRUE)
+idx = (dat$P.Value.Fisher. < p) & (dat$Ka.Ks > dNdS)
+if (sum(idx, na.rm=TRUE) > 0){
+    print(f)
+}
+' > find_signs_ofsignificant_selection.R
+for f in $(ls *.aln.pw.kaks.tmp)
+do
+    Rscript find_signs_ofsignificant_selection.R $f
+done
+```
+
+
 ### NOTE: If we find high dN/dS between a pair of sequences in Lolium rigidum 
 ### while the focal alignment if not that different from those of other species,
 ### then we have to change the focal alignment to that gene,
 ### and re-run KaKs_calculator!
 
+
+### OR OR OR SIMPLY USE PAML::codeml on these small datasets, i.e. per TSR/NTSR gene per orthogroup
+```{sh}
+echo '
+**************
+*** INPUTS ***
+**************
+      seqfile = CYP450-OG0007107.aln   * sequence data file name
+     treefile = ../ORTHOGROUPS_SINGLE_GENE.NT.treefile * tree structure file name
+**************
+*** OUPUTS ***
+**************
+      outfile = CYP450-OG0007107.codeml   * main result file
+        noisy = 3                                   * 0,1,2,3: how much rubbish on the screen
+      verbose = 1                                   * 1: detailed output, 0: concise output
+      runmode = 2                                   * 0: user tree; 1: semi-automatic; 2: automatic; 3: StepwiseAddition; (4,5):PerturbationNNI
+********************************
+*** PROPERTIES OF THE INPUTS ***
+********************************
+        ndata = 1                                   * number of datasets
+      seqtype = 1                                   * 1:codons; 2:AAs; 3:codons-->AAs 
+    CodonFreq = 2                                   * 0:1/61 each, 1:F1X4, 2:F3X4, 3:codon table, 4:F1x4MG, 5:F3x4MG, 6:FMutSel0, 7:FMutSel
+********************************
+*** CODON SUBSTITUTION MODEL ***
+********************************
+        model = 0                                   * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
+      NSsites = 0                                   * 0: M0 (one ratio), 1: M1a (neutral), 2: M2a (selection), ...
+        icode = 0                                   * 0:universal code, 1:mammalian mt, ...
+        Mgene = 4                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
+********************************************
+*** TRANSITION / TRANSVERSION RATE RATIO ***
+********************************************
+    fix_kappa = 0                                   * 0: estimate kappa, 1: fix kappa, 2: kappa for branches
+        kappa = 1                                   * initial or fixed kappa
+*********************************************************
+*** dN/dS: NONSYNONYNOUS / SYNONYNOUS VARIATION RATIO ***
+*********************************************************
+    fix_omega = 0                                   * 0: estimate omega, 1: fix omega
+        omega = 0.1                                 * initial or fixed omega
+******************************************
+*** GAMMA DISTRIBUTION SHAPE PARAMETER ***
+******************************************
+    fix_alpha = 0                                   * 0: estimate alpha; 1: fix alpha
+        alpha = 1                                   * initial or fixed alpha or is equal 0:infinity (constant rate)
+       Malpha = 1                                   * 0: one alpha, 1: different alphas for genes
+        ncatG = 10                                  * number of categories in the dG, AdG, or nparK models of rates
+**********************
+*** CLOCK SETTINGS ***
+**********************
+        clock = 1                                   * 0:no clock, 1:global clock; 2:local clock; 3:CombinedAnalysis
+        getSE = 0
+ RateAncestor = 0
+*********************
+*** MISCELLANEOUS ***
+*********************
+   Small_Diff = .1e-6
+    cleandata = 1
+       method = 0
+  fix_blength = 0                                  * 0: ignore, -1: random, 1: initial, 2: fixed
+' > CYP450-OG0007107.ctl
+
+time codeml CYP450-OG0007107.ctl
+```
+
+### OR OR OR OR OR BETTER YET! LEAR MORE ABOUT THESE THINGS!!!!
 
 
 ## Evolutionary tree of stress-related genes: How did these stress-related gene which are under selection came about? 
