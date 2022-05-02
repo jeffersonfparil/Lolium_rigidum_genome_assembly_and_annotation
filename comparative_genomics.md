@@ -1390,7 +1390,7 @@ mkdir BLASTOUT/
 mv *.blastout BLASTOUT/
 ```
 
-2. Infer gene family expansion and contraction
+2. Infer gene family expansion and contraction (Outpus: ${GENE}.conex)
 ```{sh}
 ### Input files
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
@@ -1423,7 +1423,7 @@ echo -e "Species\tExpansion\tContraction" > ${GENE}.conex
 grep -v "^#" ${GENE}_CAFE_Gamma100_results/Gamma_clade_results.txt | \
     grep -v "^<" | \
     sed 's/<..>//g' | \
-    sed 's/<.>//g' >> ${GENE}.conex
+    sed 's/<.>//g' >> 
 done
 
 ### Clean-up
@@ -1635,6 +1635,33 @@ done
 ### then we have to change the focal alignment to that gene,
 ### and re-run KaKs_calculator!
 
+### TESTING KaKs_Calucator2.0 expanding tools
+```{sh}
+echo '#!/bin/bash
+f=$1
+julia split_alignment_pairs.jl \
+    ${f} \
+    15 \
+    15 \
+    ${f}.windows.tmp
+
+KaKs_Calculator \
+    -m MS \
+    -i ${f}.windows.tmp \
+    -o ${f%.aln.pw*}.kaks.tmp
+
+Rscript plot_KaKs_across_windows.R \
+    ${f%.aln.pw*}.kaks.tmp \
+    0.001
+' > KaKs_per_window_and_plot_in_parallel.sh
+chmod +x KaKs_per_window_and_plot_in_parallel.sh
+time \
+parallel ./KaKs_per_window_and_plot_in_parallel.sh \
+    {} ::: $(ls *.aln.pw)
+
+
+```
+
 
 ### OR OR OR SIMPLY USE PAML::codeml on these small datasets, i.e. per TSR/NTSR gene per orthogroup
 ```{sh}
@@ -1648,32 +1675,34 @@ echo '
 *** OUPUTS ***
 **************
       outfile = CYP450-OG0007107.codeml   * main result file
-        noisy = 3                                   * 0,1,2,3: how much rubbish on the screen
+        noisy = 9                                   * 0,1,2,3: how much rubbish on the screen
       verbose = 1                                   * 1: detailed output, 0: concise output
-      runmode = 2                                   * 0: user tree; 1: semi-automatic; 2: automatic; 3: StepwiseAddition; (4,5):PerturbationNNI
+      runmode = 0                                   * 0: user tree; 1: semi-automatic; 2: automatic; 3: StepwiseAddition; (4,5):PerturbationNNI
 ********************************
 *** PROPERTIES OF THE INPUTS ***
 ********************************
         ndata = 1                                   * number of datasets
       seqtype = 1                                   * 1:codons; 2:AAs; 3:codons-->AAs 
     CodonFreq = 2                                   * 0:1/61 each, 1:F1X4, 2:F3X4, 3:codon table, 4:F1x4MG, 5:F3x4MG, 6:FMutSel0, 7:FMutSel
+    aaDist = 0                                      * 0:equal, +:geometric; -:linear, 1-6:G1974,Miyata,c,p,v,a
+   aaRatefile = ../paml4.9j/jones.dat               * only used for aa seqs with model=empirical(_F), dayhoff.dat, jones.dat, wag.dat, mtmam.dat, or your own
 ********************************
 *** CODON SUBSTITUTION MODEL ***
 ********************************
-        model = 0                                   * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
+        model = 0                                  * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
       NSsites = 0                                   * 0: M0 (one ratio), 1: M1a (neutral), 2: M2a (selection), ...
         icode = 0                                   * 0:universal code, 1:mammalian mt, ...
-        Mgene = 4                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
+        Mgene = 0                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
 ********************************************
 *** TRANSITION / TRANSVERSION RATE RATIO ***
 ********************************************
     fix_kappa = 0                                   * 0: estimate kappa, 1: fix kappa, 2: kappa for branches
-        kappa = 1                                   * initial or fixed kappa
+        kappa = 2                                   * initial or fixed kappa
 *********************************************************
 *** dN/dS: NONSYNONYNOUS / SYNONYNOUS VARIATION RATIO ***
 *********************************************************
     fix_omega = 0                                   * 0: estimate omega, 1: fix omega
-        omega = 0.1                                 * initial or fixed omega
+        omega = 0.5                                 * initial or fixed omega
 ******************************************
 *** GAMMA DISTRIBUTION SHAPE PARAMETER ***
 ******************************************
@@ -1684,8 +1713,8 @@ echo '
 **********************
 *** CLOCK SETTINGS ***
 **********************
-        clock = 1                                   * 0:no clock, 1:global clock; 2:local clock; 3:CombinedAnalysis
-        getSE = 0
+        clock = 0                                   * 0:no clock, 1:global clock; 2:local clock; 3:CombinedAnalysis
+        getSE = 1
  RateAncestor = 0
 *********************
 *** MISCELLANEOUS ***
@@ -1695,8 +1724,10 @@ echo '
        method = 0
   fix_blength = 0                                  * 0: ignore, -1: random, 1: initial, 2: fixed
 ' > CYP450-OG0007107.ctl
-
 time codeml CYP450-OG0007107.ctl
+
+
+
 ```
 
 ### OR OR OR OR OR BETTER YET! LEAR MORE ABOUT THESE THINGS!!!!
