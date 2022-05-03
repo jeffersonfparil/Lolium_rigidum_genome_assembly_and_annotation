@@ -1,9 +1,10 @@
-args = commandsArgs(trailingOnly=TRUE)
-# args = c("SOD-OG0016003.kaks.tmp", "0.001")
+args = commandArgs(trailingOnly=TRUE)
+# args = c("APX-OG0002614.kaks.tmp", "0.001")
 fname_input = args[1]
 alpha = as.numeric(args[2])
 
 dat = read.delim(fname_input, header=TRUE)
+dat$Sequence = gsub("_rna-", "_rna_", dat$Sequence)
 X = matrix(unlist(strsplit(as.character(dat$Sequence), "-")), ncol=12, byrow=TRUE)
 Y = matrix(unlist(strsplit(X[,11], "\\(")), ncol=2, byrow=TRUE)
 df = data.frame(
@@ -29,6 +30,7 @@ par(mfrow=c(n,m))
 for (aln in alignments) {
     # aln = unique(df$Species_alignment2)[1]
     subdf = df[df$Species_alignment2 == aln, ]
+    subdf = subdf[order(subdf$Position_ini, decreasing=FALSE), ]
     plot(subdf$Position_ini, subdf$KaKs, type="l",
         main=paste0(subdf$Species1[1], "::", subdf$Species_alignment1[1], " vs ", subdf$Species2[1], "::", subdf$Species_alignment2[1]),
         sub=paste0(subdf$Gene[1], " (", subdf$Orthogroup[1], ")"),

@@ -1774,7 +1774,7 @@ done
 ### then we have to change the focal alignment to that gene,
 ### and re-run KaKs_calculator!
 
-### TESTING KaKs_Calucator2.0 expanding tools
+### TESTING KaKs_Calucator2.0 with sliding windows
 ```{sh}
 echo '#!/bin/bash
 f=$1
