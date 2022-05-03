@@ -217,7 +217,3 @@ RepeatMasker/RepeatMasker \
    close(file_output_COPIA)
    close(file_output_GYPSY)
    ```
-
-
-
-

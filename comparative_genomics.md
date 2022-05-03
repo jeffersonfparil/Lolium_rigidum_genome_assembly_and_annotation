@@ -466,6 +466,78 @@ julia orthogroup_classification_gene_family_GO_terms.jl \
         ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 ```
 
+## Detect whole genome duplication events
+```{sh}
+### Install MCScanX
+git clone https://github.com/wyp1125/MCScanX.git
+cd MCScanX/
+make
+PATH=${PATH}:$(pwd)
+cd -
+
+### Install bedops for gff to bed conversion
+wget https://github.com/bedops/bedops/releases/download/v2.4.40/bedops_linux_x86_64-v2.4.40.tar.bz2
+tar -xvjf bedops_linux_x86_64-v2.4.40.tar.bz2
+PATH=${PATH}:${DIR}/bin
+
+### Build blast database for each species' cds
+time \
+parallel \
+makeblastdb \
+    -in {} \
+    -dbtype nucl \
+    ::: $(ls *.cds)
+
+### Blast all vs all per species
+f=Lolium_rigidum.cds
+blastn \
+    -db $f \
+    -query ${f%.cds*}.cds \
+    -out ${f%.cds*}.blast.tmp \
+    -evalue 1e-10 \
+    -max_hsps 5 \
+    -outfmt 6
+
+cut -d"_" -f4,5 ${f%.cds*}.blast.tmp > col1.tmp
+cut -d"_" -f9,10 ${f%.cds*}.blast.tmp > col2.tmp
+cut -f3- ${f%.cds*}.blast.tmp > col3-n.tmp
+paste col1.tmp col2.tmp col3-n.tmp > ${f%.cds*}.blast
+rm col1.tmp col2.tmp col3-n.tmp ${f%.cds*}.blast.tmp
+
+### Filter and restructure gff
+time \
+gff2bed < ${f%.cds*}.gff > ${f%.cds*}.gff.tmp
+grep -P "CDS\t0\tID=cds-" ${f%.cds*}.gff.tmp > ${f%.cds*}.gff.2.tmp
+cut -f1 ${f%.cds*}.gff.2.tmp > col1.tmp
+cut -f10 ${f%.cds*}.gff.2.tmp | cut -d";" -f1 | sed "s/ID=cds-//g" > col2.tmp
+cut -f2-3 ${f%.cds*}.gff.2.tmp > col34.tmp
+paste col1.tmp col2.tmp col34.tmp | awk '!seen[$2]++' > ${f%.cds*}.gff
+
+mkdir ${f%.cds*}_MCScanX/
+mv ${f%.cds*}.blast ${f%.cds*}_MCScanX/
+mv ${f%.cds*}.gff ${f%.cds*}_MCScanX/
+
+time \
+MCScanX ${f%.cds*}_MCScanX/${f%.cds*}
+
+echo '800     //dimension (in pixels) of x axis
+800     //dimension (in pixels) of y axis
+NC_061509.1,NC_0615011.1        //chromosomes in x axis
+NC_061510.1,NC_061512.1      //chromosomes in y axis
+' > MCScanX.ctl
+
+cd ${DIR}/MCScanX/downstream_analyses/
+java circle_plotter \
+    -g ${DIR}/${f%.cds*}_MCScanX/${f%.cds*}.gff \
+    -s ${DIR}/${f%.cds*}_MCScanX/${f%.cds*}.collinearity \
+    -c ${DIR}/MCScanX.ctl \
+    -o ${DIR}/${f%.cds*}_MCScanX/${f%.cds*}.png
+
+perl add_kaks_to_synteny.pl \
+    -i ${DIR}/${f%.cds*}_MCScanX/${f%.cds*}.collinearity \
+    -d ${DIR}/${f} \
+    -o test.kaks.tmp
+```
 ## Preliminary assessment of the distribution of the genes, orthogroups and gene family classifications.
 ```{sh}
 echo '
@@ -757,10 +829,9 @@ grep -v "^#" ${DIR}/CAFE_Gamma100_results/Gamma_clade_results.txt | \
 ```
 
 ## Build tree using single-gene orthogroups
-
 1. Identify single-copy orthogroups and their respective gene names across all 7 species:
 ```{sh}
-awk '($2 == 1) && ($3 == 1) && ($4 == 1) && ($5 == 1) && ($6 == 1) && ($7 == 1) && ($8 == 1)'  $ORTHOUT | cut -f1 > single_gene_list.grep
+awk '($2 == 1) && ($3 == 1) && ($4 == 1) && ($5 == 1) && ($6 == 1) && ($7 == 1) && ($8 == 1)' $ORTHOUT | cut -f1 > single_gene_list.grep
 grep -f single_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > single_gene_list.geneNames
 ```
 
@@ -996,6 +1067,52 @@ echo '
 
 time codeml ORTHOGROUPS_SINGLE_GENE-CODEML.ctl
 ```
+
+## Visualise synteny between Lolium rigidum and Lolium perenne using single-gene orthogroups
+1. Identify single-copy orthogroups and their respective gene names in Lolium rigidum and L. perenne
+```{sh}
+awk '($3 == 1) && ($4 == 1)' $ORTHOUT | cut -f1 > single_gene_list.grep
+grep -f single_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > single_gene_list.geneNames
+```
+
+2. Extract the CDS of these genes in the 2 species with coordinates in the genome
+```{sh}
+echo '#!/bin/bash
+i=$1
+line=$(head -n${i} single_gene_list.geneNames | tail -n1)
+ORTHONAME=$(echo $line | cut -d" " -f1)
+for name in $(echo $line | sed -z "s/ /\n/g" | sed "s/,//g" | tail -n+2 | grep "^Lolium")
+do
+    SPECIES=$(echo $name | cut -d"|" -f1)
+    GENE_NAME=$(echo $name | cut -d"|" -f2)
+    julia extract_sequence_using_name_query.jl \
+        ${SPECIES}.cds \
+        ${GENE_NAME} \
+        ${ORTHONAME}-${SPECIES}.fasta \
+        ${SPECIES} \
+        true
+done
+if [ $(ls ${ORTHONAME}-*.fasta | wc -l) -eq 2 ]
+then
+    cat ${ORTHONAME}-*.fasta > ${ORTHONAME}.fasta
+fi
+rm ${ORTHONAME}-*.fasta
+' > parallel_extract_single_gene_orthogroups_LOLIUMS.sh
+chmod +x parallel_extract_single_gene_orthogroups_LOLIUMS.sh
+time \
+parallel \
+./parallel_extract_single_gene_orthogroups_LOLIUMS.sh {} \
+::: $(seq 1 $(cat single_gene_list.geneNames | wc -l))
+```
+
+3. Extract location, i.e. start site only
+```{sh}
+echo 'args = commanArgs(trailingOnly=TRUE)
+fname = args[1]
+dat
+'
+```
+
 
 ## Identify herbicide TSR and NTSR genes
 1. Download protein sequences of genes from UniProt (https://www.uniprot.org) (Outputs: ${GENE}.faa)
@@ -1302,6 +1419,28 @@ echo 'cytochrome P450 AND organism:"Lolium multiflorum (Italian ryegrass) (Loliu
 echo "NONE!"
 cat *.fasta > CYP450.faa
 rm *.fasta
+
+##############################################
+### 8.) ATP-binding cassette transporter (ABC)
+echo 'ABC transporter AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+wget https://www.uniprot.org/uniprot/Q9LVM1.fasta
+wget https://www.uniprot.org/uniprot/Q94FB9.fasta
+echo 'ABC transporter AND organism:"Oryza sativa (Rice) [4530]"'
+wget https://www.uniprot.org/uniprot/A0A650FN06.fasta
+wget https://www.uniprot.org/uniprot/Q94HL6.fasta
+wget https://www.uniprot.org/uniprot/Q01HZ4.fasta
+wget https://www.uniprot.org/uniprot/Q25AJ5.fasta
+echo 'ABC transporter AND organism:"Zea mays (Maize) [4577]"'
+wget https://www.uniprot.org/uniprot/A7KVC2.fasta
+wget https://www.uniprot.org/uniprot/C0P683.fasta
+wget https://www.uniprot.org/uniprot/A0A317YHC9.fasta
+wget https://www.uniprot.org/uniprot/A0A1D6E8S2.fasta
+echo 'ABC transporter AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+echo "NONE!"
+echo 'ABC transporter AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+echo "NONE!"
+cat *.fasta > ABC.faa
+rm *.fasta
 ```
 
 2. Generate BLAST database for each orthogroup (Outputs: ${ORTHOGROUP}.*)
@@ -1423,7 +1562,7 @@ echo -e "Species\tExpansion\tContraction" > ${GENE}.conex
 grep -v "^#" ${GENE}_CAFE_Gamma100_results/Gamma_clade_results.txt | \
     grep -v "^<" | \
     sed 's/<..>//g' | \
-    sed 's/<.>//g' >> 
+    sed 's/<.>//g' >> ${GENE}.conex
 done
 
 ### Clean-up
@@ -1641,8 +1780,8 @@ echo '#!/bin/bash
 f=$1
 julia split_alignment_pairs.jl \
     ${f} \
-    15 \
-    15 \
+    60 \
+    30 \
     ${f}.windows.tmp
 
 KaKs_Calculator \
@@ -1669,13 +1808,13 @@ echo '
 **************
 *** INPUTS ***
 **************
-      seqfile = CYP450-OG0007107.aln   * sequence data file name
+      seqfile = test.aln   * sequence data file name
      treefile = ../ORTHOGROUPS_SINGLE_GENE.NT.treefile * tree structure file name
 **************
 *** OUPUTS ***
 **************
-      outfile = CYP450-OG0007107.codeml   * main result file
-        noisy = 9                                   * 0,1,2,3: how much rubbish on the screen
+      outfile = test.codeml   * main result file
+        noisy = 3                                   * 0,1,2,3: how much rubbish on the screen
       verbose = 1                                   * 1: detailed output, 0: concise output
       runmode = 0                                   * 0: user tree; 1: semi-automatic; 2: automatic; 3: StepwiseAddition; (4,5):PerturbationNNI
 ********************************
@@ -1685,12 +1824,11 @@ echo '
       seqtype = 1                                   * 1:codons; 2:AAs; 3:codons-->AAs 
     CodonFreq = 2                                   * 0:1/61 each, 1:F1X4, 2:F3X4, 3:codon table, 4:F1x4MG, 5:F3x4MG, 6:FMutSel0, 7:FMutSel
     aaDist = 0                                      * 0:equal, +:geometric; -:linear, 1-6:G1974,Miyata,c,p,v,a
-   aaRatefile = ../paml4.9j/jones.dat               * only used for aa seqs with model=empirical(_F), dayhoff.dat, jones.dat, wag.dat, mtmam.dat, or your own
 ********************************
 *** CODON SUBSTITUTION MODEL ***
 ********************************
-        model = 0                                  * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
-      NSsites = 0                                   * 0: M0 (one ratio), 1: M1a (neutral), 2: M2a (selection), ...
+        model = 0                                   * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
+      NSsites = 0 1 2 7 8                           * 0: M0 (one ratio), 1: M1a (neutral), 2: M2a (selection), ...
         icode = 0                                   * 0:universal code, 1:mammalian mt, ...
         Mgene = 0                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
 ********************************************
@@ -1703,13 +1841,13 @@ echo '
 *********************************************************
     fix_omega = 0                                   * 0: estimate omega, 1: fix omega
         omega = 0.5                                 * initial or fixed omega
-******************************************
-*** GAMMA DISTRIBUTION SHAPE PARAMETER ***
-******************************************
-    fix_alpha = 0                                   * 0: estimate alpha; 1: fix alpha
-        alpha = 1                                   * initial or fixed alpha or is equal 0:infinity (constant rate)
-       Malpha = 1                                   * 0: one alpha, 1: different alphas for genes
-        ncatG = 10                                  * number of categories in the dG, AdG, or nparK models of rates
+***************************************************************************************
+*** GAMMA DISTRIBUTION SHAPE PARAMETER FOR VARIABLE EVOLUTIONARY RATES ACROSS SITES ***
+***************************************************************************************
+    fix_alpha = 1                                   * 0: estimate alpha; 1: fix alpha
+        alpha = 0.0                                   * initial or fixed alpha or is equal 0:infinity (constant rate)
+       Malpha = 0                                   * 0: one alpha, 1: different alphas for genes
+        ncatG = 3                                  * number of categories in the dG, AdG, or nparK models of rates
 **********************
 *** CLOCK SETTINGS ***
 **********************
@@ -1723,8 +1861,8 @@ echo '
     cleandata = 1
        method = 0
   fix_blength = 0                                  * 0: ignore, -1: random, 1: initial, 2: fixed
-' > CYP450-OG0007107.ctl
-time codeml CYP450-OG0007107.ctl
+' > test.ctl
+time codeml test.ctl
 
 
 

@@ -42,9 +42,17 @@ while !eof(file_input)
     if line[1] == '>'
         while match(Regex(sequence_name_query), replace(line, "|"=>":")) != nothing
             file_output = open(fasta_output, "a")
+            vec_line = split(line, " ")
             if (new_sequence_name != "")
-                vec_line = split(line, " ")
                 line = string(">", new_sequence_name)
+            end
+            if add_gene_coordinates
+                coordinates = try
+                        vec_line[(match.(Regex("interval="), vec_line) .!= nothing) .| (match.(Regex("location="), vec_line) .!= nothing)][1]
+                    catch
+                        ""
+                    end
+                line = string(line, "(", coordinates, ")")
             end
             write(file_output, string(line, '\n'))
             line = readline(file_input)
