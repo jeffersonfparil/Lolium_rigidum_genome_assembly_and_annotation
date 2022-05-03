@@ -480,7 +480,7 @@ wget https://github.com/bedops/bedops/releases/download/v2.4.40/bedops_linux_x86
 tar -xvjf bedops_linux_x86_64-v2.4.40.tar.bz2
 PATH=${PATH}:${DIR}/bin
 
-### Build blast database for each species' cds
+### Build blast database for each species cds
 time \
 parallel \
 makeblastdb \
@@ -488,37 +488,53 @@ makeblastdb \
     -dbtype nucl \
     ::: $(ls *.cds)
 
+### Blast, prepare gff, and find collinearities within each genome
+echo '#!/bin/bash
+f=$1
 ### Blast all vs all per species
-f=Lolium_rigidum.cds
 blastn \
     -db $f \
     -query ${f%.cds*}.cds \
     -out ${f%.cds*}.blast.tmp \
     -evalue 1e-10 \
     -max_hsps 5 \
-    -outfmt 6
+    -outfmt 6 \
+    -num_threads 4
 
-cut -d"_" -f4,5 ${f%.cds*}.blast.tmp > col1.tmp
-cut -d"_" -f9,10 ${f%.cds*}.blast.tmp > col2.tmp
-cut -f3- ${f%.cds*}.blast.tmp > col3-n.tmp
-paste col1.tmp col2.tmp col3-n.tmp > ${f%.cds*}.blast
-rm col1.tmp col2.tmp col3-n.tmp ${f%.cds*}.blast.tmp
+### Remove prefix and suffix to sequence names
+cut -d"_" -f4,5 ${f%.cds*}.blast.tmp > ${f}-col1.tmp
+cut -d"_" -f9,10 ${f%.cds*}.blast.tmp > ${f}-col2.tmp
+cut -f3- ${f%.cds*}.blast.tmp > ${f}-col3-n.tmp
+paste ${f}-col1.tmp ${f}-col2.tmp ${f}-col3-n.tmp > ${f%.cds*}.blast
+rm ${f}-col1.tmp ${f}-col2.tmp ${f}-col3-n.tmp ${f%.cds*}.blast.tmp
 
 ### Filter and restructure gff
 time \
 gff2bed < ${f%.cds*}.gff > ${f%.cds*}.gff.tmp
-grep -P "CDS\t0\tID=cds-" ${f%.cds*}.gff.tmp > ${f%.cds*}.gff.2.tmp
-cut -f1 ${f%.cds*}.gff.2.tmp > col1.tmp
-cut -f10 ${f%.cds*}.gff.2.tmp | cut -d";" -f1 | sed "s/ID=cds-//g" > col2.tmp
-cut -f2-3 ${f%.cds*}.gff.2.tmp > col34.tmp
-paste col1.tmp col2.tmp col34.tmp | awk '!seen[$2]++' > ${f%.cds*}.gff
+grep -P "ID=cds-" ${f%.cds*}.gff.tmp > ${f%.cds*}.gff.2.tmp
+cut -f1 ${f%.cds*}.gff.2.tmp > ${f}-col1.tmp
+cut -f10 ${f%.cds*}.gff.2.tmp | cut -d";" -f1 | sed "s/ID=cds-//g" > ${f}-col2.tmp
+cut -f2-3 ${f%.cds*}.gff.2.tmp > ${f}-col34.tmp
+paste ${f}-col1.tmp ${f}-col2.tmp ${f}-col34.tmp | awk @!seen[$2]++@ > ${f%.cds*}.gff.3.tmp
 
+### Move input files into a directory
 mkdir ${f%.cds*}_MCScanX/
 mv ${f%.cds*}.blast ${f%.cds*}_MCScanX/
-mv ${f%.cds*}.gff ${f%.cds*}_MCScanX/
+mv ${f%.cds*}.gff.3.tmp ${f%.cds*}_MCScanX/${f%.cds*}.gff
+
+### Find collinearities
+MCScanX ${f%.cds*}_MCScanX/${f%.cds*}
+
+### Clean-up
+rm ${f%.cds*}*.tmp
+' | sed "s/@/'/g" > mcscanx_in_parallel.sh
+chmod +x mcscanx_in_parallel.sh
 
 time \
-MCScanX ${f%.cds*}_MCScanX/${f%.cds*}
+parallel ./mcscanx_in_parallel.sh {} ::: $(ls *.cds)
+
+
+
 
 echo '800     //dimension (in pixels) of x axis
 800     //dimension (in pixels) of y axis
