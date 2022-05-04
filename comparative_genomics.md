@@ -15,6 +15,7 @@ cd $DIR
 ```
 
 ## Download genomes, genome annotations, and predicted CDS sequences
+**Note:** The first column of the annotation files may not correspond to the chromosome IDs.
 ```{sh}
 ### Arabidopsis thaliana
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.fna.gz
@@ -64,13 +65,13 @@ gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_protein.faa.gz > Lolium_rigidum.fa
 ### Lolium perenne
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/019/359/855/GCA_019359855.1_MPB_Lper_Kyuss_1697/GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz
 gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz > Lolium_perenne.fasta
+### Lolium perenne2
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/735/685/GCA_001735685.1_ASM173568v1/GCA_001735685.1_ASM173568v1_genomic.fna.gz
+gunzip -c GCA_001735685.1_ASM173568v1_genomic.fna.gz > Lolium_perenne2.fasta
 ### Secale cereale
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/097/815/GCA_016097815.1_HAU_Weining_v1.0/GCA_016097815.1_HAU_Weining_v1.0_genomic.fna.gz
 gunzip -c GCA_016097815.1_HAU_Weining_v1.0_genomic.fna.gz > Secale_cereale.fasta
-### 
 ```
-
-**Note:** The first column of the annotation files may not correspond to the chromosome IDs.
 
 ## Install GeMoMa (Gene Model Mapper)
 ```{sh}
@@ -79,6 +80,11 @@ mv 'download.php?which=GeMoMa' GeMoMa.zip
 unzip GeMoMa.zip
 java -jar GeMoMa-1.8.jar CLI -h
 PATH=${PATH}:${DIR} ### for GeMoMa.jar
+```
+
+## Install Java for GeMoMa (see below)
+```{sh}
+sudo apt install -y default-jre
 ```
 
 ## Install mmseq for GeMoMa-based gene annotation mapping for unannotated *Lolium perenne* and *Secale cereale* genomes
@@ -96,6 +102,7 @@ cd -
 wget https://github.com/davidemms/OrthoFinder/releases/download/2.5.4/OrthoFinder.tar.gz
 tar -xvzf OrthoFinder.tar.gz
 cd OrthoFinder/
+./orthofinder -h
 PATH=${PATH}:$(pwd)
 cd -
 ```
@@ -105,7 +112,7 @@ cd -
 sudo apt install hmmer
 ```
 
-## Install CAFE to analyse gene family evolution
+## Install CAFE5 to analyse gene family evolution
 ```{sh}
 wget https://github.com/hahnlab/CAFE5/releases/download/v5.0/CAFE5-5.0.0.tar.gz
 tar -xvzf CAFE5-5.0.0.tar.gz
@@ -120,7 +127,7 @@ cd -
 ## Install MACSE: Multiple Alignment of Coding SEquences Accounting for Frameshifts and Stop Codons
 ```{sh}
 wget https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar
-java -Xmx250G -jar macse_v2.06.jar -h
+java -Xmx250G -jar macse_v2.06.jar -help
 ```
 
 ## Install IQ-TREE for building trees with fossil root dates
@@ -128,7 +135,10 @@ java -Xmx250G -jar macse_v2.06.jar -h
 sudo apt install libeigen3-dev
 wget https://github.com/Cibiv/IQ-TREE/releases/download/v2.0.7/iqtree-2.0.7-Linux.tar.gz
 tar -xvzf iqtree-2.0.7-Linux.tar.gz
-PATH=${PATH}:$(pwd)/iqtree-2.0.7-Linux/bin
+cd iqtree-2.0.7-Linux/bin
+./iqtree2 -h
+PATH=${PATH}:$(pwd)
+cd -
 ```
 
 ## Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
@@ -166,7 +176,7 @@ cd -
 ## Use GeMoMa to map our *Lolium rigidum* annotations into *Loliumm perenne* and *Secale cereale* genomes to extract CDS
 ```{sh}
 time \
-for REF in Lolium_perenne Secale_cereale
+for REF in Lolium_perenne Lolium_perenne2 Secale_cereale
 do
     echo ${REF}
     java -jar -Xmx280G GeMoMa-1.8.jar CLI \
@@ -202,19 +212,20 @@ done
 time \
 orthofinder \
     -f ORTHOGROUPS/ \
-    -t 32
+    -t 31
 
 DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/
 ```
 
 ## Assign orthogroups into gene families
+1. Define the location of the 15,619 protein family HMMs
 ```{sh}
-### Define the location of the 15,619 protein family HMMs
 DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
 GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
+```
 
-### Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PantherHMM protein family
-
+2. Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PantherHMM protein family
+```{sh}
 ### Add Orthogroup name to each protein sequence name and merge so that we can be more efficient with hmmsearch
 echo '#!/bin/bash
 f=$1
@@ -251,7 +262,10 @@ done
 
 ### Clean-up
 rm orthogroup_filenames*
+```
 
+3. Find PantherHMM protein families for each orthogroup
+```{sh}
 ### Prepare parallelisable HMMER search script
 echo '#!/bin/bash
 PROTFA=$1
@@ -283,11 +297,10 @@ parallel \
 PANTHER_ORTHOGROUPS=$(echo ${MERGED_ORTHOGROUPS} | sed s/.faa$//g).pthr
 cat ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-* > ${PANTHER_ORTHOGROUPS}
 rm ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-*
+```
 
-### Find the best fitting gene family to each unique sequence per orthogroup.
-### This means that each orthogroup can have multiple gene families.
-### Next, add family name and GO terms to each gene family.
-
+4. Find the best fitting gene family to each unique sequence per orthogroup. This means that each orthogroup can have multiple gene families. Next, add family name and GO terms to each gene family.
+```{sh}
 grep "^>" ${MERGED_ORTHOGROUPS} | cut -d':' -f1 | sed 's/>//g' | sort | uniq > all_orthogroups.tmp
 
 echo '
@@ -466,94 +479,6 @@ julia orthogroup_classification_gene_family_GO_terms.jl \
         ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 ```
 
-## Detect whole genome duplication events
-```{sh}
-### Install MCScanX
-git clone https://github.com/wyp1125/MCScanX.git
-cd MCScanX/
-make
-PATH=${PATH}:$(pwd)
-cd -
-
-### Install bedops for gff to bed conversion
-wget https://github.com/bedops/bedops/releases/download/v2.4.40/bedops_linux_x86_64-v2.4.40.tar.bz2
-tar -xvjf bedops_linux_x86_64-v2.4.40.tar.bz2
-PATH=${PATH}:${DIR}/bin
-
-### Build blast database for each species cds
-time \
-parallel \
-makeblastdb \
-    -in {} \
-    -dbtype nucl \
-    ::: $(ls *.cds)
-
-### Blast, prepare gff, and find collinearities within each genome
-echo '#!/bin/bash
-f=$1
-### Blast all vs all per species
-blastn \
-    -db $f \
-    -query ${f%.cds*}.cds \
-    -out ${f%.cds*}.blast.tmp \
-    -evalue 1e-10 \
-    -max_hsps 5 \
-    -outfmt 6 \
-    -num_threads 4
-
-### Remove prefix and suffix to sequence names
-cut -d"_" -f4,5 ${f%.cds*}.blast.tmp > ${f}-col1.tmp
-cut -d"_" -f9,10 ${f%.cds*}.blast.tmp > ${f}-col2.tmp
-cut -f3- ${f%.cds*}.blast.tmp > ${f}-col3-n.tmp
-paste ${f}-col1.tmp ${f}-col2.tmp ${f}-col3-n.tmp > ${f%.cds*}.blast
-rm ${f}-col1.tmp ${f}-col2.tmp ${f}-col3-n.tmp ${f%.cds*}.blast.tmp
-
-### Filter and restructure gff
-time \
-gff2bed < ${f%.cds*}.gff > ${f%.cds*}.gff.tmp
-grep -P "ID=cds-" ${f%.cds*}.gff.tmp > ${f%.cds*}.gff.2.tmp
-cut -f1 ${f%.cds*}.gff.2.tmp > ${f}-col1.tmp
-cut -f10 ${f%.cds*}.gff.2.tmp | cut -d";" -f1 | sed "s/ID=cds-//g" > ${f}-col2.tmp
-cut -f2-3 ${f%.cds*}.gff.2.tmp > ${f}-col34.tmp
-paste ${f}-col1.tmp ${f}-col2.tmp ${f}-col34.tmp | awk @!seen[$2]++@ > ${f%.cds*}.gff.3.tmp
-
-### Move input files into a directory
-mkdir ${f%.cds*}_MCScanX/
-mv ${f%.cds*}.blast ${f%.cds*}_MCScanX/
-mv ${f%.cds*}.gff.3.tmp ${f%.cds*}_MCScanX/${f%.cds*}.gff
-
-### Find collinearities
-MCScanX ${f%.cds*}_MCScanX/${f%.cds*}
-
-### Clean-up
-rm ${f%.cds*}*.tmp
-' | sed "s/@/'/g" > mcscanx_in_parallel.sh
-chmod +x mcscanx_in_parallel.sh
-
-time \
-parallel ./mcscanx_in_parallel.sh {} ::: $(ls *.cds)
-
-
-
-
-echo '800     //dimension (in pixels) of x axis
-800     //dimension (in pixels) of y axis
-NC_061509.1,NC_0615011.1        //chromosomes in x axis
-NC_061510.1,NC_061512.1      //chromosomes in y axis
-' > MCScanX.ctl
-
-cd ${DIR}/MCScanX/downstream_analyses/
-java circle_plotter \
-    -g ${DIR}/${f%.cds*}_MCScanX/${f%.cds*}.gff \
-    -s ${DIR}/${f%.cds*}_MCScanX/${f%.cds*}.collinearity \
-    -c ${DIR}/MCScanX.ctl \
-    -o ${DIR}/${f%.cds*}_MCScanX/${f%.cds*}.png
-
-perl add_kaks_to_synteny.pl \
-    -i ${DIR}/${f%.cds*}_MCScanX/${f%.cds*}.collinearity \
-    -d ${DIR}/${f} \
-    -o test.kaks.tmp
-```
 ## Preliminary assessment of the distribution of the genes, orthogroups and gene family classifications.
 ```{sh}
 echo '
@@ -635,155 +560,7 @@ julia count_genes_per_ortholog_paralog_classes.jl \
         ORTHOGROUPS/orthogroups_summarised_gene_counts.csv
 ```
 
-## Locate paralogs in the Lolium rigidum genome for the Circos-like figure
-```{sh}
-ORT=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
-GFF=${DIR}/Lolium_rigidum.gff
-
-echo '
-using ProgressMeter
-fname_paralogs = ARGS[1]
-fname_annotations = ARGS[2]
-fname_output = ARGS[3]
-# fname_paralogs = "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.tsv"
-# fname_annotations = "Lolium_rigidum.gff"
-# fname_output = "Lolium_rigidum.plg"
-
-# Load gene names and start position into temproray vectors
-function load_gene_names_and_coordinates(fname_annotations)
-    temp_geneIDs = []
-    temp_genes = []
-    temp_chromosomes = []
-    temp_positions = []
-    file = open(fname_annotations, "r")
-    seekend(file); n=position(file); seekstart(file)
-    pb = Progress(n)
-    while !eof(file)
-        line = split(readline(file), "\t"[1])
-        update!(pb, position(file))
-        if line[1][1] .!= "#"[1]
-            if line[3] == "CDS"
-
-                if match(Regex("Name="), line[end]) != nothing
-                    desc = split(line[end], ";"[1])
-                    id = split(desc[match.(Regex("Dbxref=GeneID:"), desc) .!= nothing][1], ","[1])[1]
-                    geneID = replace(id, "Dbxref=GeneID:" => "")
-                    name = split(desc[match.(Regex("Name="), desc) .!= nothing][1], ","[1])[1]
-                    gene = replace(name, "Name=" => "")
-                    push!(temp_geneIDs, geneID)
-                    push!(temp_genes, gene)
-                    push!(temp_chromosomes, line[1])
-                    push!(temp_positions, parse(Int, line[4]))
-                end
-            else
-                continue
-            end
-        else
-            continue
-        end
-    end
-    close(file)
-    @time idx = sortperm(temp_genes)
-    temp_geneIDs = temp_geneIDs[idx]
-    temp_genes = temp_genes[idx]
-    temp_chromosomes = temp_chromosomes[idx]
-    temp_positions = temp_positions[idx]
-
-    # Use only one CDS/gene starting position
-    genes = []
-    chromosomes = []
-    positions = []
-    n = length(temp_genes)
-    i = 1
-    pb = Progress(n)
-    while i < n
-        id = temp_geneIDs[i]
-        g = temp_genes[i]
-        c = temp_chromosomes[i]
-        p = temp_positions[i]
-        push!(genes, g)
-        push!(chromosomes, c)
-        push!(positions, p)
-        while (i < n) & ( (g == temp_genes[i]) | (id == temp_geneIDs[i]) )
-            i += 1
-        end
-        update!(pb, i)
-    end
-    if genes[end] != temp_genes[n]
-        push!(genes, temp_genes[n])
-        push!(chromosomes, temp_chromosomes[n])
-        push!(positions, temp_positions[n])
-    end
-
-    return(genes, chromosomes, positions)
-end
-genes, chromosomes, positions = load_gene_names_and_coordinates(fname_annotations)
-
-# Add orthogroup labels, i.e. paralog classification
-function add_paralogs(fname_paralogs, genes)
-    paralogs = repeat(["None"], length(genes))
-    file = open(fname_paralogs, "r")
-    seekend(file); n=position(file); seekstart(file)
-    pb = Progress(n)
-    header = split(readline(file), "\t"[1])
-    idx = header .== "Lolium_rigidum"
-    while !eof(file)
-        line = split(readline(file), "\t"[1])
-        orthogroup = line[1]
-        gene_names = replace.(split(line[idx][1], ", "), "Lolium_rigidum|" => "")
-        for g in gene_names
-            # g = gene_names[1]
-            paralogs[genes .== g] .= orthogroup
-        end
-        update!(pb, position(file))
-    end
-    close(file)
-    return(paralogs)
-end
-paralogs = add_paralogs(fname_paralogs, genes)
-
-# Remove remove unclassified genes
-idx = paralogs .!= "None"
-paralogs = paralogs[idx]
-genes = genes[idx]
-chromosomes = chromosomes[idx]
-positions = positions[idx]
-
-# Save the list of gene names, chromosome, position, and ortholog info into a file
-file = open(fname_output, "a")
-for i in 1:length(genes)
-    line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
-    write(file, line)
-end
-close(file)
-
-# Save only the top 5 paralogs with the most genes
-vec_p = unique(paralogs)
-vec_p_counts = []
-@showprogress for p in vec_p
-    push!(vec_p_counts, sum(p .== paralogs))
-end
-idx = vec_p_counts .>= 10
-vec_p = vec_p[idx]
-file = open(replace(fname_output, ".plg"=>"-for_plotting.plg"), "a")
-for i in 1:length(paralogs)
-    if sum(paralogs[i] .== vec_p) > 0
-        line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
-        write(file, line)
-    end
-end
-close(file)
-' > locate_paralogs.jl
-
-time \
-julia locate_paralogs.jl \
-    ${ORT} \
-    ${GFF} \
-    ${GFF%.gff*}.plg
-
-```
-
-## Infer gene family expansion and contraction in each species using CAFE
+## Infer gene family expansion and contraction in each species using CAFE5 (at alpha=1%)
 ```{sh}
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 rev ${ORTHOUT} | cut -f5- | rev > col2_to_coln.tmp
@@ -836,7 +613,7 @@ cafe5 \
     --pvalue 0.01 \
     --output_prefix CAFE_Gamma1000_results
 
-### Output
+### Output using n_gamma_cats=1,000
 echo -e "Species\tExpansion\tContraction" > CONTRACTION_EXPANSION.txt
 grep -v "^#" ${DIR}/CAFE_Gamma100_results/Gamma_clade_results.txt | \
     grep -v "^<" | \
@@ -988,7 +765,16 @@ iqtree2 \
     --redo
 ```
 
-5. Clean-up (Output: ${ORTHOLOG}.NT.cds is left for the next step, i.e. Ka/Ks estimation)
+5. **Additional**: Compute pairwise 4DTv
+```{sh}
+time \
+parallel \
+julia calculate_4DTv.jl {1} {1}.4DTv.tmp \
+    ::: $(ls *.NT.cds)
+
+```
+
+6. Clean-up
 ```{sh}
 rm OG*.fasta
 rm OG*.NT.cds
@@ -996,139 +782,86 @@ rm single_gene_list.*
 rm dates.txt
 ```
 
-## Assess Ka/Ks (dN/dS) across species using single-gene orthogroups
-1. Convert alignments from fasta into phylip format (Output: ORTHOGROUPS_SINGLE_GENE.NT.phylip)
-```{sh}
-TYPE=NT
-### Convert from fasta into phylip format
-julia fasta_to_phylip.jl ORTHOGROUPS_SINGLE_GENE.${TYPE}.aln
-mv ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip ORTHOGROUPS_SINGLE_GENE.${TYPE}.tmp
-
-### Append gene delineation
-echo "$(head -n1 ORTHOGROUPS_SINGLE_GENE.${TYPE}.tmp) G" > ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
-cut -d"=" -f2 alignment_parition.${TYPE}.nex | grep -v "#" | grep -v "begin" | grep -v "end" | sed -z "/^$/d" | sed "s/;//g" > gene_coordinates.tmp
-echo "G $(cat gene_coordinates.tmp | wc -l)" > row_2_gene_lengths.tmp
-for diff in $(cat gene_coordinates.tmp)
-do
-    # diff=$(head -n10 gene_coordinates.tmp | tail -n1)
-    echo "($diff - 1) / 3" | bc | sed "s/-//g" >> row_2_gene_lengths.tmp
-done
-sed -z "s/\n/ /g" row_2_gene_lengths.tmp >> ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
-sed -i -z "s/ $/\n/g" ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
-tail -n+2 ORTHOGROUPS_SINGLE_GENE.${TYPE}.tmp >> ORTHOGROUPS_SINGLE_GENE.${TYPE}.phylip
-
-### Clean-up
-rm *.tmp
-```
-
-2. Prepare the codeml control file and run PAML::codeml
-```{sh}
-echo '
-**************
-*** INPUTS ***
-**************
-      seqfile = ORTHOGROUPS_SINGLE_GENE.NT.phylip   * sequence data file name
-     treefile = ORTHOGROUPS_SINGLE_GENE.NT.treefile * tree structure file name
-**************
-*** OUPUTS ***
-**************
-      outfile = ORTHOGROUPS_SINGLE_GENE.NT.codeml   * main result file
-        noisy = 3                                   * 0,1,2,3: how much rubbish on the screen
-      verbose = 0                                   * 1: detailed output, 0: concise output
-      runmode = 0                                   * 0: user tree; 1: semi-automatic; 2: automatic; 3: StepwiseAddition; (4,5):PerturbationNNI
-********************************
-*** PROPERTIES OF THE INPUTS ***
-********************************
-        ndata = 1                                   * number of datasets
-      seqtype = 1                                   * 1:codons; 2:AAs; 3:codons-->AAs 
-    CodonFreq = 2                                   * 0:1/61 each, 1:F1X4, 2:F3X4, 3:codon table, 4:F1x4MG, 5:F3x4MG, 6:FMutSel0, 7:FMutSel
-********************************
-*** CODON SUBSTITUTION MODEL ***
-********************************
-        model = 0                                   * 0: JC69, 1: K80 (free-ratios model to detect), 2: F81, 3: F84, 4: HKY85, 5: T92, 6: TN93, 7: GTR (REV), 8: UNREST (also see: https://github.com/ddarriba/modeltest/wiki/Models-of-Evolution)
-      NSsites = 0                                   * 0: M0 (one ratio), 1: M1a (neutral), 2: M2a (selection), ...
-        icode = 0                                   * 0:universal code, 1:mammalian mt, ...
-        Mgene = 4                                   * only for combined sequence data files, i.e. with option G in the sequence file: 0:rates, 1:separate; 2:diff pi, 3:diff k&w, 4:all diff; set as 0 if G option was not used
-********************************************
-*** TRANSITION / TRANSVERSION RATE RATIO ***
-********************************************
-    fix_kappa = 0                                   * 0: estimate kappa, 1: fix kappa, 2: kappa for branches
-        kappa = 1.6                                 * initial or fixed kappa
-*********************************************************
-*** dN/dS: NONSYNONYNOUS / SYNONYNOUS VARIATION RATIO ***
-*********************************************************
-    fix_omega = 0                                   * 0: estimate omega, 1: fix omega
-        omega = 0.1                                 * initial or fixed omega
-******************************************
-*** GAMMA DISTRIBUTION SHAPE PARAMETER ***
-******************************************
-    fix_alpha = 0                                   * 0: estimate alpha; 1: fix alpha
-        alpha = 1                                   * initial or fixed alpha or is equal 0:infinity (constant rate)
-       Malpha = 1                                   * 0: one alpha, 1: different alphas for genes
-        ncatG = 10                                  * number of categories in the dG, AdG, or nparK models of rates
-**********************
-*** CLOCK SETTINGS ***
-**********************
-        clock = 1                                   * 0:no clock, 1:global clock; 2:local clock; 3:CombinedAnalysis
-        getSE = 0
- RateAncestor = 0
-*********************
-*** MISCELLANEOUS ***
-*********************
-   Small_Diff = .1e-6
-    cleandata = 1
-       method = 0
-  fix_blength = 0                                  * 0: ignore, -1: random, 1: initial, 2: fixed
-' > ORTHOGROUPS_SINGLE_GENE-CODEML.ctl
-
-time codeml ORTHOGROUPS_SINGLE_GENE-CODEML.ctl
-```
-
-## Visualise synteny between Lolium rigidum and Lolium perenne using single-gene orthogroups
-1. Identify single-copy orthogroups and their respective gene names in Lolium rigidum and L. perenne
-```{sh}
-awk '($3 == 1) && ($4 == 1)' $ORTHOUT | cut -f1 > single_gene_list.grep
-grep -f single_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > single_gene_list.geneNames
-```
-
-2. Extract the CDS of these genes in the 2 species with coordinates in the genome
+## Assesss whole genome duplication (WGD) events using the distribution of four-fold degenerate sites (4DTv) across dual-copy paralogs within genomes and across sing-copy gene orthologs between pairs of species
+1. Prepare script to extract CDS, and align in parallel
 ```{sh}
 echo '#!/bin/bash
-i=$1
-line=$(head -n${i} single_gene_list.geneNames | tail -n1)
+j=$1
+# j=1
+line=$(head -n${j} dual_gene_list.geneNames | tail -n1)
 ORTHONAME=$(echo $line | cut -d" " -f1)
-for name in $(echo $line | sed -z "s/ /\n/g" | sed "s/,//g" | tail -n+2 | grep "^Lolium")
+# Extract CDS of these dual-copy genes
+for name in $(echo $line | cut -d" " -f2- | sed -z "s/, /\n/g")
 do
+    # name=$(echo $line | cut -d" " -f2- | sed -z "s/, /\n/g" | head -n1)
     SPECIES=$(echo $name | cut -d"|" -f1)
     GENE_NAME=$(echo $name | cut -d"|" -f2)
     julia extract_sequence_using_name_query.jl \
         ${SPECIES}.cds \
         ${GENE_NAME} \
-        ${ORTHONAME}-${SPECIES}.fasta \
-        ${SPECIES} \
-        true
+        ${ORTHONAME}-${GENE_NAME}.fasta \
+        ${GENE_NAME} \
+        false
 done
+# Concatenate the two sequences
 if [ $(ls ${ORTHONAME}-*.fasta | wc -l) -eq 2 ]
 then
     cat ${ORTHONAME}-*.fasta > ${ORTHONAME}.fasta
 fi
-rm ${ORTHONAME}-*.fasta
-' > parallel_extract_single_gene_orthogroups_LOLIUMS.sh
-chmod +x parallel_extract_single_gene_orthogroups_LOLIUMS.sh
-time \
-parallel \
-./parallel_extract_single_gene_orthogroups_LOLIUMS.sh {} \
-::: $(seq 1 $(cat single_gene_list.geneNames | wc -l))
+# Align the CDS across species
+java -Xmx8G \
+    -jar macse_v2.06.jar \
+    -prog alignSequences \
+    -seq ${ORTHONAME}.fasta \
+    -out_NT ${ORTHONAME}.aligned.unsorted.cds.tmp \
+    -out_AA ${ORTHONAME}.aligned.unsorted.prot.tmp
+# Convert stop codons and frameshifts as "---" for compatibility with downstream tools
+java -Xmx8G \
+    -jar macse_v2.06.jar \
+    -prog exportAlignment \
+    -align ${ORTHONAME}.aligned.unsorted.cds.tmp \
+    -codonForFinalStop --- \
+    -codonForInternalStop NNN \
+    -codonForExternalFS --- \
+    -codonForInternalFS --- \
+    -out_NT ${ORTHONAME}.NT.cds \
+    -out_AA ${ORTHONAME}.AA.prot
+# Calculate 4DTv (i.e. the ratio of the number of 4-fold degenerate codons with trnasversion and the total number of 4-fold degenerate codons)
+julia calculate_4DTv.jl ${ORTHONAME}.NT.cds ${ORTHONAME}.4DTv.tmp
+# Clean-up
+rm ${ORTHONAME}*.fasta
+rm ${ORTHONAME}.aligned.unsorted*.tmp ${ORTHONAME}.NT.cds ${ORTHONAME}.AA.prot
+' > parallel_extract_dual_gene_orthogroups.sh
+chmod +x parallel_extract_dual_gene_orthogroups.sh
 ```
 
-3. Extract location, i.e. start site only
+2. Identify dual-copy paralogs per species, align, and estimate 4DTv
 ```{sh}
-echo 'args = commanArgs(trailingOnly=TRUE)
-fname = args[1]
-dat
-'
+head -n1 ${ORTHOUT} | rev | cut -f5- | rev | cut -f2- | sed -z "s/\t/\n/g" > species_names.tmp
+time \
+for i in $(seq 1 $(cat species_names.tmp | wc -l))
+do
+    # i=1
+    ### Extract species name
+    SPECIES=$(head -n${i} species_names.tmp | tail -n1)
+    idx=$(echo $i + 1 | bc)
+    ### Exract names of orthogroups with 2 copies in the current species
+    awk -v col="$idx" '($col == 2)' $ORTHOUT | cut -f1 > dual_gene_list.grep
+    ### Extract names of the genes of these dual-copy orthogroups
+    grep -f dual_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f1,${idx} > dual_gene_list.geneNames
+    ### Extract CDS, and align in parallel
+    parallel \
+    ./parallel_extract_dual_gene_orthogroups.sh {} \
+    ::: $(seq 1 $(cat dual_gene_list.geneNames | wc -l))
+    ### Concatenate 4DTv estimates
+    cat *.4DTv.tmp > ${SPECIES}.4DTv
+    ### Clean-up
+    rm *.4DTv.tmp
+    rm dual_gene_list.grep
+    rm dual_gene_list.geneNames
+done
+rm species_names.tmp
 ```
-
 
 ## Identify herbicide TSR and NTSR genes
 1. Download protein sequences of genes from UniProt (https://www.uniprot.org) (Outputs: ${GENE}.faa)
@@ -1560,32 +1293,32 @@ paste -d'\t' col1.tmp coln.tmp > counts.tmp
 time \
 for GENE in $(ls *.ortho | sed 's/.ortho//g')
 do
-# GENE=$(ls *.ortho | sed 's/.ortho//g' | head -n1)
-### Extract gene family counts
-cat ${GENE}.ortho | cut -f2 > ${GENE}.ortho.tmp
-head -n1 counts.tmp > ${GENE}.orthocounts
-grep -f ${GENE}.ortho.tmp counts.tmp >> ${GENE}.orthocounts
-### Run with lambda_i ~ Gamma(alpha), for each of the i_th gene family category (Output: ${GENE}_CAFE_Gamma100_results/)
-cafe5 \
-    --infile ${GENE}.orthocounts \
-    --tree ${TREE} \
-    --n_gamma_cats 100 \
-    --cores 31 \
-    --pvalue 0.01 \
-    --output_prefix ${GENE}_CAFE_Gamma100_results
-### Output(Output: ${GENE}.conex)
-echo -e "Species\tExpansion\tContraction" > ${GENE}.conex
-grep -v "^#" ${GENE}_CAFE_Gamma100_results/Gamma_clade_results.txt | \
-    grep -v "^<" | \
-    sed 's/<..>//g' | \
-    sed 's/<.>//g' >> ${GENE}.conex
+    # GENE=$(ls *.ortho | sed 's/.ortho//g' | head -n1)
+    ### Extract gene family counts
+    cat ${GENE}.ortho | cut -f2 > ${GENE}.ortho.tmp
+    head -n1 counts.tmp > ${GENE}.orthocounts
+    grep -f ${GENE}.ortho.tmp counts.tmp >> ${GENE}.orthocounts
+    ### Run with lambda_i ~ Gamma(alpha), for each of the i_th gene family category (Output: ${GENE}_CAFE_Gamma100_results/)
+    cafe5 \
+        --infile ${GENE}.orthocounts \
+        --tree ${TREE} \
+        --n_gamma_cats 100 \
+        --cores 31 \
+        --pvalue 0.01 \
+        --output_prefix ${GENE}_CAFE_Gamma100_results
+    ### Output(Output: ${GENE}.conex)
+    echo -e "Species\tExpansion\tContraction" > ${GENE}.conex
+    grep -v "^#" ${GENE}_CAFE_Gamma100_results/Gamma_clade_results.txt | \
+        grep -v "^<" | \
+        sed 's/<..>//g' | \
+        sed 's/<.>//g' >> ${GENE}.conex
 done
 
 ### Clean-up
 rm *.tmp
 ```
 
-## dN/dS assessment: For the sress-related genes which are not more enriched, are there signs of selection?
+## dN/dS assessment: For the sress-related genes which are not more enriched (well we're including everything not just the ones that were not enriched just to be thorough), are there signs of selection?
 Note: we use "gene" to refer to TSR and NTSR genes, and alignments even genes again for the genes within orthogroups within TSR/NTSR genes per species. Apologies for any misunderstandings.
 
 1. Extract CDS per gene (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${species}-${gene}-${ortho}.cds)
@@ -1766,6 +1499,7 @@ KaKs_Calculator \
 ```
 
 7. Find kaks file with significant (p<= 0.001) Ka/Ks > 1.0
+**NOTE**: If we find high dN/dS between a pair of sequences in Lolium rigidum while the focal alignment if not that different from those of other species,then we have to change the focal alignment to that gene,and re-run KaKs_calculator!
 ```{sh}
 echo 'args = commandArgs(trailingOnly=TRUE)
 # args = c("GPX-OG0000728.aln.pw.kaks.tmp")
@@ -1784,11 +1518,161 @@ do
 done
 ```
 
+## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ##
+##               MISCELLANEOUS             ##
+## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ##
 
-### NOTE: If we find high dN/dS between a pair of sequences in Lolium rigidum 
-### while the focal alignment if not that different from those of other species,
-### then we have to change the focal alignment to that gene,
-### and re-run KaKs_calculator!
+## Locate paralogs in the Lolium rigidum genome for the Circos-like figure
+```{sh}
+ORT=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
+GFF=${DIR}/Lolium_rigidum.gff
+
+echo '
+using ProgressMeter
+fname_paralogs = ARGS[1]
+fname_annotations = ARGS[2]
+fname_output = ARGS[3]
+# fname_paralogs = "ORTHOGROUPS/OrthoFinder/Results_Apr05/Orthogroups/Orthogroups.tsv"
+# fname_annotations = "Lolium_rigidum.gff"
+# fname_output = "Lolium_rigidum.plg"
+
+# Load gene names and start position into temproray vectors
+function load_gene_names_and_coordinates(fname_annotations)
+    temp_geneIDs = []
+    temp_genes = []
+    temp_chromosomes = []
+    temp_positions = []
+    file = open(fname_annotations, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    while !eof(file)
+        line = split(readline(file), "\t"[1])
+        update!(pb, position(file))
+        if line[1][1] .!= "#"[1]
+            if line[3] == "CDS"
+
+                if match(Regex("Name="), line[end]) != nothing
+                    desc = split(line[end], ";"[1])
+                    id = split(desc[match.(Regex("Dbxref=GeneID:"), desc) .!= nothing][1], ","[1])[1]
+                    geneID = replace(id, "Dbxref=GeneID:" => "")
+                    name = split(desc[match.(Regex("Name="), desc) .!= nothing][1], ","[1])[1]
+                    gene = replace(name, "Name=" => "")
+                    push!(temp_geneIDs, geneID)
+                    push!(temp_genes, gene)
+                    push!(temp_chromosomes, line[1])
+                    push!(temp_positions, parse(Int, line[4]))
+                end
+            else
+                continue
+            end
+        else
+            continue
+        end
+    end
+    close(file)
+    @time idx = sortperm(temp_genes)
+    temp_geneIDs = temp_geneIDs[idx]
+    temp_genes = temp_genes[idx]
+    temp_chromosomes = temp_chromosomes[idx]
+    temp_positions = temp_positions[idx]
+
+    # Use only one CDS/gene starting position
+    genes = []
+    chromosomes = []
+    positions = []
+    n = length(temp_genes)
+    i = 1
+    pb = Progress(n)
+    while i < n
+        id = temp_geneIDs[i]
+        g = temp_genes[i]
+        c = temp_chromosomes[i]
+        p = temp_positions[i]
+        push!(genes, g)
+        push!(chromosomes, c)
+        push!(positions, p)
+        while (i < n) & ( (g == temp_genes[i]) | (id == temp_geneIDs[i]) )
+            i += 1
+        end
+        update!(pb, i)
+    end
+    if genes[end] != temp_genes[n]
+        push!(genes, temp_genes[n])
+        push!(chromosomes, temp_chromosomes[n])
+        push!(positions, temp_positions[n])
+    end
+
+    return(genes, chromosomes, positions)
+end
+genes, chromosomes, positions = load_gene_names_and_coordinates(fname_annotations)
+
+# Add orthogroup labels, i.e. paralog classification
+function add_paralogs(fname_paralogs, genes)
+    paralogs = repeat(["None"], length(genes))
+    file = open(fname_paralogs, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    header = split(readline(file), "\t"[1])
+    idx = header .== "Lolium_rigidum"
+    while !eof(file)
+        line = split(readline(file), "\t"[1])
+        orthogroup = line[1]
+        gene_names = replace.(split(line[idx][1], ", "), "Lolium_rigidum|" => "")
+        for g in gene_names
+            # g = gene_names[1]
+            paralogs[genes .== g] .= orthogroup
+        end
+        update!(pb, position(file))
+    end
+    close(file)
+    return(paralogs)
+end
+paralogs = add_paralogs(fname_paralogs, genes)
+
+# Remove remove unclassified genes
+idx = paralogs .!= "None"
+paralogs = paralogs[idx]
+genes = genes[idx]
+chromosomes = chromosomes[idx]
+positions = positions[idx]
+
+# Save the list of gene names, chromosome, position, and ortholog info into a file
+file = open(fname_output, "a")
+for i in 1:length(genes)
+    line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
+    write(file, line)
+end
+close(file)
+
+# Save only the top 5 paralogs with the most genes
+vec_p = unique(paralogs)
+vec_p_counts = []
+@showprogress for p in vec_p
+    push!(vec_p_counts, sum(p .== paralogs))
+end
+idx = vec_p_counts .>= 10
+vec_p = vec_p[idx]
+file = open(replace(fname_output, ".plg"=>"-for_plotting.plg"), "a")
+for i in 1:length(paralogs)
+    if sum(paralogs[i] .== vec_p) > 0
+        line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
+        write(file, line)
+    end
+end
+close(file)
+' > locate_paralogs.jl
+
+time \
+julia locate_paralogs.jl \
+    ${ORT} \
+    ${GFF} \
+    ${GFF%.gff*}.plg
+
+```
+
+
+
+
 
 ### TESTING KaKs_Calucator2.0 with sliding windows
 ```{sh}
@@ -1883,8 +1767,5 @@ time codeml test.ctl
 
 
 ```
-
-### OR OR OR OR OR BETTER YET! LEAR MORE ABOUT THESE THINGS!!!!
-
 
 ## Evolutionary tree of stress-related genes: How did these stress-related gene which are under selection came about? 

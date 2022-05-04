@@ -1,12 +1,12 @@
 ### Plot figure 1
 
 args = commandArgs(trailingOnly=TRUE)
-# args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "orthogroups_summarised_gene_counts.csv", "orthogroups_gene_counts_families_go.out", ".kaks")
+# args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "orthogroups_summarised_gene_counts.csv", "orthogroups_gene_counts_families_go.out", ".4DTv")
 fname_tree = args[1]
 fname_conex = args[2]
 fname_gene_groups = args[3]
 fname_gene_counts = args[4]
-extension_name_KaKs = args[5]
+extension_name_4DTv = args[5]
 
 library(ape)
 library(gplots)
@@ -68,17 +68,13 @@ colnames(X) = gsub("_", " ", colnames(X))
 par(mar=c(1,5,3,5))
 venn(X[,c(3,4,5,6,8)]) ### picking only 5 species (maximum number of sets to draw a Venn diagram so far)
 
-### Ka/Ks (or dN/dS using gene families with 10 genes each)
+### Distribution of 4DTv (fraction of transverions among 4-fold degenerate codons - correlated with time from whole genome duplication using dual-copy paralogs and single-copy orthologs)
 par(mar=c(5,5,5,5))
 alpha = 0.05
-kaks_files = list.files(path=".", pattern=extension_name_KaKs)
-for (f in kaks_files){
-    # f = kaks_files[3]
-    kaks = read.delim(f, header=TRUE, na.string="NA")
-    idx = !is.na(kaks$Ka.Ks) & !is.na(kaks$P.Value.Fisher) & !is.na(kaks$Model)
-    kaks = droplevels(kaks[idx, ])
-    kaks = kaks[order(kaks$Ka.Ks, decreasing=TRUE), ]
-    idx = (kaks$P.Value.Fisher < alpha) & (kaks$Ka.Ks > 1)
-    
-    hist(kaks$Ka.Ks)
+FDTv_files = list.files(path=".", pattern=extension_name_4DTv)
+for (f in FDTv_files){
+    # f = FDTv_files[3]
+    df = read.delim(f, header=FALSE, na.string="NA")
+    x = df$V4
+    hist(x)
 }
