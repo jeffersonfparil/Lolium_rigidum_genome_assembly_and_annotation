@@ -161,6 +161,17 @@ PATH=${PATH}:$(pwd)
 cd -
 ```
 
+## Install R::ape
+1. Install BLAS and LAPACK libraries for R::ape package
+```{sh}
+sudo apt install -y libblas-dev liblapack-dev
+```
+
+2. Install R::ape library
+```{R}
+install.packages("ape")
+```
+
 ## Download PantherHMM library including 15,619 protein family HMMs and their GO terms
 ```{sh}
 wget http://data.pantherdb.org/ftp/panther_library/current_release/PANTHER17.0_hmmscoring.tgz
@@ -191,10 +202,10 @@ do
         a=${DIR}/Lolium_rigidum.gff \
         g=${DIR}/Lolium_rigidum.fasta \
         outdir=${DIR}/${REF}
-    cp ${REF}/final_annotation.gff ${REF}.gff
-    cp ${REF}/predicted_cds.fasta ${REF}.cds
-    cp ${REF}/predicted_proteins.fasta ${REF}.faa
-    rm -R ${REF}
+    cp ${DIR}/${REF}/final_annotation.gff ${REF}.gff
+    cp ${DIR}/${REF}/predicted_cds.fasta ${REF}.cds
+    cp ${DIR}/${REF}/predicted_proteins.fasta ${REF}.faa
+    rm -R ${DIR}/${REF}
 done
 ```
 
@@ -782,20 +793,20 @@ rm single_gene_list.*
 rm dates.txt
 ```
 
-## Assesss whole genome duplication (WGD) events using the distribution of four-fold degenerate sites (4DTv) across dual-copy paralogs within genomes and across sing-copy gene orthologs between pairs of species
+## Assess whole genome duplication (WGD) events using the distribution of four-fold degenerate sites (4DTv) across dual-copy paralogs within genomes and across sing-copy gene orthologs between pairs of species
 1. Prepare script to extract CDS, and align in parallel
 ```{sh}
 echo '#!/bin/bash
 j=$1
-# j=1
+# j=1017
 line=$(head -n${j} dual_gene_list.geneNames | tail -n1)
 ORTHONAME=$(echo $line | cut -d" " -f1)
 # Extract CDS of these dual-copy genes
 for name in $(echo $line | cut -d" " -f2- | sed -z "s/, /\n/g")
 do
-    # name=$(echo $line | cut -d" " -f2- | sed -z "s/, /\n/g" | head -n1)
+    # name=$(echo $line | cut -d" " -f2- | sed -z "s/, /\n/g" | head -n2 | tail -n1)
     SPECIES=$(echo $name | cut -d"|" -f1)
-    GENE_NAME=$(echo $name | cut -d"|" -f2)
+    GENE_NAME=$(echo $name | cut -d"|" -f2 | sed -z "s/\r//g")
     julia extract_sequence_using_name_query.jl \
         ${SPECIES}.cds \
         ${GENE_NAME} \
@@ -828,9 +839,21 @@ java -Xmx8G \
     -out_AA ${ORTHONAME}.AA.prot
 # Calculate 4DTv (i.e. the ratio of the number of 4-fold degenerate codons with trnasversion and the total number of 4-fold degenerate codons)
 julia calculate_4DTv.jl ${ORTHONAME}.NT.cds ${ORTHONAME}.4DTv.tmp
+# Calculate divergence time with KaKs_Calculator
+grep "^>" ${ORTHONAME}.NT.cds | \
+    sed "s/^>//g" | \
+    sed -z "s/\n/:/g" | \
+    sed -z "s/:$/\n/g" > ${ORTHONAME}.axt.tmp
+grep -v "^>" ${ORTHONAME}.NT.cds >> ${ORTHONAME}.axt.tmp
+KaKs_Calculator -i ${ORTHONAME}.axt.tmp \
+                -m MA \
+                -o ${ORTHONAME}.kaks.tmp
+divergence_time=$(tail -n1 ${ORTHONAME}.kaks.tmp | cut -f16)
+sed -i -z "s/\n/\t${divergence_time}\n/g" ${ORTHONAME}.4DTv.tmp
 # Clean-up
 rm ${ORTHONAME}*.fasta
 rm ${ORTHONAME}.aligned.unsorted*.tmp ${ORTHONAME}.NT.cds ${ORTHONAME}.AA.prot
+rm ${ORTHONAME}.axt.tmp ${ORTHONAME}.kaks.tmp
 ' > parallel_extract_dual_gene_orthogroups.sh
 chmod +x parallel_extract_dual_gene_orthogroups.sh
 ```

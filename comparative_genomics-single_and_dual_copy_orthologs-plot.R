@@ -69,12 +69,25 @@ par(mar=c(1,5,3,5))
 venn(X[,c(3,4,5,6,8)]) ### picking only 5 species (maximum number of sets to draw a Venn diagram so far)
 
 ### Distribution of 4DTv (fraction of transverions among 4-fold degenerate codons - correlated with time from whole genome duplication using dual-copy paralogs and single-copy orthologs)
-par(mar=c(5,5,5,5))
-alpha = 0.05
 FDTv_files = list.files(path=".", pattern=extension_name_4DTv)
+id = c()
+x = c()
+y = c()
 for (f in FDTv_files){
-    # f = FDTv_files[3]
+    # f = FDTv_files[1]
     df = read.delim(f, header=FALSE, na.string="NA")
-    x = df$V4
-    hist(x)
+    d = density(df$V4)
+    # d = density(df$V5)
+    id = c(id, rep(gsub(".4DTv", "", f), length(d$x)))
+    x = c(x, d$x)
+    y = c(y, d$y)    
+}
+df = data.frame(id=as.factor(id), x=x, y=y)
+par(mar=c(5,5,5,5))
+plot(0, 0, xlim=range(x), ylim=range(y), xlab="4DTv", ylab="Density", type="n")
+for (i in 1:nlevels(df$id)){
+    # i = 1
+    id = levels(df$id)[i]
+    subdf = df[df$id==id, ]
+    lines(x=subdf$x, y=subdf$y, lty=i)
 }
