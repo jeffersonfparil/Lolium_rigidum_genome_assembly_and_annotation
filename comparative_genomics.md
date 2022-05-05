@@ -313,173 +313,6 @@ rm ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-*
 4. Find the best fitting gene family to each unique sequence per orthogroup. This means that each orthogroup can have multiple gene families. Next, add family name and GO terms to each gene family.
 ```{sh}
 grep "^>" ${MERGED_ORTHOGROUPS} | cut -d':' -f1 | sed 's/>//g' | sort | uniq > all_orthogroups.tmp
-
-echo '
-using CSV, DataFrames, ProgressMeter
-
-fname_orthogroup_family_hits =  ARGS[1]
-fname_family_GO =               ARGS[2]
-fname_paralogs =             ARGS[3]
-fname_orthogroup_gene_counts =  ARGS[4]
-fname_unassigned_genes =        ARGS[5]
-fname_output =                  ARGS[6]
-
-# Load all orthogroup IDs
-file = open(fname_paralogs, "r")
-all_orthogroups = readlines(file)
-close(file)
-rm(fname_paralogs) # clean-up
-
-# Load orthogroup hits
-file = open(fname_orthogroup_family_hits, "r")
-seekend(file); n = position(file); seekstart(file)
-orthogroup = []
-gene_name = []
-family_ID = []
-evalue = []
-pb = Progress(n)
-while !eof(file)
-    line = split(readline(file), " "[1])
-    seqName = split(line[1], ":"[1])
-    speciesAndGeneName = split(seqName[2], "|"[1])
-    geneName = join(split(speciesAndGeneName[2], "-"[1])[2:end], "-"[1])
-    push!(orthogroup, seqName[1])
-    push!(gene_name, geneName)
-    push!(family_ID, replace(line[2], ".orig.30.pir"=>""))
-    push!(evalue, parse(Float64, line[3]))
-    update!(pb, position(file))
-end
-close(file)
-
-# Load PantherHMM family descriptions
-file = open(fname_family_GO, "r")
-seekend(file); n = position(file); seekstart(file)
-PTHR_family_ID = []
-PTHR_family_name = []
-PTHR_GO_term = []
-pb = Progress(n)
-while !eof(file)
-    line = split(readline(file), "\t"[1])
-    push!(PTHR_family_ID, line[1])
-    push!(PTHR_family_name, line[2])
-    push!(PTHR_GO_term, line[3])
-    update!(pb, position(file))
-end
-close(file)
-
-# Load gene counts orthogroup per species
-df_counts = CSV.read(open(fname_orthogroup_gene_counts), DataFrames.DataFrame)
-
-# Load list of unassigned genes, i.e. orthogroups with a single gene specific to each species
-df_unassigned = CSV.read(open(fname_unassigned_genes), DataFrames.DataFrame)
-
-# For each gene, set the family ID as the one with the lowest E-value
-idx = sortperm(gene_name)
-orthogroup = orthogroup[idx]
-gene_name = gene_name[idx]
-family_ID = family_ID[idx]
-evalue = evalue[idx]
-
-all_gene = unique(gene_name)
-all_family_ID = []
-all_orthogroup = []
-i = 1
-@showprogress for g in all_gene
-    # g = all_gene[1]
-    t = g == gene_name[i]
-    while t == false
-        i += 1
-        t = g == gene_name[i]
-    end
-    f = []
-    o = []
-    e = []
-    while t
-        push!(f, family_ID[i])
-        push!(o, orthogroup[i])
-        push!(e, evalue[i])
-        i += 1
-        t = try
-                g == gene_name[i]
-            catch
-                false
-            end
-    end
-    push!(all_family_ID, f[e .== minimum(e)][1])
-    push!(all_orthogroup, o[e .== minimum(e)][1])
-end
-
-# Identify the PantherHMM gene family names and GO terms
-all_family = []
-all_GO = []
-@showprogress for ID in all_family_ID
-    # ID = all_family_ID[1]
-    idx = ID .== PTHR_family_ID
-    if sum(idx) == 1
-        push!(all_family, PTHR_family_name[idx][1])
-        push!(all_GO, PTHR_GO_term[idx][1])
-    else
-        # for unclassified orthogroups
-        push!(all_family, "UNKNOWN")
-        push!(all_GO, "")
-    end
-end
-
-# Summarise gene families per orthogroup
-idx = sortperm(all_orthogroup)
-all_orthogroup = all_orthogroup[idx]
-all_family_ID = all_family_ID[idx]
-all_family = all_family[idx]
-all_GO = all_GO[idx]
-final_orthogroup = unique(all_orthogroup)
-sort!(final_orthogroup)
-final_family_ID = []
-final_family = []
-final_GO = []
-i = 1
-@showprogress for o in final_orthogroup
-    t = o == all_orthogroup[i]
-    while t == false
-        i += 1
-        t = o == all_orthogroup[i]
-    end
-    fid = []
-    fam = []
-    fgo = []
-    while t
-        push!(fid, all_family_ID[i])
-        push!(fam, all_family[i])
-        push!(fgo, all_GO[i])
-        i += 1
-        t = try
-                o == all_othogroup[i]
-            catch
-                false
-            end
-    end
-    push!(final_family_ID, join(unique(fid), ";"[1]))
-    push!(final_family, join(unique(fam), ";"[1]))
-    push!(final_GO, join(unique(fgo), ";"[1]))
-end
-
-df_ID = DataFrames.DataFrame(Orthogroup=final_orthogroup,
-                          Family_ID=final_family_ID,
-                          Family=final_family,
-                          GO=final_GO)
-
-# Generate gene counts per species for the set of unassigned genes
-df_append_unassigned = Int.(.!ismissing.(df_unassigned[:, 2:end]))
-df_append_unassigned.Total = repeat([1], nrow(df_unassigned))
-df_append_unassigned.Orthogroup = df_unassigned.Orthogroup
-
-# Append unassigned orthogroups into the orthogroup gene counts dataframe
-df_counts = vcat(df_counts, df_append_unassigned)
-
-# Merge the orthogroup ID and orthogroup gene counts and save into a file
-df = outerjoin(df_counts, df_ID, on=:Orthogroup)
-CSV.write(open(fname_output, "w"), df, delim="\t"[1])
-' > "orthogroup_classification_gene_family_GO_terms.jl"
-
 time \
 julia orthogroup_classification_gene_family_GO_terms.jl \
         ORTHOGROUPS/orthogroups.pthr \
@@ -492,79 +325,6 @@ julia orthogroup_classification_gene_family_GO_terms.jl \
 
 ## Preliminary assessment of the distribution of the genes, orthogroups and gene family classifications.
 ```{sh}
-echo '
-fname = ARGS[1]
-fname_out = ARGS[2]
-using CSV, DataFrames, ProgressMeter
-file = open(fname, "r")
-df = CSV.read(file, DataFrames.DataFrame, header=true)
-close(file)
-counts = df[:, 2:(end-4)]
-species_names = names(counts)
-
-# Unassigned gene
-function count_unassigned_genes(counts, species_names)
-    println("Count unassigned genes")
-    idx = df.Total .== 1
-    unassigned = []
-    for species in species_names
-        # species = species_names[1]
-        push!(unassigned, sum(counts[idx, species_names .== species][:,1]))
-    end
-    return(unassigned)
-end
-@time unassigned = count_unassigned_genes(counts, species_names)
-
-# Unique paralogs
-function count_unique_paralogs(df, counts, species_names)
-    println("Count genes belonging to unique paralogs for each species")
-    unique_paralogs = []
-    for species in species_names
-        # species = species_names[1]
-        idx = species_names .== species
-        push!(unique_paralogs, sum((counts[:, idx] .== df.Total)[:,1]))
-    end
-    return(unique_paralogs)
-end
-@time unique_paralogs = count_unique_paralogs(df, counts, species_names)
-
-# Single-copy gene orthologs
-function count_single_copy_gene_orthologs(count, species_names)
-    println("Count single-copy gene orthologs")
-    idx = repeat([true], nrow(counts))
-    for j in 1:ncol(counts)
-        idx = idx .& (counts[:, j] .== 1)
-    end
-    single_copy_orthologs = repeat([sum(idx)], length(species_names))
-    return(single_copy_orthologs)
-end
-@time single_copy_orthologs = count_single_copy_gene_orthologs(count, species_names)
-
-# Multiple-copy orthologs
-function count_multicopy_orthologs(counts, species_names)
-    println("Count multi-copy orthologs")
-    total_per_species = []
-    for species in species_names
-        push!(total_per_species, sum(counts[:, species.==species_names][:,1]))
-    end
-    multiple_orthologs = total_per_species - (unassigned + unique_paralogs + single_copy_orthologs)
-    return(total_per_species, multiple_orthologs)
-end
-@time total_per_species, multiple_orthologs = count_multicopy_orthologs(counts, species_names)
-
-# Merge gene count classifications per species and save
-out = DataFrames.DataFrame(Species=species_names,
-                           Total=total_per_species,
-                           Multiple_Orthologs=multiple_orthologs,
-                           Single_Copy_Orthologs=single_copy_orthologs,
-                           Unique_Paralogs=unique_paralogs,
-                           Unassigned_genes=unassigned
-                          )
-file = open(fname_out, "w")
-CSV.write(file, out)
-close(file)
-' > count_genes_per_ortholog_paralog_classes.jl
-
 time \
 julia count_genes_per_ortholog_paralog_classes.jl \
         ORTHOGROUPS/orthogroups_gene_counts_families_go.out \
@@ -782,7 +542,6 @@ time \
 parallel \
 julia calculate_4DTv.jl {1} {1}.4DTv.tmp \
     ::: $(ls *.NT.cds)
-
 ```
 
 6. Clean-up
@@ -793,10 +552,12 @@ rm single_gene_list.*
 rm dates.txt
 ```
 
-## Assess whole genome duplication (WGD) events using the distribution of four-fold degenerate sites (4DTv) across dual-copy paralogs within genomes and across sing-copy gene orthologs between pairs of species
-1. Prepare script to extract CDS, and align in parallel
+## Assess whole genome duplication (WGD) events 
+We will use the distribution of four-fold degenerate sites (4DTv) across multi-copy paralogs within genomes and across sing-copy gene orthologs between pairs of species
+1. Prepare script to extract CDS, align, calculate 4DTv (pairwise), and divergence time (pairwise) in parallel
 ```{sh}
 echo '#!/bin/bash
+### NOTE: The file: dual_gene_list.geneNames contains the gene names of one species. The gene names are in the second column (space-delimited), and each gene is comma-space-delimited
 j=$1
 # j=1017
 line=$(head -n${j} dual_gene_list.geneNames | tail -n1)
@@ -837,7 +598,7 @@ java -Xmx8G \
     -codonForInternalFS --- \
     -out_NT ${ORTHONAME}.NT.cds \
     -out_AA ${ORTHONAME}.AA.prot
-# Calculate 4DTv (i.e. the ratio of the number of 4-fold degenerate codons with trnasversion and the total number of 4-fold degenerate codons)
+# Calculate 4DTv (i.e. the ratio of the number of 4-fold degenerate codons with transversion and the total number of 4-fold degenerate codons)
 julia calculate_4DTv.jl ${ORTHONAME}.NT.cds ${ORTHONAME}.4DTv.tmp
 # Calculate divergence time with KaKs_Calculator
 grep "^>" ${ORTHONAME}.NT.cds | \
@@ -869,7 +630,7 @@ do
     SPECIES=$(head -n${i} species_names.tmp | tail -n1)
     idx=$(echo $i + 1 | bc)
     ### Exract names of orthogroups with 2 copies in the current species
-    awk -v col="$idx" '($col == 2)' $ORTHOUT | cut -f1 > dual_gene_list.grep
+    awk -v col="$idx" '($col >= 2)' $ORTHOUT | cut -f1 > dual_gene_list.grep
     ### Extract names of the genes of these dual-copy orthogroups
     grep -f dual_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f1,${idx} > dual_gene_list.geneNames
     ### Extract CDS, and align in parallel
@@ -1693,10 +1454,6 @@ julia locate_paralogs.jl \
 
 ```
 
-
-
-
-
 ### TESTING KaKs_Calucator2.0 with sliding windows
 ```{sh}
 echo '#!/bin/bash
@@ -1723,7 +1480,6 @@ parallel ./KaKs_per_window_and_plot_in_parallel.sh \
 
 
 ```
-
 
 ### OR OR OR SIMPLY USE PAML::codeml on these small datasets, i.e. per TSR/NTSR gene per orthogroup
 ```{sh}

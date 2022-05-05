@@ -76,18 +76,20 @@ y = c()
 for (f in FDTv_files){
     # f = FDTv_files[1]
     df = read.delim(f, header=FALSE, na.string="NA")
+    df[is.na(df)] = 0
     d = density(df$V4)
     # d = density(df$V5)
     id = c(id, rep(gsub(".4DTv", "", f), length(d$x)))
     x = c(x, d$x)
-    y = c(y, d$y)    
+    y = c(y, (d$y - min(d$y))/diff(range(d$y)))
 }
 df = data.frame(id=as.factor(id), x=x, y=y)
 par(mar=c(5,5,5,5))
-plot(0, 0, xlim=range(x), ylim=range(y), xlab="4DTv", ylab="Density", type="n")
+plot(0, 0, xlim=range(df$x), ylim=range(df$y), xlab="4DTv", ylab="Scaled density", type="n")
 for (i in 1:nlevels(df$id)){
     # i = 1
     id = levels(df$id)[i]
     subdf = df[df$id==id, ]
     lines(x=subdf$x, y=subdf$y, lty=i)
 }
+legend("topright", legend=levels(df$id), lty=c(1:nlevels(df$id)), lwd=2)
