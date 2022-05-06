@@ -1,9 +1,18 @@
 # Comparative genomics
 
-## Set working directories and the main orthogroup output filename (these variables and reiterated in their respective sections where they were used)
+## Set working directories, executables, and output files
 ```sh}
 DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
-DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*
+GEMOMA=${DIR}/GeMoMa/GeMoMa-1.8.jar
+PATH=${PATH}:${DIR}/mmseqs/bin
+PATH=${PATH}:${DIR}/OrthoFinder
+MACSE=${DIR}/MACSE/macse_v2.06.jar
+PATH=${PATH}:${DIR}/iqtree-2.0.7-Linux/bin
+PATH=${PATH}:${DIR}/paml4.9j/bin
+PATH=${PATH}:${DIR}/paml4.9j/src
+PATH=${PATH}:${DIR}/kakscalculator2-2.0.1/src
+
+DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May06
 DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences
 DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
 GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
@@ -65,24 +74,26 @@ gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_protein.faa.gz > Lolium_rigidum.fa
 ### Lolium perenne
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/019/359/855/GCA_019359855.1_MPB_Lper_Kyuss_1697/GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz
 gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz > Lolium_perenne.fasta
-### Lolium perenne2
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/735/685/GCA_001735685.1_ASM173568v1/GCA_001735685.1_ASM173568v1_genomic.fna.gz
-gunzip -c GCA_001735685.1_ASM173568v1_genomic.fna.gz > Lolium_perenne2.fasta
 ### Secale cereale
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/097/815/GCA_016097815.1_HAU_Weining_v1.0/GCA_016097815.1_HAU_Weining_v1.0_genomic.fna.gz
 gunzip -c GCA_016097815.1_HAU_Weining_v1.0_genomic.fna.gz > Secale_cereale.fasta
+### Clean-up
+rm GCF*.gz GCA*.gz
 ```
 
 ## Install GeMoMa (Gene Model Mapper)
 ```{sh}
+mkdir GeMoMa/
+cd GeMoMa/
 wget http://www.jstacs.de/download.php?which=GeMoMa
 mv 'download.php?which=GeMoMa' GeMoMa.zip
 unzip GeMoMa.zip
-java -jar GeMoMa-1.8.jar CLI -h
-PATH=${PATH}:${DIR} ### for GeMoMa.jar
+GEMOMA=${DIR}/GeMoMa/GeMoMa-1.8.jar
+java -jar ${GEMOMA} CLI -h
+cd -
 ```
 
-## Install Java for GeMoMa (see below)
+## Install Java for GeMoMa
 ```{sh}
 sudo apt install -y default-jre
 ```
@@ -95,6 +106,7 @@ cd mmseqs/bin/
 ./mmseqs -h
 PATH=${PATH}:${DIR}/mmseqs/bin
 cd -
+rm mmseqs-linux-avx2.tar.gz
 ```
 
 ## Install OrthoFinder for classifying genes into orthologs, and paralogs, as well as to build a tree for the analysis of gene family evolution
@@ -103,8 +115,9 @@ wget https://github.com/davidemms/OrthoFinder/releases/download/2.5.4/OrthoFinde
 tar -xvzf OrthoFinder.tar.gz
 cd OrthoFinder/
 ./orthofinder -h
-PATH=${PATH}:$(pwd)
+PATH=${PATH}:${DIR}/OrthoFinder
 cd -
+rm OrthoFinder.tar.gz
 ```
 
 ## Install HMMER for mapping CDS to PantherHMM gene family models
@@ -119,15 +132,20 @@ tar -xvzf CAFE5-5.0.0.tar.gz
 cd CAFE5/
 ./configure
 make
-bin/cafe5 -h
-PATH=${PATH}:$(pwd)/bin
+PATH=${PATH}:${DIR}/CAFE5/bin
+cafe5 -h
 cd -
+rm CAFE5-5.0.0.tar.gz
 ```
 
 ## Install MACSE: Multiple Alignment of Coding SEquences Accounting for Frameshifts and Stop Codons
 ```{sh}
+mkdir MACSE/
+cd MACSE/
 wget https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar
-java -Xmx250G -jar macse_v2.06.jar -help
+MACSE=${DIR}/MACSE/macse_v2.06.jar
+java -Xmx250G -jar ${MACSE} -help
+cd -
 ```
 
 ## Install IQ-TREE for building trees with fossil root dates
@@ -135,20 +153,18 @@ java -Xmx250G -jar macse_v2.06.jar -help
 sudo apt install libeigen3-dev
 wget https://github.com/Cibiv/IQ-TREE/releases/download/v2.0.7/iqtree-2.0.7-Linux.tar.gz
 tar -xvzf iqtree-2.0.7-Linux.tar.gz
-cd iqtree-2.0.7-Linux/bin
-./iqtree2 -h
-PATH=${PATH}:$(pwd)
-cd -
+PATH=${PATH}:${DIR}/iqtree-2.0.7-Linux/bin
+iqtree2 -h
+rm iqtree-2.0.7-Linux.tar.gz
 ```
 
 ## Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
 ```{sh}
 wget http://abacus.gene.ucl.ac.uk/software/paml4.9j.tgz
 tar -xvzf paml4.9j.tgz
-cd paml4.9j/
-PATH=${PATH}/bin
-PATH=${PATH}/src
-cd -
+PATH=${PATH}:${DIR}/paml4.9j/bin
+PATH=${PATH}:${DIR}/paml4.9j/src
+rm paml4.9j.tgz
 ```
 
 ## Install KaKs_Calculator2.0 to assess signatures of selection
@@ -157,8 +173,10 @@ wget https://github.com/kullrich/kakscalculator2/archive/refs/tags/v2.0.1.tar.gz
 tar -xvzf v2.0.1.tar.gz
 cd kakscalculator2-2.0.1/src
 make
-PATH=${PATH}:$(pwd)
+PATH=${PATH}:${DIR}/kakscalculator2-2.0.1/src
+KaKs_Calculator -h
 cd -
+rm v2.0.1.tar.gz
 ```
 
 ## Install R::ape
@@ -172,6 +190,12 @@ sudo apt install -y libblas-dev liblapack-dev
 install.packages("ape")
 ```
 
+## Install Julia packages: DataFrames, CSV, and ProgressMeter
+```{julia}
+using Pkg
+Pkg.add(["DataFrames", "CSV", "ProgressMeter"])
+```
+
 ## Download PantherHMM library including 15,619 protein family HMMs and their GO terms
 ```{sh}
 wget http://data.pantherdb.org/ftp/panther_library/current_release/PANTHER17.0_hmmscoring.tgz
@@ -181,16 +205,17 @@ cd PantherHMM_17.0/
 wget http://data.pantherdb.org/ftp/hmm_classifications/current_release/PANTHER17.0_HMM_classifications
 ### Isolate family codes and names, i.e. exclude subfamily info
 grep -v ':SF' PANTHER17.0_HMM_classifications > Panther17.0_HMM_familyIDs.txt
+rm PANTHER17.0_hmmscoring.tgz
 cd -
 ```
 
 ## Use GeMoMa to map our *Lolium rigidum* annotations into *Loliumm perenne* and *Secale cereale* genomes to extract CDS
 ```{sh}
 time \
-for REF in Lolium_perenne Lolium_perenne2 Secale_cereale
+for REF in Lolium_perenne Secale_cereale
 do
     echo ${REF}
-    java -jar -Xmx280G GeMoMa-1.8.jar CLI \
+    java -jar -Xmx280G ${GEMOMA} CLI \
         GeMoMaPipeline \
         threads=31 \
         GeMoMa.Score=ReAlign \
@@ -362,7 +387,7 @@ cafe5 \
     --infile counts.tmp \
     --tree ${TREE} \
     --n_gamma_cats 100 \
-    --cores 15 \
+    --cores 32 \
     --pvalue 0.01 \
     --output_prefix CAFE_Gamma100_results
 
@@ -371,7 +396,7 @@ cafe5 \
     --infile counts.tmp \
     --tree ${TREE} \
     --n_gamma_cats 10 \
-    --cores 15 \
+    --cores 32 \
     --pvalue 0.01 \
     --output_prefix CAFE_Gamma10_results
 
@@ -380,7 +405,7 @@ cafe5 \
     --infile counts.tmp \
     --tree ${TREE} \
     --n_gamma_cats 1000 \
-    --cores 15 \
+    --cores 32 \
     --pvalue 0.01 \
     --output_prefix CAFE_Gamma1000_results
 
