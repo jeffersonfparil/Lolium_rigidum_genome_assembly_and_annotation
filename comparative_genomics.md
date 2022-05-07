@@ -6,6 +6,7 @@ DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
 GEMOMA=${DIR}/GeMoMa/GeMoMa-1.8.jar
 PATH=${PATH}:${DIR}/mmseqs/bin
 PATH=${PATH}:${DIR}/OrthoFinder
+PATH=${PATH}:${DIR}/CAFE5/bin
 MACSE=${DIR}/MACSE/macse_v2.06.jar
 PATH=${PATH}:${DIR}/iqtree-2.0.7-Linux/bin
 PATH=${PATH}:${DIR}/paml4.9j/bin
@@ -378,33 +379,7 @@ cafe5 \
     --pvalue 0.01 \
     --output_prefix CAFE_Base_results
 
-# Extract gene families significantly differentially mapped
-echo $'#nexus\nbegin trees;' > Significant_trees.tre
-grep "*" CAFE_Base_results/Base_asr.tre >> Significant_trees.tre
-echo "end;" >> Significant_trees.tre
-
-# Extract the number of expanded and contracted orthogroups (gene families)
-cat CAFE_Base_results/Base_clade_results.txt
-
 # Re-run with lambda_i ~ Gamma(alpha), for each of the i_th gene family category
-time \
-cafe5 \
-    --infile counts.tmp \
-    --tree ${TREE} \
-    --n_gamma_cats 100 \
-    --cores 32 \
-    --pvalue 0.01 \
-    --output_prefix CAFE_Gamma100_results
-
-time \
-cafe5 \
-    --infile counts.tmp \
-    --tree ${TREE} \
-    --n_gamma_cats 10 \
-    --cores 32 \
-    --pvalue 0.01 \
-    --output_prefix CAFE_Gamma10_results
-
 time \
 cafe5 \
     --infile counts.tmp \
@@ -605,8 +580,8 @@ do
         ${GENE_NAME} \
         false
 done
-# Concatenate the two sequences
-if [ $(ls ${ORTHONAME}-*.fasta | wc -l) -eq 2 ]
+# Concatenate the sequences
+if [ $(ls ${ORTHONAME}-*.fasta | wc -l) -gt 1 ]
 then
     cat ${ORTHONAME}-*.fasta > ${ORTHONAME}.fasta
 fi
@@ -630,17 +605,17 @@ java -Xmx8G \
     -out_AA ${ORTHONAME}.AA.prot
 # Calculate 4DTv (i.e. the ratio of the number of 4-fold degenerate codons with transversion and the total number of 4-fold degenerate codons)
 julia calculate_4DTv.jl ${ORTHONAME}.NT.cds ${ORTHONAME}.4DTv.tmp
-# Calculate divergence time with KaKs_Calculator
-grep "^>" ${ORTHONAME}.NT.cds | \
-    sed "s/^>//g" | \
-    sed -z "s/\n/:/g" | \
-    sed -z "s/:$/\n/g" > ${ORTHONAME}.axt.tmp
-grep -v "^>" ${ORTHONAME}.NT.cds >> ${ORTHONAME}.axt.tmp
-KaKs_Calculator -i ${ORTHONAME}.axt.tmp \
-                -m MA \
-                -o ${ORTHONAME}.kaks.tmp
-divergence_time=$(tail -n1 ${ORTHONAME}.kaks.tmp | cut -f16)
-sed -i -z "s/\n/\t${divergence_time}\n/g" ${ORTHONAME}.4DTv.tmp
+# # Calculate divergence time with KaKs_Calculator
+# grep "^>" ${ORTHONAME}.NT.cds | \
+#     sed "s/^>//g" | \
+#     sed -z "s/\n/:/g" | \
+#     sed -z "s/:$/\n/g" > ${ORTHONAME}.axt.tmp
+# grep -v "^>" ${ORTHONAME}.NT.cds >> ${ORTHONAME}.axt.tmp
+# KaKs_Calculator -i ${ORTHONAME}.axt.tmp \
+#                 -m MA \
+#                 -o ${ORTHONAME}.kaks.tmp
+# divergence_time=$(tail -n1 ${ORTHONAME}.kaks.tmp | cut -f16)
+# sed -i -z "s/\n/\t${divergence_time}\n/g" ${ORTHONAME}.4DTv.tmp
 # Clean-up
 rm ${ORTHONAME}*.fasta
 rm ${ORTHONAME}.aligned.unsorted*.tmp ${ORTHONAME}.NT.cds ${ORTHONAME}.AA.prot
@@ -1484,7 +1459,7 @@ julia locate_paralogs.jl \
 
 ```
 
-### TESTING KaKs_Calucator2.0 with sliding windows
+## TESTING KaKs_Calucator2.0 with sliding windows
 ```{sh}
 echo '#!/bin/bash
 f=$1
@@ -1511,7 +1486,7 @@ parallel ./KaKs_per_window_and_plot_in_parallel.sh \
 
 ```
 
-### OR OR OR SIMPLY USE PAML::codeml on these small datasets, i.e. per TSR/NTSR gene per orthogroup
+## OR OR OR SIMPLY USE PAML::codeml on these small datasets, i.e. per TSR/NTSR gene per orthogroup
 ```{sh}
 echo '
 **************
