@@ -81,6 +81,11 @@ gunzip -c GCA_016097815.1_HAU_Weining_v1.0_genomic.fna.gz > Secale_cereale.fasta
 rm GCF*.gz GCA*.gz
 ```
 
+## Install R and Julia
+```{sh}
+sudo apt install -y r-base julia
+```
+
 ## Install GeMoMa (Gene Model Mapper)
 ```{sh}
 mkdir GeMoMa/
@@ -122,7 +127,7 @@ rm OrthoFinder.tar.gz
 
 ## Install HMMER for mapping CDS to PantherHMM gene family models
 ```{sh}
-sudo apt install hmmer
+sudo apt install -y hmmer
 ```
 
 ## Install CAFE5 to analyse gene family evolution
