@@ -33,3 +33,20 @@ jellyfish histo \
     -o Lolium_rigidum-${k}mer.jf.out
 rm Lolium_rigidum-${k}mer.jf.out.tmp
 done
+
+echo '
+args = commandArgs(trailingOnly=TRUE)
+# args = c("Lolium_rigidum-17mer.jf.out")
+f = args[1]
+dat = read.delim(f, header=FALSE, sep=" ")
+dat = dat[5:(nrow(dat)-1), ] ### remove first 4 and last 1 outliers
+idx = which(dat$V2==max(dat$V2))
+kmer = dat$V1[idx]
+estimated_size = (sum(dat$V1 * dat$V2) / kmer) / 1e9
+write.table(estimated_size, file=gsub(".out", ".GBsize", f), col.names=FALSE, row.names=FALSE, quote=FALSE)
+' > estimate_genome_size_in_GB.R
+
+for f in $(ls *.mer.jf.out)
+do
+Rscript estimate_genome_size_in_GB.R ${f}
+done
