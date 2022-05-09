@@ -391,10 +391,30 @@ cafe5 \
 
 ### Output using n_gamma_cats=1,000
 echo -e "Species\tExpansion\tContraction" > CONTRACTION_EXPANSION.txt
-grep -v "^#" ${DIR}/CAFE_Gamma100_results/Gamma_clade_results.txt | \
+grep -v "^#" ${DIR}/CAFE_Gamma1000_results/Gamma_clade_results.txt | \
     grep -v "^<" | \
     sed 's/<..>//g' | \
     sed 's/<.>//g' >> CONTRACTION_EXPANSION.txt
+```
+
+## GO term enrichment analysis of contracted and expanded gene families
+```{sh}
+ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
+n=$(head -n1 ${DIR}/CAFE_Gamma1000_results/Gamma_change.tab | sed -z "s/\t/\n/g" | grep -n "Lolium_rigidum" | cut -d":" -f1)
+cut -f1,${n} ${DIR}/CAFE_Gamma1000_results/Gamma_change.tab | grep -v "+0" | grep "+" | cut -f1 > expanded_orthogroups_for_grep.tmp
+cut -f1,${n} ${DIR}/CAFE_Gamma1000_results/Gamma_change.tab | grep -v "+" | cut -f1 > contracted_orthogroups_for_grep.tmp
+
+grep -f expanded_orthogroups_for_grep.tmp $ORTHOUT | cut -f$(head -n1 $ORTHOUT | awk '{printf NF-2}') | grep -v "^$" > expanded_orthogroups.pthr.tmp
+grep -f contracted_orthogroups_for_grep.tmp $ORTHOUT | cut -f$(head -n1 $ORTHOUT | awk '{printf NF-2}') | grep -v "^$" > contracted_orthogroups.pthr.tmp
+
+# wget http://data.pantherdb.org/PANTHER17.0/ontology/PANTHERGOslim.obo
+# wget http://data.pantherdb.org/ftp/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR17.0_arabidopsis
+wget http://data.pantherdb.org/ftp/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/PTHR17.0_rice
+# grep -f expanded_orthogroups.pthr.tmp PTHR17.0_arabidopsis | cut -f3
+grep -f expanded_orthogroups.pthr.tmp PTHR17.0_rice | cut -f3 > expanded_orthogroups.forgo
+grep -f contracted_orthogroups.pthr.tmp PTHR17.0_rice | cut -f3 > contracted_orthogroups.forgo
+### THen paste with Arabidopsis thalian list into http://geneontology.org/
+
 ```
 
 ## Build tree using single-gene orthogroups
@@ -438,17 +458,18 @@ parallel \
 ```{sh}
 echo '#!/bin/bash
 f=$1
+MACSE=$2
 ORTHOLOG=${f%.fasta*}
 # Align the CDS across species
 java -Xmx8G \
-    -jar macse_v2.06.jar \
+    -jar ${MACSE} \
     -prog alignSequences \
     -seq ${f} \
     -out_NT ${ORTHOLOG}.aligned.unsorted.cds.tmp \
     -out_AA ${ORTHOLOG}.aligned.unsorted.prot.tmp
 # Convert stop codons and frameshifts as "---" for compatibility with downstream tools
 java -Xmx8G \
-    -jar macse_v2.06.jar \
+    -jar ${MACSE} \
     -prog exportAlignment \
     -align ${ORTHOLOG}.aligned.unsorted.cds.tmp \
     -codonForFinalStop --- \
@@ -463,7 +484,7 @@ rm ${ORTHOLOG}*.tmp ${ORTHOLOG}.AA.prot # we are not using the amino acid sequen
 chmod +x parallel_align_cds.sh
 time \
 parallel \
-./parallel_align_cds.sh {} \
+./parallel_align_cds.sh {} ${MACSE} \
 ::: $(ls OG*.fasta)
 ```
 
@@ -541,12 +562,23 @@ iqtree2 \
     --redo
 ```
 
-5. **Additional**: Compute pairwise 4DTv
+5. **Additional**: Compute pairwise 4DTv (Output: ORTHOGROUPS_SINGLE_GENE.NT.4DTv)
 ```{sh}
+### Compute the transversion rate among 4-fold degenerate sites (Output: ${ORTHOLOG}.NT.cds.4DTv.tmp)
 time \
 parallel \
 julia calculate_4DTv.jl {1} {1}.4DTv.tmp \
     ::: $(ls *.NT.cds)
+### Concatenate pairwise 4DTv among species across single-copy orthogroups
+echo -e "ORTHOGROUP\tSPECIES_1\tSPECIES_2\tn4D_sites\tnTv4D_sites\t4DTv" > ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.4DTv
+for f in $(ls *.cds.4DTv.tmp)
+do
+    # f=$(ls *.cds.4DTv.tmp | head -n10 | tail -n1)
+    n=$(cat $f | wc -l)
+    printf "${f%.${TYPE}*}\n%.0s" $(seq 1 $n) > col1.tmp
+    sed -z "s/ /\t/g" $f | sed -z "s/:/\t/g"  > col2n.tmp
+    paste col1.tmp col2n.tmp >> ORTHOGROUPS_SINGLE_GENE.${TYPE%.*}.4DTv
+done
 ```
 
 6. Clean-up
@@ -555,6 +587,7 @@ rm OG*.fasta
 rm OG*.NT.cds
 rm single_gene_list.*
 rm dates.txt
+rm *.tmp
 ```
 
 ## Assess whole genome duplication (WGD) events 
@@ -564,6 +597,7 @@ We will use the distribution of four-fold degenerate sites (4DTv) across multi-c
 echo '#!/bin/bash
 ### NOTE: The file: dual_gene_list.geneNames contains the gene names of one species. The gene names are in the second column (space-delimited), and each gene is comma-space-delimited
 j=$1
+MACSE=$2
 # j=1017
 line=$(head -n${j} dual_gene_list.geneNames | tail -n1)
 ORTHONAME=$(echo $line | cut -d" " -f1)
@@ -587,14 +621,14 @@ then
 fi
 # Align the CDS across species
 java -Xmx8G \
-    -jar macse_v2.06.jar \
+    -jar ${MACSE} \
     -prog alignSequences \
     -seq ${ORTHONAME}.fasta \
     -out_NT ${ORTHONAME}.aligned.unsorted.cds.tmp \
     -out_AA ${ORTHONAME}.aligned.unsorted.prot.tmp
 # Convert stop codons and frameshifts as "---" for compatibility with downstream tools
 java -Xmx8G \
-    -jar macse_v2.06.jar \
+    -jar ${MACSE} \
     -prog exportAlignment \
     -align ${ORTHONAME}.aligned.unsorted.cds.tmp \
     -codonForFinalStop --- \
@@ -605,21 +639,21 @@ java -Xmx8G \
     -out_AA ${ORTHONAME}.AA.prot
 # Calculate 4DTv (i.e. the ratio of the number of 4-fold degenerate codons with transversion and the total number of 4-fold degenerate codons)
 julia calculate_4DTv.jl ${ORTHONAME}.NT.cds ${ORTHONAME}.4DTv.tmp
-# # Calculate divergence time with KaKs_Calculator
-# grep "^>" ${ORTHONAME}.NT.cds | \
-#     sed "s/^>//g" | \
-#     sed -z "s/\n/:/g" | \
-#     sed -z "s/:$/\n/g" > ${ORTHONAME}.axt.tmp
-# grep -v "^>" ${ORTHONAME}.NT.cds >> ${ORTHONAME}.axt.tmp
-# KaKs_Calculator -i ${ORTHONAME}.axt.tmp \
-#                 -m MA \
-#                 -o ${ORTHONAME}.kaks.tmp
-# divergence_time=$(tail -n1 ${ORTHONAME}.kaks.tmp | cut -f16)
-# sed -i -z "s/\n/\t${divergence_time}\n/g" ${ORTHONAME}.4DTv.tmp
+##### # Calculate divergence time with KaKs_Calculator
+##### grep "^>" ${ORTHONAME}.NT.cds | \
+#####     sed "s/^>//g" | \
+#####     sed -z "s/\n/:/g" | \
+#####     sed -z "s/:$/\n/g" > ${ORTHONAME}.axt.tmp
+##### grep -v "^>" ${ORTHONAME}.NT.cds >> ${ORTHONAME}.axt.tmp
+##### KaKs_Calculator -i ${ORTHONAME}.axt.tmp \
+#####                 -m MA \
+#####                 -o ${ORTHONAME}.kaks.tmp
+##### divergence_time=$(tail -n1 ${ORTHONAME}.kaks.tmp | cut -f16)
+##### sed -i -z "s/\n/\t${divergence_time}\n/g" ${ORTHONAME}.4DTv.tmp
 # Clean-up
 rm ${ORTHONAME}*.fasta
 rm ${ORTHONAME}.aligned.unsorted*.tmp ${ORTHONAME}.NT.cds ${ORTHONAME}.AA.prot
-rm ${ORTHONAME}.axt.tmp ${ORTHONAME}.kaks.tmp
+##### rm ${ORTHONAME}.axt.tmp ${ORTHONAME}.kaks.tmp
 ' > parallel_extract_dual_gene_orthogroups.sh
 chmod +x parallel_extract_dual_gene_orthogroups.sh
 ```
@@ -635,12 +669,12 @@ do
     SPECIES=$(head -n${i} species_names.tmp | tail -n1)
     idx=$(echo $i + 1 | bc)
     ### Exract names of orthogroups with 2 copies in the current species
-    awk -v col="$idx" '($col >= 2)' $ORTHOUT | cut -f1 > dual_gene_list.grep
+    awk -v col="$idx" '($col >= 2) && ($col <= 5)' $ORTHOUT | cut -f1 > dual_gene_list.grep
     ### Extract names of the genes of these dual-copy orthogroups
     grep -f dual_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f1,${idx} > dual_gene_list.geneNames
     ### Extract CDS, and align in parallel
     parallel \
-    ./parallel_extract_dual_gene_orthogroups.sh {} \
+    ./parallel_extract_dual_gene_orthogroups.sh {} ${MACSE} \
     ::: $(seq 1 $(cat dual_gene_list.geneNames | wc -l))
     ### Concatenate 4DTv estimates
     cat *.4DTv.tmp > ${SPECIES}.4DTv

@@ -79,7 +79,7 @@ function pair_up_sequences_and_convert_into_codons(vec_seq::Vector{Seq})::Vector
     vec_cod_pairs = []
     for i in 1:(length(vec_seq)-1)
         cod1 = sequence_to_codons(vec_seq[i])
-        for j in 2:length(vec_seq)
+        for j in (i+1):length(vec_seq)
             cod2 = sequence_to_codons(vec_seq[j])
             if length(cod1.cod) != length(cod2.cod)
                 println("Sequences are not the same length!")

@@ -11,3 +11,25 @@ Rscript find_mean_gene_model_length.R
 ### Plot genome assembl diagram
 time \
 julia genome_statistics.jl
+
+
+### K-mer analyis to estimate genome size
+sudo apt install -y jellyfish
+gunzip LOL-WGS_combined_R1.fastq.gz
+gunzip LOL-WGS_combined_R2.fastq.gz
+time \
+for k in 17 19 21 25
+do
+jellyfish count \
+    -m ${k} \
+    -s 5G \
+    -C \
+    LOL-WGS_combined_R1.fastq \
+    LOL-WGS_combined_R2.fastq \
+    -t 32 \
+    -o Lolium_rigidum-${k}mer.jf.out.tmp
+jellyfish histo \
+    Lolium_rigidum-${k}mer.jf.out.tmp \
+    -o Lolium_rigidum-${k}mer.jf.out
+rm Lolium_rigidum-${k}mer.jf.out.tmp
+done
