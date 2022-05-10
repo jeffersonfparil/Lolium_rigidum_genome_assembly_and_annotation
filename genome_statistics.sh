@@ -14,26 +14,6 @@ julia genome_statistics.jl
 
 
 ### K-mer analyis to estimate genome size
-sudo apt install -y jellyfish
-gunzip LOL-WGS_combined_R1.fastq.gz
-gunzip LOL-WGS_combined_R2.fastq.gz
-time \
-for k in 17 19 21 25
-do
-jellyfish count \
-    -m ${k} \
-    -s 5G \
-    -C \
-    LOL-WGS_combined_R1.fastq \
-    LOL-WGS_combined_R2.fastq \
-    -t 32 \
-    -o Lolium_rigidum-${k}mer.jf.out.tmp
-jellyfish histo \
-    Lolium_rigidum-${k}mer.jf.out.tmp \
-    -o Lolium_rigidum-${k}mer.jf.out
-rm Lolium_rigidum-${k}mer.jf.out.tmp
-done
-
 echo '
 args = commandArgs(trailingOnly=TRUE)
 # args = c("Lolium_rigidum-17mer.jf.out")
@@ -46,7 +26,25 @@ estimated_size = (sum(dat$V1 * dat$V2) / kmer) / 1e9
 write.table(estimated_size, file=gsub(".out", ".GBsize", f), col.names=FALSE, row.names=FALSE, quote=FALSE)
 ' > estimate_genome_size_in_GB.R
 
-for f in $(ls *.mer.jf.out)
+sudo apt install -y jellyfish
+gunzip LOL-WGS_combined_R1.fastq.gz
+gunzip LOL-WGS_combined_R2.fastq.gz
+
+time \
+for k in $(seq 15 25)
 do
-Rscript estimate_genome_size_in_GB.R ${f}
+jellyfish count \
+    -m ${k} \
+    -s 5G \
+    -C \
+    LOL-WGS_combined_R1.fastq \
+    LOL-WGS_combined_R2.fastq \
+    -t 32 \
+    -o Lolium_rigidum-${k}mer.jf.out.tmp
+jellyfish histo \
+    Lolium_rigidum-${k}mer.jf.out.tmp \
+    -o Lolium_rigidum-${k}mer.jf.out
+Rscript estimate_genome_size_in_GB.R \
+    Lolium_rigidum-${k}mer.jf.out
+rm Lolium_rigidum-${k}mer.jf.out.tmp
 done
