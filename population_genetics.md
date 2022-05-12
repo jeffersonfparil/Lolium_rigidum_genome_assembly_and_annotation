@@ -83,7 +83,61 @@ parallel \
     ::: $(find ${DIR}/BAM/ -name '*.bam')
 ```
 
+## Merge NPSTAT output
+```{sh}
+echo -e "Population\tChromosome" > col1_to_2.tmp
+head -n1 $(ls BAM/*.stats | head -n1) > col3_to_n.tmp
+paste col1_to_2.tmp col3_to_n.tmp > Lolium_rigidum.popgen
+for f in $(ls BAM/*.stats)
+do
+    # f=$(ls BAM/*.stats | head -n13 | tail -n1)
+    b=$(basename $f)
+    pop=${b%-*}
+    pop=$(echo $b | cut -d"-" -f1)
+    chr=$(echo $b | cut -d"-" -f2 | cut -d"." -f1)
+    printf "$pop\n%.s" $(seq 1 $(cat $f | wc -l)) > pop.tmp
+    printf "$chr\n%.s" $(seq 1 $(cat $f | wc -l)) > chr.tmp
+    paste pop.tmp chr.tmp $f > merged.tmp
+    tail -n+2 merged.tmp >> Lolium_rigidum.popgen
+done
+rm *.tmp
+```
+
 ## Population genetics analyses
 ```{R}
+dat = read.delim("Lolium_rigidum.popgen", header=T)
+vec_pops = unique(dat$Population)
+vec_chrs = unique(dat$Chromosome)
+vec_resp = colnames(dat)[5:ncol(dat)]
+
+window_length = 1e+6
+
+i = 34
+j = 3
+
+l = length(vec_resp)
+n = ceiling(sqrt(l))
+m = ceiling(l / n)
+par(mfrow=c(n, m), mar=c(5, 5, 2, 1))
+for (k in 1:l){
+    # k = 9
+    pop = dat$Population[i]
+    chr = dat$Chromosome[j]
+    res = vec_resp[k]
+
+    idx = (dat$Population==pop) & (dat$Chromosome==chr)
+    df = droplevels(dat[idx, ])
+
+    x = df$window
+    y = eval(parse(text=paste0("df$", res)))
+    y = eval(parse(text=paste0("df$", res)))
+    plot(x, y, type="l", las=2, xlab="", ylab="", xaxt="n", main=res)
+    x_min = min(x)
+    x_max = max(x)
+    pos = round(seq(x_min, x_max, length=5))
+    axis(side=1, at=pos, lab=pos)
+    mtext(side=1, text=paste0(chr, ": window (Mb)"), cex=0.6, padj=3.5)
+    grid()
+}
 
 ```
