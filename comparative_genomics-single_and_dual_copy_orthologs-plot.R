@@ -2,7 +2,7 @@
 
 ### EXECUTION
 # time \
-# Rscript comparative_genomics-single_and_dual_copy_orthologs-plot.R \
+# Rscript /home/jeffersonfparil/Documents/Lolium_rigidum_genome_assembly_and_annotation/comparative_genomics-single_and_dual_copy_orthologs-plot.R \
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics/ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex \
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics/CONTRACTION_EXPANSION.txt \
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics/orthogroups_summarised_gene_counts.csv \
@@ -10,7 +10,7 @@
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics \
 #     .4DTv \
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics/ORTHOGROUPS_SINGLE_GENE.NT.4DTv \
-#     test.svg
+#     test.png
 
 args = commandArgs(trailingOnly=TRUE)
 # args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "orthogroups_summarised_gene_counts.csv", "orthogroups_gene_counts_families_go.out", "/home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics", ".4DTv", "ORTHOGROUPS_SINGLE_GENE.NT.4DTv", "test.svg")
@@ -22,13 +22,23 @@ dir_name_4DTv = args[5]
 extension_name_4DTv = args[6]
 fname_4DTv_singlecopy = args[7]
 fname_svg_output = args[8]
+fname_png_output = "test.png"
 
 library(ape)
 library(gplots)
+library(png)
+library(grid)
 
-svg(fname_svg_output, width=12, height=9)
+species_order = c("Arabidopsis_thaliana",
+                  "Oryza_sativa",
+                  "Sorghum_bicolor",
+                  "Zea_mays",
+                  "Secale_cereale",
+                  "Lolium_perenne",
+                  "Lolium_rigidum") ### Check tree plot!!!
 
-# par(mfrow=c(2,2))
+svg(fname_svg_output, width=24, height=18)
+
 layout(matrix(c(rep(1,times=6), rep(2,times=2), rep(3,times=6),
                 rep(4,times=7), rep(5,times=7)), byrow=TRUE, nrow=2))
 
@@ -41,6 +51,32 @@ x_axis = round(seq(0, max(tree$edge.length), by=20))
 axis(side=1, line=1.5, at=max(x_axis)-x_axis, lab=x_axis)
 mtext(text="Million years ago", side=1, line=4.5, at=median(x_axis))
 
+### Insert photos
+# system("wget https://upload.wikimedia.org/wikipedia/commons/c/c0/Lolium_rigidum_1.JPG")
+# system("wget https://upload.wikimedia.org/wikipedia/commons/b/bb/Lolium_perenne_flowers%2C_engels_raaigras_bloeiend_aartje.jpg")
+# system("wget https://upload.wikimedia.org/wikipedia/commons/9/92/Secale_cereale_flowering%2C_rogge_bloeiend_%281%29.jpg")
+# system("wget https://upload.wikimedia.org/wikipedia/commons/0/0b/Zea_mays_003.JPG")
+# system("wget https://upload.wikimedia.org/wikipedia/commons/f/f2/Mature_Rice_%28India%29_by_Augustus_Binu.jpg")
+# system("wget https://upload.wikimedia.org/wikipedia/commons/e/e6/SorghumBicolor.jpg")
+# system("wget https://upload.wikimedia.org/wikipedia/commons/6/60/Arabidopsis_thaliana_inflorescencias.jpg")
+flower_pngs = paste0(species_order, ".png")
+for (i in 1:length(flower_pngs)){
+    flower = readPNG(flower_pngs[i])
+    grid.raster(flower, x=0.4, y=(0.59+((i-1)/18)), width=0.035)
+}
+
+library(grImport2)
+# library(rsvg)
+
+
+flower_svgs = paste0(species_order, ".svg")
+# rsvg_svg(flower_svgs[i])
+# i = 1
+SVGlogo = readPicture(flower_svgs[i], warn=FALSE)
+grid.picture(SVGlogo)
+
+
+
 ### Expansion / Contraction: middle area text
 par(mar=c(5,0,5,0))
 plot(x=plt$x.lim, y=plt$y.lim, type="n", bty="n", xaxt="n", yaxt="n", xlab="", ylab="")
@@ -48,13 +84,7 @@ adj_frac = 0.04
 conex = read.table(fname_conex, header=TRUE)
 conex = conex[order(conex$Species), ]
 tips.order = unlist(lapply(conex$Species, FUN=function(x) {
-                            which(x == c("Arabidopsis_thaliana",
-                                         "Oryza_sativa",
-                                         "Sorghum_bicolor",
-                                         "Zea_mays",
-                                         "Secale_cereale",
-                                         "Lolium_perenne",
-                                         "Lolium_rigidum"))}))
+                            which(x == species_order)}))
 conex$order = tips.order
 conex = conex[order(conex$order), ]
 conex$Expansion = formatC(conex$Expansion, format="d", big.mark=",")
@@ -62,7 +92,7 @@ conex$Contraction = formatC(conex$Contraction, format="d", big.mark=",")
 conex_lab = paste0(conex$Expansion, " : ", conex$Contraction)
 # text(x=(plt$x.lim[2]-(adj_frac*plt$x.lim[2])), y=seq(plt$y.lim[1], plt$y.lim[2]), adj=0.5, lab=conex_lab, cex=1.2)
 text(x=median(plt$x.lim), y=seq(plt$y.lim[1], plt$y.lim[2]), adj=0.5, lab=conex_lab, cex=1.2)
-mtext(side=3, line=1, at=median(plt$x.lim), adj=0.5, text="Expansion : Contraction")
+mtext(side=3, line=1, at=median(plt$x.lim), adj=0.449, text="Expansion : Contraction")
 
 ### Gene classifications: bar plot
 gene_groups = read.csv(fname_gene_groups)
@@ -74,9 +104,9 @@ X = t(as.matrix(gene_groups[, 3:m]))
 rownames(X) = gsub("_", " ", colnames(gene_groups)[3:m])
 colnames(X) = gene_groups$Species
 colors = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c")
-par(mar=c(3.5, 1.0, 3.5, 8.0))
+par(mar=c(3.5, 3.5, 3.5, 8.0))
 barplot(X, col=colors, bord=NA, horiz=TRUE, yaxt="n", xaxt="n", xlim=c(0, signif(max(gene_groups$Total),0)),
-        legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.25, +0.05), cex=1.2))
+        legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.25, +0.05), cex=1.0))
 x_axis = seq(0, signif(max(gene_groups$Total),0), length=5)
 axis(side=1, at=x_axis, lab=formatC(x_axis, format="d", big.mark=","))
 mtext(text="Gene counts", side=1, line=3, at=median(x_axis))

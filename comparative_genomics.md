@@ -3,8 +3,6 @@
 ## Set working directories, executables, and output files
 ```sh}
 DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
-GEMOMA=${DIR}/GeMoMa/GeMoMa-1.8.jar
-PATH=${PATH}:${DIR}/mmseqs/bin
 PATH=${PATH}:${DIR}/OrthoFinder
 PATH=${PATH}:${DIR}/CAFE5/bin
 MACSE=${DIR}/MACSE/macse_v2.06.jar
@@ -13,14 +11,14 @@ PATH=${PATH}:${DIR}/paml4.9j/bin
 PATH=${PATH}:${DIR}/paml4.9j/src
 PATH=${PATH}:${DIR}/kakscalculator2-2.0.1/src
 
-DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May06
+DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May11
 DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences
 DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
 GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
 MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 TREE=${DIR_ORTHOGROUPS}/Species_Tree/SpeciesTree_rooted.txt
-DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences
+DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May11/Orthogroup_Sequences
 DIR_GENES=${DIR}/TSR_NTSR_GENES
 cd $DIR
 ```
@@ -74,11 +72,25 @@ gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz > Lolium_rigidum.gf
 gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_cds_from_genomic.fna.gz > Lolium_rigidum.cds
 gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_protein.faa.gz > Lolium_rigidum.faa
 ### Lolium perenne
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/019/359/855/GCA_019359855.1_MPB_Lper_Kyuss_1697/GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz
-gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz > Lolium_perenne.fasta
+# wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/019/359/855/GCA_019359855.1_MPB_Lper_Kyuss_1697/GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz
+# gunzip -c GCA_019359855.1_MPB_Lper_Kyuss_1697_genomic.fna.gz > Lolium_perenne.fasta
+wget https://de.cyverse.org/anon-files//iplant/home/shared/commons_repo/curated/Copetti_Kyuss_assembly_annotation_March_2021/Kyuss_1697_assembly.fa
+wget https://de.cyverse.org/anon-files//iplant/home/shared/commons_repo/curated/Copetti_Kyuss_assembly_annotation_March_2021/Kyuss_1697_KYUS.gff
+wget https://de.cyverse.org/anon-files//iplant/home/shared/commons_repo/curated/Copetti_Kyuss_assembly_annotation_March_2021/Kyuss_1697_KYUS_CDS.fa
+wget https://de.cyverse.org/anon-files//iplant/home/shared/commons_repo/curated/Copetti_Kyuss_assembly_annotation_March_2021/Kyuss_1697_KYUS_proteins.fa
+mv Kyuss_1697_assembly.fa Lolium_perenne.fasta
+mv Kyuss_1697_KYUS.gff Lolium_perenne.gff
+mv Kyuss_1697_KYUS_CDS.fa Lolium_perenne.cds
+mv Kyuss_1697_KYUS_proteins.fa Lolium_perenne.faa
 ### Secale cereale
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/016/097/815/GCA_016097815.1_HAU_Weining_v1.0/GCA_016097815.1_HAU_Weining_v1.0_genomic.fna.gz
-gunzip -c GCA_016097815.1_HAU_Weining_v1.0_genomic.fna.gz > Secale_cereale.fasta
+wget https://doi.ipk-gatersleben.de/DOI/b9a5ca69-6263-4e6e-a400-f669bee5e92c/3d38d912-c8d7-4587-be08-8b22b7e9f3b2/1/DOWNLOAD
+mv DOWNLOAD Secale_cereale.fasta
+wget https://doi.ipk-gatersleben.de/DOI/8afb3971-b5e1-4748-8f0e-1b929ba73248/43ce7b0a-f4c6-4996-82bf-9ba90b9ec6b0/1/DOWNLOAD
+mv DOWNLOAD Secale_cereale.gff
+wget https://doi.ipk-gatersleben.de/DOI/8afb3971-b5e1-4748-8f0e-1b929ba73248/ecfaef55-5b60-4b1f-9c6f-88b3f0f602ad/1/DOWNLOAD
+mv DOWNLOAD Secale_cereale.cds
+wget https://doi.ipk-gatersleben.de/DOI/8afb3971-b5e1-4748-8f0e-1b929ba73248/01369868-8f23-4a21-834f-113b1a9d922d/1/DOWNLOAD
+mv DOWNLOAD Secale_cereale.faa
 ### Clean-up
 rm GCF*.gz GCA*.gz
 ```
@@ -86,34 +98,6 @@ rm GCF*.gz GCA*.gz
 ## Install R and Julia
 ```{sh}
 sudo apt install -y r-base julia
-```
-
-## Install GeMoMa (Gene Model Mapper)
-```{sh}
-mkdir GeMoMa/
-cd GeMoMa/
-wget http://www.jstacs.de/download.php?which=GeMoMa
-mv 'download.php?which=GeMoMa' GeMoMa.zip
-unzip GeMoMa.zip
-GEMOMA=${DIR}/GeMoMa/GeMoMa-1.8.jar
-java -jar ${GEMOMA} CLI -h
-cd -
-```
-
-## Install Java for GeMoMa
-```{sh}
-sudo apt install -y default-jre
-```
-
-## Install mmseq for GeMoMa-based gene annotation mapping for unannotated *Lolium perenne* and *Secale cereale* genomes
-```{sh}
-wget https://github.com/soedinglab/MMseqs2/releases/download/13-45111/mmseqs-linux-avx2.tar.gz
-tar -xvzf mmseqs-linux-avx2.tar.gz
-cd mmseqs/bin/
-./mmseqs -h
-PATH=${PATH}:${DIR}/mmseqs/bin
-cd -
-rm mmseqs-linux-avx2.tar.gz
 ```
 
 ## Install OrthoFinder for classifying genes into orthologs, and paralogs, as well as to build a tree for the analysis of gene family evolution
@@ -216,31 +200,6 @@ rm PANTHER17.0_hmmscoring.tgz
 cd -
 ```
 
-## Use GeMoMa to map our *Lolium rigidum* annotations into *Loliumm perenne* and *Secale cereale* genomes to extract CDS
-```{sh}
-time \
-for REF in Lolium_perenne Secale_cereale
-do
-    echo ${REF}
-    java -jar -Xmx280G ${GEMOMA} CLI \
-        GeMoMaPipeline \
-        threads=31 \
-        GeMoMa.Score=ReAlign \
-        AnnotationFinalizer.r=NO \
-        p=true pc=true pgr=true \
-        o=true \
-        t=${DIR}/${REF}.fasta \
-        i=Lolium_rigidum \
-        a=${DIR}/Lolium_rigidum.gff \
-        g=${DIR}/Lolium_rigidum.fasta \
-        outdir=${DIR}/${REF}
-    cp ${DIR}/${REF}/final_annotation.gff ${REF}.gff
-    cp ${DIR}/${REF}/predicted_cds.fasta ${REF}.cds
-    cp ${DIR}/${REF}/predicted_proteins.fasta ${REF}.faa
-    rm -R ${DIR}/${REF}
-done
-```
-
 ## Use OrthoFinder to find orthologs and paralogs
 ```{sh}
 mkdir ORTHOGROUPS/
@@ -257,7 +216,7 @@ orthofinder \
     -f ORTHOGROUPS/ \
     -t 31
 
-DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/
+DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May11/
 ```
 
 ## Assign orthogroups into gene families
@@ -371,16 +330,6 @@ awk -F'\t' '{print $(NF-1)}' ${ORTHOUT} > col1.tmp
 paste -d'\t' col1.tmp col2_to_coln.tmp > counts.tmp
 TREE=${DIR_ORTHOGROUPS}/Species_Tree/SpeciesTree_rooted.txt
 
-# Run using the "Base" model where a single lambda (lambda = P(gene gain or gene loss per unit time)) is estimated.
-time \
-cafe5 \
-    --infile counts.tmp \
-    --tree ${TREE} \
-    --cores 15 \
-    --pvalue 0.01 \
-    --output_prefix CAFE_Base_results
-
-# Re-run with lambda_i ~ Gamma(alpha), for each of the i_th gene family category
 time \
 cafe5 \
     --infile counts.tmp \

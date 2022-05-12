@@ -17,7 +17,7 @@ new_sequence_name = try
 add_gene_coordinates = try 
                     parse(Bool, ARGS[5])
                 catch
-                    true
+                    false
                 end
 
 if fasta_output == ""
