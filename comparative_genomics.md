@@ -11,14 +11,14 @@ PATH=${PATH}:${DIR}/paml4.9j/bin
 PATH=${PATH}:${DIR}/paml4.9j/src
 PATH=${PATH}:${DIR}/kakscalculator2-2.0.1/src
 
-DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May11
+DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May13
 DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequences
 DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
 GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
 MERGED_ORTHOGROUPS=${DIR}/ORTHOGROUPS/orthogroups.faa
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 TREE=${DIR_ORTHOGROUPS}/Species_Tree/SpeciesTree_rooted.txt
-DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May11/Orthogroup_Sequences
+DIR_ORTHOGROUP_SEQS=${DIR_ORTHOGROUPS}/Orthogroup_Sequences
 DIR_GENES=${DIR}/TSR_NTSR_GENES
 cd $DIR
 ```
@@ -325,30 +325,16 @@ time \
 cafe5 \
     --infile counts.tmp \
     --tree ${TREE} \
+    --n_gamma_cats 1000 \
     --cores 31 \
     --pvalue 0.01 \
-    --output_prefix CAFE_Base_results
-### Summarise results
+    --output_prefix CAFE_Gamma1000_results
+### Output using n_gamma_cats=1,000
 echo -e "Species\tExpansion\tContraction" > CONTRACTION_EXPANSION.txt
-grep -v "^#" ${DIR}/CAFE_Base_results/Base_clade_results.txt | \
+grep -v "^#" ${DIR}/CAFE_Gamma1000_results/Gamma_clade_results.txt | \
     grep -v "^<" | \
     sed 's/<..>//g' | \
     sed 's/<.>//g' >> CONTRACTION_EXPANSION.txt
-
-# time \
-# cafe5 \
-#     --infile counts.tmp \
-#     --tree ${TREE} \
-#     --n_gamma_cats 1000 \
-#     --cores 31 \
-#     --pvalue 0.01 \
-#     --output_prefix CAFE_Gamma1000_results
-# ### Output using n_gamma_cats=1,000
-# echo -e "Species\tExpansion\tContraction" > CONTRACTION_EXPANSION.txt
-# grep -v "^#" ${DIR}/CAFE_Gamma1000_results/Gamma_clade_results.txt | \
-#     grep -v "^<" | \
-#     sed 's/<..>//g' | \
-#     sed 's/<.>//g' >> CONTRACTION_EXPANSION.txt
 ```
 
 ## GO term enrichment analysis of contracted and expanded gene families

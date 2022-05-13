@@ -10,7 +10,7 @@
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics \
 #     .4DTv \
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics/ORTHOGROUPS_SINGLE_GENE.NT.4DTv \
-#     test.png
+#     test.svg
 
 args = commandArgs(trailingOnly=TRUE)
 # args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "orthogroups_summarised_gene_counts.csv", "orthogroups_gene_counts_families_go.out", "/home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics", ".4DTv", "ORTHOGROUPS_SINGLE_GENE.NT.4DTv", "test.svg")
@@ -22,10 +22,10 @@ dir_name_4DTv = args[5]
 extension_name_4DTv = args[6]
 fname_4DTv_singlecopy = args[7]
 fname_svg_output = args[8]
-fname_png_output = "test.png"
 
 library(ape)
-library(gplots)
+# library(gplots)
+library(VennDiagram)
 library(png)
 library(grid)
 
@@ -37,45 +37,50 @@ species_order = c("Arabidopsis_thaliana",
                   "Lolium_perenne",
                   "Lolium_rigidum") ### Check tree plot!!!
 
-svg(fname_svg_output, width=24, height=18)
+svg(fname_svg_output, width=12, height=9)
 
+pushViewport(plotViewport(layout=grid.layout(2, 2), margins=c(2,2,5,5)))
 layout(matrix(c(rep(1,times=6), rep(2,times=2), rep(3,times=6),
                 rep(4,times=7), rep(5,times=7)), byrow=TRUE, nrow=2))
 
 ### Tree: dendrogram
 tree = read.nexus(fname_tree)
 tree = ladderize(tree, right=FALSE)
-par(mar=c(5,2,5,0))
+par(mar=c(0,0,0,0))
+plot(x=c(0,1), y=c(0,1), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
+
+highlight_x = c(0.0, 1.0, 1.0, 0.0)
+highlight_y1 = c(0.1, 0.1, 0.2, 0.2)
+highlight_y2 = c(highlight_y1[3:4], 0.9, 0.9)
+polygon(x=highlight_x, y=highlight_y1, col="#fee0d2", border=NA)
+polygon(x=highlight_x, y=highlight_y2, col="#deebf7", border=NA)
+
+par(new=TRUE, mar=c(5,2,5,0))
 plt = plot.phylo(tree, cex=1.2)
 x_axis = round(seq(0, max(tree$edge.length), by=20))
 axis(side=1, line=1.5, at=max(x_axis)-x_axis, lab=x_axis)
 mtext(text="Million years ago", side=1, line=4.5, at=median(x_axis))
 
-### Insert photos
-# system("wget https://upload.wikimedia.org/wikipedia/commons/c/c0/Lolium_rigidum_1.JPG")
-# system("wget https://upload.wikimedia.org/wikipedia/commons/b/bb/Lolium_perenne_flowers%2C_engels_raaigras_bloeiend_aartje.jpg")
-# system("wget https://upload.wikimedia.org/wikipedia/commons/9/92/Secale_cereale_flowering%2C_rogge_bloeiend_%281%29.jpg")
-# system("wget https://upload.wikimedia.org/wikipedia/commons/0/0b/Zea_mays_003.JPG")
-# system("wget https://upload.wikimedia.org/wikipedia/commons/f/f2/Mature_Rice_%28India%29_by_Augustus_Binu.jpg")
-# system("wget https://upload.wikimedia.org/wikipedia/commons/e/e6/SorghumBicolor.jpg")
-# system("wget https://upload.wikimedia.org/wikipedia/commons/6/60/Arabidopsis_thaliana_inflorescencias.jpg")
-flower_pngs = paste0(species_order, ".png")
-for (i in 1:length(flower_pngs)){
-    flower = readPNG(flower_pngs[i])
-    grid.raster(flower, x=0.4, y=(0.59+((i-1)/18)), width=0.035)
-}
-
-library(grImport2)
-# library(rsvg)
-
-
-flower_svgs = paste0(species_order, ".svg")
-# rsvg_svg(flower_svgs[i])
-# i = 1
-SVGlogo = readPicture(flower_svgs[i], warn=FALSE)
-grid.picture(SVGlogo)
-
-
+# ### Insert photos
+# # system("wget https://upload.wikimedia.org/wikipedia/commons/c/c0/Lolium_rigidum_1.JPG")
+# # system("wget https://upload.wikimedia.org/wikipedia/commons/b/bb/Lolium_perenne_flowers%2C_engels_raaigras_bloeiend_aartje.jpg")
+# # system("wget https://upload.wikimedia.org/wikipedia/commons/9/92/Secale_cereale_flowering%2C_rogge_bloeiend_%281%29.jpg")
+# # system("wget https://upload.wikimedia.org/wikipedia/commons/0/0b/Zea_mays_003.JPG")
+# # system("wget https://upload.wikimedia.org/wikipedia/commons/f/f2/Mature_Rice_%28India%29_by_Augustus_Binu.jpg")
+# # system("wget https://upload.wikimedia.org/wikipedia/commons/e/e6/SorghumBicolor.jpg")
+# # system("wget https://upload.wikimedia.org/wikipedia/commons/6/60/Arabidopsis_thaliana_inflorescencias.jpg")
+# flower_pngs = paste0(species_order, ".png")
+# for (i in 1:length(flower_pngs)){
+#     flower = readPNG(flower_pngs[i])
+#     grid.raster(flower, x=0.4, y=(0.59+((i-1)/18)), width=0.035)
+# }
+# library(grImport2)
+# # library(rsvg)
+# flower_svgs = paste0(species_order, ".svg")
+# # rsvg_svg(flower_svgs[i])
+# # i = 1
+# SVGlogo = readPicture(flower_svgs[i], warn=FALSE)
+# grid.picture(SVGlogo)
 
 ### Expansion / Contraction: middle area text
 par(mar=c(5,0,5,0))
@@ -106,21 +111,40 @@ colnames(X) = gene_groups$Species
 colors = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c")
 par(mar=c(3.5, 3.5, 3.5, 8.0))
 barplot(X, col=colors, bord=NA, horiz=TRUE, yaxt="n", xaxt="n", xlim=c(0, signif(max(gene_groups$Total),0)),
-        legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.25, +0.05), cex=1.0))
+        legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.25, +0.05), cex=1.0, bty="n"))
 x_axis = seq(0, signif(max(gene_groups$Total),0), length=5)
 axis(side=1, at=x_axis, lab=formatC(x_axis, format="d", big.mark=","))
 mtext(text="Gene counts", side=1, line=3, at=median(x_axis))
 
 ### Venn diagram of shared gene families
 gene_counts = read.delim(fname_gene_counts, header=TRUE)
-X = gene_counts[, 1:(ncol(gene_counts)-4)]
-X$Orthogroup = as.numeric(gsub("OG", "", X$Orthogroup))+1
-X[,2:ncol(X)] = X[,2:ncol(X)] > 0
+# X = gene_counts[, 1:(ncol(gene_counts)-4)]
+# X$Orthogroup = as.numeric(gsub("OG", "", X$Orthogroup))+1
+# X[,2:ncol(X)] = X[,2:ncol(X)] > 0
+# colnames(X) = gsub("_", "\n", colnames(X))
+# par(mar=c(2, 3, 3, 2))
+# ### picking only 5 species (maximum number of sets to draw a Venn diagram so far)
+# species_to_include= c("Lolium\nrigidum", "Lolium\nperenne", "Oryza\nsativa", "Zea\nmays", "Secale\ncereale")
+# idx = colnames(X) %in% species_to_include
+# venn(X[, idx], col=rainbow(length(species_to_include)))
+
+X = gene_counts[, 2:(ncol(gene_counts)-4)] > 0
 colnames(X) = gsub("_", "\n", colnames(X))
-par(mar=c(2, 3, 3, 2))
-species_to_include= c("Lolium\nrigidum", "Lolium\nperenne", "Oryza\nsativa", "Zea\nmays", "Secale\ncereale")
-idx = colnames(X) %in% species_to_include
-venn(X[, idx]) ### picking only 5 species (maximum number of sets to draw a Venn diagram so far)
+Y = list()
+species_to_include= c("Lolium\nrigidum", "Lolium\nperenne", "Oryza\nsativa", "Zea\nmays", "Arabidopsis\nthaliana")
+for (name in species_to_include){
+    j = c(1:ncol(X))[colnames(X)==name]
+    if (sum(species_to_include %in% name) == 0){
+        next
+    }
+    eval(parse(text=paste0("Y$`", name, "` = c(1:nrow(X))[X[, j]]")))
+}
+
+vp = venn.diagram(Y, category.names=, col=1:length(Y), fill=NA, bord=NA, alpha = 0.3, filename = NULL)
+pushViewport(plotViewport(layout.pos.col=1, layout.pos.row=2))
+grid.draw(vp)
+plot(0, xaxt="n", yaxt="n", xlab="", ylab="", type="n", bty="n")
+
 
 ### Distribution of 4DTv (fraction of transverions among 4-fold degenerate codons - correlated with time from whole genome duplication using dual-copy paralogs and single-copy orthologs)
 

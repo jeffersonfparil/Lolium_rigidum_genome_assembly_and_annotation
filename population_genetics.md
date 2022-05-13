@@ -17,6 +17,11 @@ mkdir ${DIR}/NPSTAT
 git clone https://github.com/jeffersonfparil/Lolium_rigidum_genome_assembly_and_annotation.git
 ```
 
+## Install bwa and samtools
+```{sh}
+sudo apt install -y bwa samtools
+```
+
 ## Install npstat
 ```{sh}
 sudo apt install samtools gsl-bin libgsl0-dev
@@ -35,6 +40,7 @@ rm popoolation2_1201.zip
 ```
 
 ## Prepare the reference genome sequence and annotation
+1. Download reference genome and annotation files
 ```{sh}
 cd ${DIR}/REFERENCE
 ### Download reference genome and annotation files
@@ -44,8 +50,10 @@ gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz > Lolium_rigidum.fa
 gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz > Lolium_rigidum.gff
 rm GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
 rm GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
+```
 
-### Extract each of the 7 chromosomes
+2. Extract each of the 7 chromosomes
+```{sh}
 echo '#!/bin/bash
 i=$1
 SRC=$2
@@ -70,31 +78,82 @@ chmod +x extract_chrom_and_rename.sh
 time \
 parallel ./extract_chrom_and_rename.sh \
     {} ${SRC} ::: $(seq 1 7)
+```
 
+3. Concatenate the 7 chromosomes into a reference fasta file for mapping, pilingup and synching and index for mapping
+```{sh}
+cat chromosome*.fasta > Reference.fasta
+bwa index Reference.fasta
+```
 
-### Extract genome annotation file, split by chromosome and rename to be same as the fasta's i.e. Chromosome${1..7}
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
-gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz > Lolium_rigidum.gff
-
+4. Extract genome annotation file, split by chromosome and rename to be same as the fasta's i.e. Chromosome${1..7}
+```{sh}
 grep "^NC" Lolium_rigidum.gff | cut -f1 | sort | uniq > chr_id.tmp ### assumes we get the 7 chromosomes hence 7 lines here!!!
 for i in $(seq 1 7)
 do
     # i=1
     id=$(head -n${i} chr_id.tmp | tail -n1)
-    CHR=Chromosome${i}
-    grep ${id} Lolium_rigidum.gff | sed "s/${id}/${CHR}/g" > ${CHR}.gff
+    CHR=$(echo chromosome ${i})
+    NEW_FNAME=$(echo $CHR | sed "s/ /_/g").gff
+    grep "^$id" Lolium_rigidum.gff | sed "s/^$id/$CHR/g" > ${NEW_FNAME}
 done
 
-### Clean-up
+### Concatenate the 7 chromosomes into a reference gff
+cat chromosome*.gff > Reference.gff
+```
+
+5. Clean-up
+```{sh}
 rm chr_id.tmp
 cd ${DIR}
 ```
 
+## Align reads into the reference genome
+```{sh}
+echo '#!/bin/bash
+FASTQ1=$1
+FASTQ2=$2
+REF=$3
+MAPQ=$4
+BAM=$5
+# FASTQ1=$(find ${DIR}/FASTQ -name '*_R1.fastq.gz' | sort | head -n1)
+# FASTQ2=$(find ${DIR}/FASTQ -name '*_R2.fastq.gz' | sort | head -n1)
+# REF=${DIR}/REFERENCE/Reference.fasta
+# MAPQ=20
+# BAM=$(find ${DIR}/FASTQ -name '*_R1.fastq.gz' | sort | sed 's/_combined_R1.fastq.gz/.bam/g' | head -n1)
+bwa mem ${REF} ${FASTQ1} ${FASTQ2} | \
+    samtools view -b -q ${MAPQ} --reference ${REF} | \
+    samtools sort > ${BAM}
+' > align.sh
+chmod +x align.sh
+time \
+parallel --link -j 10 ./align.sh \
+    {1} \
+    {2} \
+    ${DIR}/REFERENCE/Reference.fasta \
+    20 \
+    {3} \
+    ::: $(find ${DIR}/FASTQ -name '*_R1.fastq.gz' | sort) \
+    ::: $(find ${DIR}/FASTQ -name '*_R2.fastq.gz' | sort) \
+    ::: $(find ${DIR}/FASTQ -name '*_R1.fastq.gz' | sort | sed 's/_combined_R1.fastq.gz/.bam/g')
 
+### Clean-up
+mv ${DIR}/FASTQ/*.bam ${DIR}/BAM
+```
 
+## Run NPSTAT to estimate Watterson's theta, Tajima's D, Fay and Wu's
+1. Index alignments
+```{sh}
+echo '#!/bin/bash
+BAM=$1
+samtools index ${BAM}
+' > index_bam.sh
+chmod +x index_bam.sh
+time \
+parallel ./index_bam.sh {} ::: $(find ${DIR}/BAM -name '*.bam')
+```
 
-
-## Run NPSTAT to estimate Watterson's theta, Tajima's D, Fay and Wu's 
+2. Pileup
 ```{sh}
 echo '#!/bin/bash
 i=$1
@@ -102,7 +161,27 @@ BAM=$2
 # i=3
 # BAM=BAM/ACC09.bam
 CHR=Chromosome${i}
-samtools index ${BAM}
+samtools mpileup \
+    -r ${CHR} \
+    ${BAM} > \
+    ${BAM%.bam*}-${CHR}.pileup
+' > pileup.sh
+chmod +x pileup.sh
+time \
+parallel ./pileup.sh \
+    {1} {2} \
+    ::: $(seq 1 7) \
+    ::: $(find ${DIR}/BAM -name '*.bam')
+```
+
+3. Run NPSTAT per population per chromosome across 1Mb windows
+```{sh}
+echo '#!/bin/bash
+i=$1
+BAM=$2
+# i=3
+# BAM=BAM/ACC09.bam
+CHR=Chromosome${i}
 samtools mpileup \
     -r ${CHR} \
     ${BAM} > \
