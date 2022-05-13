@@ -3,7 +3,7 @@ using ProgressMeter
 ### BE SURE TO REPLACE "|" in the sequence_name_query input
 
 fasta_input = ARGS[1]
-sequence_name_query = ARGS[2:(length(ARGS)-3)]
+sequence_name_query_vec = ARGS[2:(length(ARGS)-3)]
 fasta_output = try 
                     ARGS[length(ARGS)-2]
                 catch
@@ -20,11 +20,11 @@ add_gene_coordinates = try
                     false
                 end
 
-if sequence_name_query isa Vector
-    if length(sequence_name_query) > 1
-        sequence_name_query = join(sequence_name_query, " ")[1]
+if sequence_name_query_vec isa Vector
+    if length(sequence_name_query_vec) > 1
+        sequence_name_query = join(sequence_name_query_vec, " ")[1]
     else
-        sequence_name_query = sequence_name_query[1]
+        sequence_name_query = sequence_name_query_vec[1]
     end
 end
 

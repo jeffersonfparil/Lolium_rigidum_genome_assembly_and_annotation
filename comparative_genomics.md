@@ -82,15 +82,6 @@ mv Kyuss_1697_assembly.fa Lolium_perenne.fasta
 mv Kyuss_1697_KYUS.gff Lolium_perenne.gff
 mv Kyuss_1697_KYUS_CDS.fa Lolium_perenne.cds
 mv Kyuss_1697_KYUS_proteins.fa Lolium_perenne.faa
-### Secale cereale
-wget https://doi.ipk-gatersleben.de/DOI/b9a5ca69-6263-4e6e-a400-f669bee5e92c/3d38d912-c8d7-4587-be08-8b22b7e9f3b2/1/DOWNLOAD
-mv DOWNLOAD Secale_cereale.fasta
-wget https://doi.ipk-gatersleben.de/DOI/8afb3971-b5e1-4748-8f0e-1b929ba73248/43ce7b0a-f4c6-4996-82bf-9ba90b9ec6b0/1/DOWNLOAD
-mv DOWNLOAD Secale_cereale.gff
-wget https://doi.ipk-gatersleben.de/DOI/8afb3971-b5e1-4748-8f0e-1b929ba73248/ecfaef55-5b60-4b1f-9c6f-88b3f0f602ad/1/DOWNLOAD
-mv DOWNLOAD Secale_cereale.cds
-wget https://doi.ipk-gatersleben.de/DOI/8afb3971-b5e1-4748-8f0e-1b929ba73248/01369868-8f23-4a21-834f-113b1a9d922d/1/DOWNLOAD
-mv DOWNLOAD Secale_cereale.faa
 ### Clean-up
 rm GCF*.gz GCA*.gz
 ```
