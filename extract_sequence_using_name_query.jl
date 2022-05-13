@@ -21,7 +21,7 @@ add_gene_coordinates = try
                 end
 
 if length(sequence_name_query) > 1
-    sequence_name_query = join(sequence_name_query, " ")
+    sequence_name_query = join(sequence_name_query, " ")[1]
 end
 
 if fasta_output == ""
