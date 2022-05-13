@@ -22,7 +22,7 @@ add_gene_coordinates = try
 
 if sequence_name_query_vec isa Vector
     if length(sequence_name_query_vec) > 1
-        sequence_name_query = join(sequence_name_query_vec, " ")[1]
+        sequence_name_query = join(sequence_name_query_vec, " ")
     else
         sequence_name_query = sequence_name_query_vec[1]
     end
