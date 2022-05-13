@@ -1,8 +1,20 @@
-# Population genetics analysis of 60 Lolium rigidum population from SE Australi
+# Population genetics analysis of 60 Lolium rigidum population from SE Australia
+- Here we derive site frequency spectrum (SFS) summary statistics, Watterson's theta, Tajima's D, Fst, etc...
 
 ## Set-up working directories
 ```{sh}
 DIR=/data-weedomics-1/Lolium_rigidum_population_genetics_analysis
+SRC=${DIR}/Lolium_rigidum_genome_assembly_and_annotation
+mkdir ${DIR}/REFERENCE
+mkdir ${DIR}/FASTQ
+mkdir ${DIR}/BAM
+mkdir ${DIR}/PILEUP
+mkdir ${DIR}/NPSTAT
+```
+
+## Clone analysis repository
+```{sh}
+git clone https://github.com/jeffersonfparil/Lolium_rigidum_genome_assembly_and_annotation.git
 ```
 
 ## Install npstat
@@ -15,21 +27,36 @@ PATH=${PATH}:$(pwd)
 cd -
 ```
 
+## Install Popoolation2
+```{sh}
+wget https://sourceforge.net/projects/popoolation2/files/popoolation2_1201.zip
+unzip popoolation2_1201.zip
+rm popoolation2_1201.zip
+```
+
 ## Prepare the reference genome sequence and annotation
 ```{sh}
+cd ${DIR}/REFERENCE
+### Download reference genome and annotation files
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
+gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz > Lolium_rigidum.fasta
+gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz > Lolium_rigidum.gff
+rm GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
+rm GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
+
 ### Extract each of the 7 chromosomes
-cd REFERENCE/
 for i in $(seq 1 7)
 do
     # i=1
-    CHR="Chromosome${i}"
-    julia extract_sequence_using_name_query.jl \
-        Reference.fasta \
-        ${CHR} \
-        ${CHR}.fasta.tmp \
-        ${CHR} \
+    CHR="chromosome ${i}"
+    julia ${SRC}/extract_sequence_using_name_query.jl \
+        Lolium_rigidum.fasta \
+        "${CHR}" \
+        $(echo ${CHR} | sed 's/ /_/g').fasta.tmp \
+        "" \
         false
-    julia reformat_fasta_sequence.jl \
+    julia ${SRC}/reformat_fasta_sequence.jl \
         ${CHR}.fasta.tmp \
         50 \
         ${CHR}.fasta
@@ -38,23 +65,27 @@ done
 
 ### Extract genome annotation file, split by chromosome and rename to be same as the fasta's i.e. Chromosome${1..7}
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
-gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz > Reference.gff
+gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz > Lolium_rigidum.gff
 
-grep "^NC" Reference.gff | cut -f1 | sort | uniq > chr_id.tmp ### assumes we get the 7 chromosomes hence 7 lines here!!!
+grep "^NC" Lolium_rigidum.gff | cut -f1 | sort | uniq > chr_id.tmp ### assumes we get the 7 chromosomes hence 7 lines here!!!
 for i in $(seq 1 7)
 do
     # i=1
     id=$(head -n${i} chr_id.tmp | tail -n1)
     CHR=Chromosome${i}
-    grep ${id} Reference.gff | sed "s/${id}/${CHR}/g" > ${CHR}.gff
+    grep ${id} Lolium_rigidum.gff | sed "s/${id}/${CHR}/g" > ${CHR}.gff
 done
 
 ### Clean-up
 rm chr_id.tmp
-cd -
+cd ${DIR}
 ```
 
-## Run NPSTAT
+
+
+
+
+## Run NPSTAT to estimate Watterson's theta, Tajima's D, Fay and Wu's 
 ```{sh}
 echo '#!/bin/bash
 i=$1
@@ -83,12 +114,20 @@ parallel \
     ::: $(find ${DIR}/BAM/ -name '*.bam')
 ```
 
+## Clean-up
+```{sh}
+mkdir ${DIR}/PILEUP
+mkdir ${DIR}/NPSTAT
+mv ${DIR}/BAM/*.pileup ${DIR}/PILEUP
+mv ${DIR}/BAM/*.stats ${DIR}/NPSTAT
+```
+
 ## Merge NPSTAT output
 ```{sh}
 echo -e "Population\tChromosome" > col1_to_2.tmp
-head -n1 $(ls BAM/*.stats | head -n1) > col3_to_n.tmp
-paste col1_to_2.tmp col3_to_n.tmp > Lolium_rigidum.popgen
-for f in $(ls BAM/*.stats)
+head -n1 $(ls ${DIR}/NPSTAT/*.stats | head -n1) > col3_to_n.tmp
+paste col1_to_2.tmp col3_to_n.tmp > Lolium_rigidum.npstat
+for f in $(ls ${DIR}/NPSTAT/*.stats)
 do
     # f=$(ls BAM/*.stats | head -n13 | tail -n1)
     b=$(basename $f)
@@ -98,14 +137,21 @@ do
     printf "$pop\n%.s" $(seq 1 $(cat $f | wc -l)) > pop.tmp
     printf "$chr\n%.s" $(seq 1 $(cat $f | wc -l)) > chr.tmp
     paste pop.tmp chr.tmp $f > merged.tmp
-    tail -n+2 merged.tmp >> Lolium_rigidum.popgen
+    tail -n+2 merged.tmp >> Lolium_rigidum.npstat
 done
 rm *.tmp
 ```
 
+## Run Popoolation2 to estimate
+```{sh}
+
+perl <popoolation2-path>/fst-sliding.pl --input p1_p2.sync --output p1_p2_w500.fst --min-count 6 --min-coverage 50 --max-coverage 200 --min-covered-fraction 1 --window-size 500 --step-size 500 --pool-size 500
+```
+
+
 ## Population genetics analyses
 ```{R}
-dat = read.delim("Lolium_rigidum.popgen", header=T)
+dat = read.delim("Lolium_rigidum.npstat", header=T)
 vec_pops = unique(dat$Population)
 vec_chrs = unique(dat$Chromosome)
 vec_resp = colnames(dat)[5:ncol(dat)]

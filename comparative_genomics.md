@@ -1,7 +1,7 @@
 # Comparative genomics
 
 ## Set working directories, executables, and output files
-```sh}
+```{sh}
 DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
 PATH=${PATH}:${DIR}/OrthoFinder
 PATH=${PATH}:${DIR}/CAFE5/bin
@@ -334,17 +334,30 @@ time \
 cafe5 \
     --infile counts.tmp \
     --tree ${TREE} \
-    --n_gamma_cats 1000 \
-    --cores 32 \
+    --cores 31 \
     --pvalue 0.01 \
-    --output_prefix CAFE_Gamma1000_results
-
-### Output using n_gamma_cats=1,000
+    --output_prefix CAFE_Base_results
+### Summarise results
 echo -e "Species\tExpansion\tContraction" > CONTRACTION_EXPANSION.txt
-grep -v "^#" ${DIR}/CAFE_Gamma1000_results/Gamma_clade_results.txt | \
+grep -v "^#" ${DIR}/CAFE_Base_results/Base_clade_results.txt | \
     grep -v "^<" | \
     sed 's/<..>//g' | \
     sed 's/<.>//g' >> CONTRACTION_EXPANSION.txt
+
+# time \
+# cafe5 \
+#     --infile counts.tmp \
+#     --tree ${TREE} \
+#     --n_gamma_cats 1000 \
+#     --cores 31 \
+#     --pvalue 0.01 \
+#     --output_prefix CAFE_Gamma1000_results
+# ### Output using n_gamma_cats=1,000
+# echo -e "Species\tExpansion\tContraction" > CONTRACTION_EXPANSION.txt
+# grep -v "^#" ${DIR}/CAFE_Gamma1000_results/Gamma_clade_results.txt | \
+#     grep -v "^<" | \
+#     sed 's/<..>//g' | \
+#     sed 's/<.>//g' >> CONTRACTION_EXPANSION.txt
 ```
 
 ## GO term enrichment analysis of contracted and expanded gene families

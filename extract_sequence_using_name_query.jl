@@ -3,22 +3,26 @@ using ProgressMeter
 ### BE SURE TO REPLACE "|" in the sequence_name_query input
 
 fasta_input = ARGS[1]
-sequence_name_query = ARGS[2]
+sequence_name_query = ARGS[2:length(ARGS)-3]
 fasta_output = try 
-                    ARGS[3]
+                    ARGS[length(ARGS)-2]
                 catch
                     ""
                 end
 new_sequence_name = try 
-                    ARGS[4]
+                    ARGS[length(ARGS)-1]
                 catch
                     ""
                 end
 add_gene_coordinates = try 
-                    parse(Bool, ARGS[5])
+                    parse(Bool, ARGS[length(ARGS)])
                 catch
                     false
                 end
+
+if length(sequence_name_query) > 1
+    sequence_name_query = join(sequence_name_query, " ")
+end
 
 if fasta_output == ""
     fasta_output = string(join(split(fasta_input, ".")[1:(end-1)], "."), "-", sequence_name_query, ".out")
