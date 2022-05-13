@@ -3,7 +3,7 @@ using ProgressMeter
 ### BE SURE TO REPLACE "|" in the sequence_name_query input
 
 fasta_input = ARGS[1]
-sequence_name_query = ARGS[2:length(ARGS)-3]
+sequence_name_query = ARGS[2:(length(ARGS)-3)]
 fasta_output = try 
                     ARGS[length(ARGS)-2]
                 catch
