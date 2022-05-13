@@ -15,15 +15,17 @@ new_sequence_name = try
                     ""
                 end
 add_gene_coordinates = try 
-                    parse(Bool, ARGS[length(ARGS)])
+                    parse(Bool, ARGS[length(ARGS)-0])
                 catch
                     false
                 end
 
-if length(sequence_name_query) > 1
-    sequence_name_query = join(sequence_name_query, " ")[1]
-else
-    sequence_name_query = sequence_name_query[1]
+if sequence_name_query isa Vector
+    if length(sequence_name_query) > 1
+        sequence_name_query = join(sequence_name_query, " ")[1]
+    else
+        sequence_name_query = sequence_name_query[1]
+    end
 end
 
 if fasta_output == ""

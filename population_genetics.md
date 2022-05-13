@@ -46,22 +46,31 @@ rm GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
 rm GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
 
 ### Extract each of the 7 chromosomes
-for i in $(seq 1 7)
-do
-    # i=1
-    CHR="chromosome ${i}"
-    julia ${SRC}/extract_sequence_using_name_query.jl \
-        Lolium_rigidum.fasta \
-        "${CHR}" \
-        $(echo ${CHR} | sed 's/ /_/g').fasta.tmp \
-        "" \
-        false
-    julia ${SRC}/reformat_fasta_sequence.jl \
-        ${CHR}.fasta.tmp \
-        50 \
-        ${CHR}.fasta
-    rm ${CHR}.fasta.tmp
-done
+echo '#!/bin/bash
+i=$1
+SRC=$2
+CHR="chromosome ${i}"
+NEW_SEQ_NAME=$(echo $CHR | sed "s/ /_/g")
+FNAME_TMP=${NEW_SEQ_NAME}.fasta.tmp ### NO SPACES PLEASE!
+FNAME=${FNAME_TMP%.tmp*}
+julia ${SRC}/extract_sequence_using_name_query.jl \
+    Lolium_rigidum.fasta \
+    ${CHR} \
+    ${FNAME_TMP} \
+    ${NEW_SEQ_NAME} \
+    false
+julia ${SRC}/reformat_fasta_sequence.jl \
+    ${FNAME_TMP} \
+    50 \
+    ${FNAME}
+rm ${FNAME_TMP}
+' > extract_chrom_and_rename.sh
+chmod +x extract_chrom_and_rename.sh
+
+time \
+parallel ./extract_chrom_and_rename.sh \
+    {} ${SRC} ::: $(seq 1 7)
+
 
 ### Extract genome annotation file, split by chromosome and rename to be same as the fasta's i.e. Chromosome${1..7}
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.gff.gz
