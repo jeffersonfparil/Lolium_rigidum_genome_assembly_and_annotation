@@ -39,7 +39,7 @@ species_order = c("Arabidopsis_thaliana",
 
 svg(fname_svg_output, width=12, height=9)
 
-pushViewport(plotViewport(layout=grid.layout(2, 2), margins=c(2,2,5,5)))
+pushViewport(plotViewport(layout=grid.layout(2, 2), margins=c(0,2,5,5)))
 layout(matrix(c(rep(1,times=6), rep(2,times=2), rep(3,times=6),
                 rep(4,times=7), rep(5,times=7)), byrow=TRUE, nrow=2))
 
@@ -131,16 +131,18 @@ gene_counts = read.delim(fname_gene_counts, header=TRUE)
 X = gene_counts[, 2:(ncol(gene_counts)-4)] > 0
 colnames(X) = gsub("_", "\n", colnames(X))
 Y = list()
-species_to_include= c("Lolium\nrigidum", "Lolium\nperenne", "Oryza\nsativa", "Zea\nmays", "Arabidopsis\nthaliana")
+species_to_include= c("Lolium\nrigidum", "Lolium\nperenne", "Oryza\nsativa", "Zea\nmays")
+colours = c("#d7191c", "#fdae61", "#abd9e9", "#2c7bb6")
 for (name in species_to_include){
     j = c(1:ncol(X))[colnames(X)==name]
     if (sum(species_to_include %in% name) == 0){
         next
     }
+    name = gsub("\n", " ", name)
     eval(parse(text=paste0("Y$`", name, "` = c(1:nrow(X))[X[, j]]")))
 }
 
-vp = venn.diagram(Y, category.names=, col=1:length(Y), fill=NA, bord=NA, alpha = 0.3, filename = NULL)
+vp = venn.diagram(Y, col=colours, fill=colours, alpha=0.3, filename=NULL)
 pushViewport(plotViewport(layout.pos.col=1, layout.pos.row=2))
 grid.draw(vp)
 plot(0, xaxt="n", yaxt="n", xlab="", ylab="", type="n", bty="n")
