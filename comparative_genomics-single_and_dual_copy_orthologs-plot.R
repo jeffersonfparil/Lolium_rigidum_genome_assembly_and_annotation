@@ -30,10 +30,9 @@ library(png)
 library(grid)
 
 species_order = c("Arabidopsis_thaliana",
-                  "Oryza_sativa",
-                  "Sorghum_bicolor",
                   "Zea_mays",
-                  "Secale_cereale",
+                  "Sorghum_bicolor",
+                  "Oryza_sativa",
                   "Lolium_perenne",
                   "Lolium_rigidum") ### Check tree plot!!!
 
@@ -45,7 +44,22 @@ layout(matrix(c(rep(1,times=6), rep(2,times=2), rep(3,times=6),
 
 ### Tree: dendrogram
 tree = read.nexus(fname_tree)
-tree = ladderize(tree, right=FALSE)
+
+tree = ape::rotate(tree, 9)
+
+tree$edge[,1] = rev(tree$edge[,1])
+tree$edge[,2] = rev(tree$edge[,2])
+tree$edge.length = rev(tree$edge.length)
+tree$node.label = rev(tree$node.label)
+# tree$tip.label = rev(tree$tip.label)
+
+# plot(tree); nodelabels()
+
+# tree = reorder.phylo(tree, order=c("cladewise", "postorder", "pruningwise")[1])
+
+# tree = ladderize(tree, right=FALSE)
+
+
 par(mar=c(0,0,0,0))
 plot(x=c(0,1), y=c(0,1), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
 
@@ -56,7 +70,7 @@ polygon(x=highlight_x, y=highlight_y1, col="#fee0d2", border=NA)
 polygon(x=highlight_x, y=highlight_y2, col="#deebf7", border=NA)
 
 par(new=TRUE, mar=c(5,2,5,0))
-plt = plot.phylo(tree, cex=1.2)
+plt = plot.phylo(tree, cex=1.2, direction="rightward")
 x_axis = round(seq(0, max(tree$edge.length), by=20))
 axis(side=1, line=1.5, at=max(x_axis)-x_axis, lab=x_axis)
 mtext(text="Million years ago", side=1, line=4.5, at=median(x_axis))
@@ -111,7 +125,7 @@ colnames(X) = gene_groups$Species
 colors = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c")
 par(mar=c(3.5, 3.5, 3.5, 8.0))
 barplot(X, col=colors, bord=NA, horiz=TRUE, yaxt="n", xaxt="n", xlim=c(0, signif(max(gene_groups$Total),0)),
-        legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.25, +0.05), cex=1.0, bty="n"))
+        legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.25, +0.01), cex=1.0, bty="n"))
 x_axis = seq(0, signif(max(gene_groups$Total),0), length=5)
 axis(side=1, at=x_axis, lab=formatC(x_axis, format="d", big.mark=","))
 mtext(text="Gene counts", side=1, line=3, at=median(x_axis))
