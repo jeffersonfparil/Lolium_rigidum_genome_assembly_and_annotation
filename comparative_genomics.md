@@ -996,7 +996,7 @@ rm ${ORTHONAME}.aligned.unsorted*.tmp ${ORTHONAME}.NT.cds ${ORTHONAME}.AA.prot
 chmod +x parallel_extract_dual_gene_orthogroups.sh
 ```
 
-2. Identify dual-copy paralogs per species, align, and estimate 4DTv
+2. Identify multi-copy paralogs (2 to 5 copies) per species, align, and estimate 4DTv
 ```{sh}
 head -n1 ${ORTHOUT} | rev | cut -f5- | rev | cut -f2- | sed -z "s/\t/\n/g" > species_names.tmp
 time \
@@ -1007,19 +1007,19 @@ do
     SPECIES=$(head -n${i} species_names.tmp | tail -n1)
     idx=$(echo $i + 1 | bc)
     ### Exract names of orthogroups with 2 copies in the current species
-    awk -v col="$idx" '($col >= 2) && ($col <= 5)' $ORTHOUT | cut -f1 > dual_gene_list.grep
-    ### Extract names of the genes of these dual-copy orthogroups
-    grep -f dual_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f1,${idx} > dual_gene_list.geneNames
+    awk -v col="$idx" '($col >= 2) && ($col <= 5)' $ORTHOUT | cut -f1 > multi_gene_list.grep
+    ### Extract names of the genes of these multi-copy orthogroups
+    grep -f multi_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f1,${idx} > multi_gene_list.geneNames
     ### Extract CDS, and align in parallel
     parallel \
-    ./parallel_extract_dual_gene_orthogroups.sh {} ${MACSE} \
-    ::: $(seq 1 $(cat dual_gene_list.geneNames | wc -l))
+    ./parallel_extract_multi_gene_orthogroups.sh {} ${MACSE} \
+    ::: $(seq 1 $(cat multi_gene_list.geneNames | wc -l))
     ### Concatenate 4DTv estimates
     cat *.4DTv.tmp > ${SPECIES}.4DTv
     ### Clean-up
     rm *.4DTv.tmp
-    rm dual_gene_list.grep
-    rm dual_gene_list.geneNames
+    rm multi_gene_list.grep
+    rm multi_gene_list.geneNames
 done
 ### Clean-up
 rm species_names.tmp
