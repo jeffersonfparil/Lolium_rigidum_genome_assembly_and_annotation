@@ -10,7 +10,7 @@
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics \
 #     .4DTv \
 #     /home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics/ORTHOGROUPS_SINGLE_GENE.NT.4DTv \
-#     test.svg
+#     Lolium_rigidum_comparative_genomics.svg
 
 args = commandArgs(trailingOnly=TRUE)
 # args = c("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "CONTRACTION_EXPANSION.txt", "orthogroups_summarised_gene_counts.csv", "orthogroups_gene_counts_families_go.out", "/home/jeffersonfparil/Downloads/data/Lolium_genome_comparative_genomics", ".4DTv", "ORTHOGROUPS_SINGLE_GENE.NT.4DTv", "test.svg")
@@ -70,7 +70,7 @@ polygon(x=highlight_x, y=highlight_y1, col="#fee0d2", border=NA)
 polygon(x=highlight_x, y=highlight_y2, col="#deebf7", border=NA)
 
 par(new=TRUE, mar=c(5,2,5,0))
-plt = plot.phylo(tree, cex=1.2, direction="rightward")
+plt = plot.phylo(tree, cex=1.5, direction="rightward")
 x_axis = round(seq(0, max(tree$edge.length), by=20))
 axis(side=1, line=1.5, at=max(x_axis)-x_axis, lab=x_axis)
 mtext(text="Million years ago", side=1, line=4.5, at=median(x_axis))
@@ -125,7 +125,7 @@ colnames(X) = gene_groups$Species
 colors = c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c")
 par(mar=c(3.5, 3.5, 3.5, 8.0))
 barplot(X, col=colors, bord=NA, horiz=TRUE, yaxt="n", xaxt="n", xlim=c(0, signif(max(gene_groups$Total),0)),
-        legend.text=TRUE, args.legend=list(x="bottomright", inset=c(-0.25, +0.01), cex=1.0, bty="n"))
+        legend.text=TRUE, args.legend=list(x="right", inset=c(-0.25, +0.01), cex=1.3, bty="n"))
 x_axis = seq(0, signif(max(gene_groups$Total),0), length=5)
 axis(side=1, at=x_axis, lab=formatC(x_axis, format="d", big.mark=","))
 mtext(text="Gene counts", side=1, line=3, at=median(x_axis))
@@ -203,10 +203,9 @@ for (species1 in levels(dat$SPECIES_1)){
 }
 df = data.frame(id=as.factor(id), x=x, y=y)
 
-species_list = c("Lolium rigidum", "Lolium perenne", "Oryza sativa",
+species_list = c("Lolium rigidum", "Lolium perenne", "Oryza sativa", "Zea mays",
                  "Lolium rigidum X Lolium perenne",
                  "Lolium rigidum X Oryza sativa",
-                 "Lolium rigidum X Secale cereale",
                  "Lolium rigidum X Zea mays")
 df = droplevels(df[df$id %in% species_list, ])
 
@@ -225,3 +224,7 @@ legend("topright", legend=levels(df$id), col=colours, lwd=2)
 
 
 dev.off()
+
+### Clean-up
+system("rm VennDiagram.*.log")
+system(paste0("inkscape -w 2000 ", fname_svg_output, " -o ", gsub(".svg", ".png", fname_svg_output)))

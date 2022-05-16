@@ -233,30 +233,43 @@ rm *.tmp
 ## Run Popoolation2 to estimate
 ```{sh}
 
-perl <popoolation2-path>/fst-sliding.pl --input p1_p2.sync --output p1_p2_w500.fst --min-count 6 --min-coverage 50 --max-coverage 200 --min-covered-fraction 1 --window-size 500 --step-size 500 --pool-size 500
+perl <popoolation2-path>/fst-sliding.pl \
+    --input p1_p2.sync \
+    --output p1_p2_w500.fst \
+    --min-count 6 \
+    --min-coverage 50 \
+    --max-coverage 200 \
+    --min-covered-fraction 1 \
+    --window-size 500 \
+    --step-size 500 \
+    --pool-size 500
 ```
 
 
 ## Population genetics analyses
 ```{R}
 dat = read.delim("Lolium_rigidum.npstat", header=T)
+dat = dat[grepl("ACC", dat$Population), ]
 vec_pops = unique(dat$Population)
 vec_chrs = unique(dat$Chromosome)
 vec_resp = colnames(dat)[5:ncol(dat)]
 
 window_length = 1e+6
 
-i = 34
 j = 3
+k = 6
 
-l = length(vec_resp)
-n = ceiling(sqrt(l))
+xlim = range(dat$window)
+ylim = c(-6, +6)
+
+l = length(vec_pops)
+n = ceiling(sqrt(l)) -1
 m = ceiling(l / n)
-par(mfrow=c(n, m), mar=c(5, 5, 2, 1))
-for (k in 1:l){
-    # k = 9
-    pop = dat$Population[i]
-    chr = dat$Chromosome[j]
+
+par(mfrow=c(n, m), mar=c(3, 5, 3, 1))
+for (i in 1:l){
+    pop = vec_pops[i]
+    chr = vec_chrs[j]
     res = vec_resp[k]
 
     idx = (dat$Population==pop) & (dat$Chromosome==chr)
@@ -265,12 +278,12 @@ for (k in 1:l){
     x = df$window
     y = eval(parse(text=paste0("df$", res)))
     y = eval(parse(text=paste0("df$", res)))
-    plot(x, y, type="l", las=2, xlab="", ylab="", xaxt="n", main=res)
+    plot(x, y, ylim=ylim, type="l", las=2, xlab="", ylab=res, xaxt="n", main=vec_pops[i])
     x_min = min(x)
     x_max = max(x)
     pos = round(seq(x_min, x_max, length=5))
     axis(side=1, at=pos, lab=pos)
-    mtext(side=1, text=paste0(chr, ": window (Mb)"), cex=0.6, padj=3.5)
+    mtext(side=1, text=paste0(chr, ": position (Mb)"), cex=0.6, padj=3.5)
     grid()
 }
 

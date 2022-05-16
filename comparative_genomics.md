@@ -1023,7 +1023,6 @@ do
 done
 ### Clean-up
 rm species_names.tmp
-rm *.tmp
 ```
 
 ## Identify herbicide TSR and NTSR genes
