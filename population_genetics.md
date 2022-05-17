@@ -10,6 +10,7 @@ mkdir ${DIR}/FASTQ
 mkdir ${DIR}/BAM
 mkdir ${DIR}/PILEUP
 mkdir ${DIR}/NPSTAT
+PATH=${PATH}:${DIR}/npstat
 ```
 
 ## Clone analysis repository
@@ -28,7 +29,7 @@ sudo apt install samtools gsl-bin libgsl0-dev
 git clone https://github.com/lucaferretti/npstat.git
 cd npstat
 make
-PATH=${PATH}:$(pwd)
+PATH=${PATH}:${DIR}/npstat
 cd -
 ```
 
@@ -160,7 +161,7 @@ i=$1
 BAM=$2
 # i=3
 # BAM=BAM/ACC09.bam
-CHR=Chromosome${i}
+CHR=chromosome_${i}
 samtools mpileup \
     -r ${CHR} \
     ${BAM} > \
@@ -172,45 +173,32 @@ parallel ./pileup.sh \
     {1} {2} \
     ::: $(seq 1 7) \
     ::: $(find ${DIR}/BAM -name '*.bam')
+mv ${DIR}/BAM/*.pileup ${DIR}/PILEUP
 ```
 
 3. Run NPSTAT per population per chromosome across 1Mb windows
 ```{sh}
 echo '#!/bin/bash
-i=$1
-BAM=$2
-# i=3
-# BAM=BAM/ACC09.bam
-CHR=Chromosome${i}
-samtools mpileup \
-    -r ${CHR} \
-    ${BAM} > \
-    ${BAM%.bam*}-${CHR}.pileup
+f=$1
+# f=PILEUP/ACC01-chromosome_1.pileup
+b=$(basename $f)
+CHR=$(echo ${b%.pileup*} | cut -d"-" -f2)
 npstat \
     -n 42 \
     -l 1000000 \
     -outgroup REFERENCE/${CHR}.fasta \
     -annot REFERENCE/${CHR}.gff \
-     ${BAM%.bam*}-${CHR}.pileup
-' > parallel_pileup_npstat.sh
-chmod +x parallel_pileup_npstat.sh
+     ${f}
+' > parallel_npstat.sh
+chmod +x parallel_npstat.sh
 time \
 parallel \
-./parallel_pileup_npstat.sh \
-    {1} {2} \
-    ::: $(seq 1 7) \
-    ::: $(find ${DIR}/BAM/ -name '*.bam')
+./parallel_npstat.sh \
+    {} ::: $(find ${DIR}/PILEUP -name '*.pileup')
+mv PILEUP/*.stats NPSTAT
 ```
 
-## Clean-up
-```{sh}
-mkdir ${DIR}/PILEUP
-mkdir ${DIR}/NPSTAT
-mv ${DIR}/BAM/*.pileup ${DIR}/PILEUP
-mv ${DIR}/BAM/*.stats ${DIR}/NPSTAT
-```
-
-## Merge NPSTAT output
+4. Merge NPSTAT output
 ```{sh}
 echo -e "Population\tChromosome" > col1_to_2.tmp
 head -n1 $(ls ${DIR}/NPSTAT/*.stats | head -n1) > col3_to_n.tmp
@@ -244,7 +232,6 @@ perl <popoolation2-path>/fst-sliding.pl \
     --step-size 500 \
     --pool-size 500
 ```
-
 
 ## Population genetics analyses
 ```{R}

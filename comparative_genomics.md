@@ -3,6 +3,7 @@
 ## Set working directories, executables, and output files
 ```{sh}
 DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
+SRC=${DIR}/Lolium_rigidum_genome_assembly_and_annotation
 PATH=${PATH}:${DIR}/OrthoFinder
 PATH=${PATH}:${DIR}/CAFE5/bin
 MACSE=${DIR}/MACSE/macse_v2.06.jar
@@ -89,6 +90,11 @@ rm GCF*.gz GCA*.gz
 ## Install R and Julia
 ```{sh}
 sudo apt install -y r-base julia
+```
+
+## Clone this repository
+```{sh}
+git clone https://github.com/jeffersonfparil/Lolium_rigidum_genome_assembly_and_annotation.git
 ```
 
 ## Install OrthoFinder for classifying genes into orthologs, and paralogs, as well as to build a tree for the analysis of gene family evolution
@@ -1487,8 +1493,7 @@ Note: we use "gene" to refer to TSR and NTSR genes, and alignments even genes ag
 1. Extract CDS per gene (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${species}-${gene}-${ortho}.cds)
 ```{sh}
 ### Extract species names and number of species
-head -n1 ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f2- > \
-    species_names.tmp
+head -n1 ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f2- > species_names.tmp
 NSPECIES=$(awk -F"\t" "{print NF}" species_names.tmp)
 
 ### Extract gene names
@@ -1532,12 +1537,13 @@ parallel ./extract_gene_names.sh \
 echo '#!/bin/bash
 f=$1
 DIR=$2
+SRC=$3
 species=$(echo $f | cut -d"-" -f1)
 gene=$(echo $f | cut -d"-" -f2)
 ortho=$(echo $f | cut -d"-" -f3)
 for query in $(cat $f)
 do
-    julia ${DIR}/extract_sequence_using_name_query.jl \
+    julia ${SRC}/extract_sequence_using_name_query.jl \
                     ${DIR}/${species}.cds \
                     ${query} \
                     ${species}-${gene}-${ortho}-${query}.cds.tmp \
@@ -1553,6 +1559,7 @@ time \
 parallel ./extract_sequences_in_parallel.sh \
     {} \
     ${DIR} \
+    ${SRC} \
     ::: $(ls *-list_gene_names.tmp)
 ```
 
@@ -1574,16 +1581,17 @@ echo '#!/bin/bash
 f=$1
 ext=$2
 DIR=$3
+MACSE=$4
 # f=Zea_mays-SOD-OG0026358.cds; ext=cds
 java -Xmx8G \
-    -jar ${DIR}/macse_v2.06.jar \
+    -jar ${MACSE} \
     -prog alignSequences \
     -seq ${f} \
     -out_NT ${f%.${ext}*}.aligned.unsorted.cds.tmp \
     -out_AA ${f%.${ext}*}.aligned.unsorted.prot.tmp
 # Convert stop codons and frameshifts as "---" for compatibility with downstream tools
 java -Xmx8G \
-    -jar ${DIR}/macse_v2.06.jar \
+    -jar ${MACSE} \
     -prog exportAlignment \
     -align ${f%.${ext}*}.aligned.unsorted.cds.tmp \
     -codonForFinalStop --- \
@@ -1595,7 +1603,7 @@ java -Xmx8G \
 ' > align_in_parallel.sh
 chmod +x align_in_parallel.sh
 time \
-parallel ./align_in_parallel.sh {} cds ${DIR} \
+parallel ./align_in_parallel.sh {} cds ${DIR} ${MACSE} \
     ::: $(ls *.cds)
 
 rm *.tmp *.AA.prot
@@ -1662,7 +1670,7 @@ KaKs_Calculator \
 ```
 
 7. Find kaks file with significant (p<= 0.001) Ka/Ks > 1.0
-**NOTE**: If we find high dN/dS between a pair of sequences in Lolium rigidum while the focal alignment if not that different from those of other species,then we have to change the focal alignment to that gene,and re-run KaKs_calculator!
+**NOTE**: If we find high dN/dS between a pair of sequences in Lolium rigidum while the focal alignment is not that different from those of other species,then we have to change the focal alignment to that gene,and re-run KaKs_calculator!
 ```{sh}
 echo 'args = commandArgs(trailingOnly=TRUE)
 # args = c("GPX-OG0000728.aln.pw.kaks.tmp")
