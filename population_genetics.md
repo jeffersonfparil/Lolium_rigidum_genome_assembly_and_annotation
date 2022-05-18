@@ -218,7 +218,24 @@ done
 rm *.tmp
 ```
 
-## Run Popoolation2 to estimate
+## Merge pileup files
+```{julia}
+args = ARGS
+args = ["10",
+        "20",
+        "PILEUP/ACC07-chromosome_2.pileup",
+        "PILEUP/ACC08-chromosome_2.pileup",
+        "PILEUP/ACC09-chromosome_2.pileup",
+        "PILEUP/ACC10-chromosome_2.pileup",
+        "PILEUP/ACC11-chromosome_2.pileup"]
+
+min_depth = parse(Int, args[1])
+min_quality = parse(Float64, args[2])
+vec_pileups = args[3:end]
+
+```
+
+## Run Popoolation2 to estimate Fst
 ```{sh}
 
 perl <popoolation2-path>/fst-sliding.pl \
