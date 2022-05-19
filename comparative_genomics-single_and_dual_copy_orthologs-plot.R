@@ -62,12 +62,13 @@ tree$node.label = rev(tree$node.label)
 
 par(mar=c(0,0,0,0))
 plot(x=c(0,1), y=c(0,1), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
+text(x=0.05, y=1, lab="a", cex=2.5, font=2)
 
 highlight_x = c(0.0, 1.0, 1.0, 0.0)
 highlight_y1 = c(0.1, 0.1, 0.2, 0.2)
 highlight_y2 = c(highlight_y1[3:4], 0.9, 0.9)
-polygon(x=highlight_x, y=highlight_y1, col="#fee0d2", border=NA)
-polygon(x=highlight_x, y=highlight_y2, col="#deebf7", border=NA)
+polygon(x=highlight_x, y=highlight_y1, col="#d9d9d9", border=NA)
+polygon(x=highlight_x, y=highlight_y2, col="#f0f0f0", border=NA)
 
 par(new=TRUE, mar=c(5,2,5,0))
 plt = plot.phylo(tree, cex=1.5, direction="rightward")
@@ -110,7 +111,7 @@ conex$Expansion = formatC(conex$Expansion, format="d", big.mark=",")
 conex$Contraction = formatC(conex$Contraction, format="d", big.mark=",")
 conex_lab = paste0(conex$Expansion, " : ", conex$Contraction)
 # text(x=(plt$x.lim[2]-(adj_frac*plt$x.lim[2])), y=seq(plt$y.lim[1], plt$y.lim[2]), adj=0.5, lab=conex_lab, cex=1.2)
-text(x=median(plt$x.lim), y=seq(plt$y.lim[1], plt$y.lim[2]), adj=0.5, lab=conex_lab, cex=1.2)
+text(x=median(plt$x.lim), y=seq(plt$y.lim[1], plt$y.lim[2]), adj=0.5, lab=conex_lab, cex=1.5)
 mtext(side=3, line=1, at=median(plt$x.lim), adj=0.449, text="Expansion : Contraction")
 
 ### Gene classifications: bar plot
@@ -159,8 +160,9 @@ for (name in species_to_include){
 vp = venn.diagram(Y, col=colours, fill=colours, alpha=0.3, filename=NULL)
 pushViewport(plotViewport(layout.pos.col=1, layout.pos.row=2))
 grid.draw(vp)
-plot(0, xaxt="n", yaxt="n", xlab="", ylab="", type="n", bty="n")
-
+par(mar=c(0,0,0,0))
+plot(x=c(0,1), y=c(0,1), xaxt="n", yaxt="n", xlab="", ylab="", type="n", bty="n")
+text(x=0.05, y=0.95, lab="b", cex=2.5, font=2)
 
 ### Distribution of 4DTv (fraction of transverions among 4-fold degenerate codons - correlated with time from whole genome duplication using dual-copy paralogs and single-copy orthologs)
 
@@ -203,25 +205,29 @@ for (species1 in levels(dat$SPECIES_1)){
 }
 df = data.frame(id=as.factor(id), x=x, y=y)
 
-species_list = c("Lolium rigidum", "Lolium perenne", "Oryza sativa", "Zea mays",
+species_list = c("Lolium rigidum",
+                 "Lolium perenne",
+                 "Zea mays",
                  "Lolium rigidum X Lolium perenne",
-                 "Lolium rigidum X Oryza sativa",
                  "Lolium rigidum X Zea mays")
 df = droplevels(df[df$id %in% species_list, ])
 
 par(mar=c(5, 5, 5, 2))
 n = nlevels(df$id)
-colours = c("#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854", "#ffd92f", "#e5c494", "#b3b3b3")
+colours = colours[c(1,2,4,2,4)]
 plot(0, 0, xlim=range(df$x), ylim=range(df$y), xlab="4DTv", ylab="Density", type="n")
 for (i in 1:n){
     # i = 1
-    id = levels(df$id)[i]
+    id = species_list[i]
     subdf = df[df$id==id, ]
-    lines(x=subdf$x, y=subdf$y, col=colours[i], lwd=2)
+    lines(x=subdf$x, y=subdf$y, col=colours[i], lty=i, lwd=2.5)
 }
 grid()
-legend("topright", legend=levels(df$id), col=colours, lwd=2)
+legend("topright", legend=species_list, col=colours, lty=c(1:n), lwd=2.5, cex=1.5)
 
+par(new=TRUE, mar=c(0,0,0,0))
+plot(x=c(0,1), y=c(0,1), xaxt="n", yaxt="n", xlab="", ylab="", type="n", bty="n")
+text(x=0.05, y=0.95, lab="c", cex=2.5, font=2)
 
 dev.off()
 
