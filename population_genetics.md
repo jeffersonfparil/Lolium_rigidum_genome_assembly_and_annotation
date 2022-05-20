@@ -233,6 +233,24 @@ min_depth = parse(Int, args[1])
 min_quality = parse(Float64, args[2])
 vec_pileups = args[3:end]
 
+file = open(vec_pileups[1], "r")
+vec_pos = []
+@time while !eof(file)
+    line = readline(file)
+end
+
+```
+
+## Or rerun samtools mpileup on all the bam files
+```{sh}
+find ${DIR}/BAM -name '*.bam' > bam_list.tmp
+time \
+samtools mpileup \
+    -aa \
+    -f ${DIR}/REFERENCE/Reference.fasta \
+    -b bam_list.tmp \
+    > ${DIR}/PILEUP/ALL_PILEUP.mpileup
+
 ```
 
 ## Run Popoolation2 to estimate Fst

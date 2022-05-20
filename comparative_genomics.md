@@ -1045,7 +1045,7 @@ cd $DIR_GENES
 #################
 ### CLETHODIM ###
 #################
-### TARGET: Acetyle Co-A carboxylase
+### TARGET: Acetyl Co-A carboxylase
 echo 'acetyl-coenzyme a carboxylase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]" '
 wget https://www.uniprot.org/uniprot/Q38970.fasta
 wget https://www.uniprot.org/uniprot/Q9LD43.fasta
