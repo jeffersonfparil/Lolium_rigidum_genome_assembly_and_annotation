@@ -9,6 +9,7 @@ mkdir ${DIR}/REFERENCE
 mkdir ${DIR}/FASTQ
 mkdir ${DIR}/BAM
 mkdir ${DIR}/PILEUP
+mkdir ${DIR}/SYNC
 mkdir ${DIR}/NPSTAT
 PATH=${PATH}:${DIR}/npstat
 ```
@@ -218,54 +219,45 @@ done
 rm *.tmp
 ```
 
-## Merge pileup files
-```{julia}
-args = ARGS
-args = ["10",
-        "20",
-        "PILEUP/ACC07-chromosome_2.pileup",
-        "PILEUP/ACC08-chromosome_2.pileup",
-        "PILEUP/ACC09-chromosome_2.pileup",
-        "PILEUP/ACC10-chromosome_2.pileup",
-        "PILEUP/ACC11-chromosome_2.pileup"]
 
-min_depth = parse(Int, args[1])
-min_quality = parse(Float64, args[2])
-vec_pileups = args[3:end]
-
-file = open(vec_pileups[1], "r")
-vec_pos = []
-@time while !eof(file)
-    line = readline(file)
-end
-
-```
-
-## Or rerun samtools mpileup on all the bam files
+## Or rerun samtools mpileup on all the bam files (ran for 10 hours on ssh_weedomics_1) then generate the sync file
 ```{sh}
 find ${DIR}/BAM -name '*.bam' > bam_list.tmp
 time \
 samtools mpileup \
-    -aa \
-    -f ${DIR}/REFERENCE/Reference.fasta \
-    -b bam_list.tmp \
+    --fasta-ref ${DIR}/REFERENCE/Reference.fasta \
+    --bam-list bam_list.tmp \
+    --adjust-MQ 50 \
+    --max-depth 10000 \
+    --min-MQ 20 \
+    --min-BQ 50 \
     > ${DIR}/PILEUP/ALL_PILEUP.mpileup
+rm bam_list.tmp
+
+time \
+java -ea -Xmx60g -jar ${DIR}/popoolation2_1201/mpileup2sync.jar \
+    --input ${DIR}/PILEUP/ALL_PILEUP.mpileup \
+    --output ${DIR}/SYNC/ALL_SYNC.sync \
+    --fastq-type sanger \
+    --min-qual 30 \
+    --threads 32
+
 
 ```
 
 ## Run Popoolation2 to estimate Fst
 ```{sh}
-
-perl <popoolation2-path>/fst-sliding.pl \
-    --input p1_p2.sync \
-    --output p1_p2_w500.fst \
-    --min-count 6 \
+time \
+perl ${DIR}/popoolation2_1201/fst-sliding.pl \
+    --input ${DIR}/SYNC/ALL_SYNC.sync \
+    --output ALL_FST.fst \
+    --min-count 10 \
     --min-coverage 50 \
     --max-coverage 200 \
     --min-covered-fraction 1 \
     --window-size 500 \
     --step-size 500 \
-    --pool-size 500
+    --pool-size 42
 ```
 
 ## Population genetics analyses
