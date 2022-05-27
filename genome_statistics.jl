@@ -175,7 +175,8 @@ module PlotGenome
                                     vec_colours_chrom=palette(:default),
                                     n_int_tick_length_bp=100*1e+6,
                                     n_int_tick_label_size=7,
-                                    n_int_chrom_name_size=7)
+                                    n_int_chrom_name_size=7,
+                                    add_legend=true)
         ########################
         ### TEST
         # r=0.75
@@ -221,12 +222,12 @@ module PlotGenome
                                         w=w/4,
                                         n_int_points=1),
                         legend=false,
-                        linecolor=:gray)
+                        linecolor=:black)
                 vec_flt_coor_text = fun_arcshape(x, x, r=r+(w/2), w=0.00, n_int_points=1)
                 annotate!(plt,
                             vec_flt_coor_text.x[1],
                             vec_flt_coor_text.y[1],
-                            (string(Int(j)), n_int_tick_label_size, :gray, :center))
+                            (string(Int(j)), n_int_tick_label_size, :black, :center))
             end
             ### print chromosome names
             vec_flt_coor_text = fun_arcshape(θ1-(vec_flt_arc_lengths_filled[i]/2),
@@ -235,10 +236,12 @@ module PlotGenome
             str_chromosome_name = replace(vec_str_chromosome_names[i], "Chromosome"=>"Chr")
             annotate!(plt, vec_flt_coor_text.x[1],
                         vec_flt_coor_text.y[1],
-                        (str_chromosome_name, n_int_chrom_name_size, :gray, :center))
+                        (str_chromosome_name, n_int_chrom_name_size, :black, :center))
         end
         ### add legend
-        annotate!(plt, -1.5, -1.5, (string("×", n_int_tick_length_bp, " bases"), n_int_chrom_name_size, :gray, :left))
+        if add_legend
+            annotate!(plt, -1.5, -1.5, (string("×", n_int_tick_length_bp, " bases"), n_int_chrom_name_size, :black, :left))
+        end
         ### return plot
         return(plt)
     end
@@ -295,6 +298,7 @@ module PlotGenome
                 n_flt_max_GC_perc_genomewide < n_flt_mean_GC_content ? n_flt_max_GC_perc_genomewide=n_flt_mean_GC_content : nothing
             end
         end
+        @show n_flt_max_GC_perc_genomewide
         n_int_remainder_min = round(n_flt_min_GC_perc_genomewide*100) % 5
         n_flt_min_GC_perc_genomewide = round(n_flt_min_GC_perc_genomewide + ((0 - n_int_remainder_min)/100), digits=2)
         n_int_remainder_max = round(n_flt_max_GC_perc_genomewide*100) % 5
@@ -304,6 +308,7 @@ module PlotGenome
         x1 = 1.50; y1 = -1.35
         n_int_colours = length(vec_colours_GC)
         ### heatmap
+        n_int_tick_legend_size = Int(ceil(0.8 * n_int_tick_label_size))
         for i in 1:n_int_colours
             dx0 = x0+(x1-x0)*((i-1)/n_int_colours)
             dx1 = x1+(x1-x0)*((i-0)/n_int_colours)
@@ -314,26 +319,27 @@ module PlotGenome
             plot!(plt, shp_rectangle, color=vec_colours_GC[i], linecolor=vec_colours_GC[i])
         end
         ### ticks
-        vec_flt_legend_ticks = round.(collect(range(n_flt_min_GC_perc_genomewide, n_flt_max_GC_perc_genomewide, length=(n_int_colours+2))), digits=2)
-        for i in 1:(n_int_colours+2)
-            dx0 = x0+(x1-x0)*((i-1)/4)
+        n_int_min_for_legend_tick = round(n_flt_min_GC_perc_genomewide - ((n_flt_max_GC_perc_genomewide - n_flt_min_GC_perc_genomewide)/n_int_colours), digits=2)
+        vec_flt_legend_ticks = vcat([n_int_min_for_legend_tick], round.(collect(range(n_flt_min_GC_perc_genomewide, n_flt_max_GC_perc_genomewide, length=n_int_colours)), digits=2))
+        for i in 1:2:(n_int_colours+1)
+            dx0 = (x0-(1/(2*n_int_colours)))+(x1-x0)*(i/n_int_colours)
             shp_tick = Shape(vcat((dx0, y1),
                                 (dx0, y1+(y1*0.03))))
             plot!(plt, shp_tick, color=:gray, linecolor=:gray)
             annotate!(plt,
                     dx0,
                     y1+(y1*0.05),
-                    (vec_flt_legend_ticks[i], n_int_tick_label_size, :gray, :center))
+                    (vec_flt_legend_ticks[i], n_int_tick_legend_size, :gray, :center))
         end
         ### GC content labels
         annotate!(plt,
                 x0+((x1-x0)/2),
                 -1.2,
-                (string("Lane ", lane_id, " legend:"), n_int_tick_label_size, :gray, :bottom))
+                (string("Lane ", lane_id, " legend:"), n_int_tick_legend_size, :gray, :bottom))
         annotate!(plt,
                 x0+((x1-x0)/2),
-                -1.5,
-                ("GC content", n_int_tick_label_size, :gray, :bottom))
+                -(1.2 + (0.3*n_int_tick_legend_size/9)),
+                ("GC content", n_int_tick_legend_size, :gray, :bottom))
 
         ### plot per chromosome
         ProgressMeter.@showprogress for i in 1:n
@@ -924,24 +930,24 @@ function execute(str_filename_fasta, str_fname_output_svg, str_filename_LTR_COPI
     savefig(plt, str_fname_output_svg)
 end
 
-str_filename_fasta = "Lolium_rigidum.fasta"
-str_fname_output_svg = "Lolium_rigidum_1.svg"
-str_filename_LTR_COPIA = "Lolium_rigidum-LTR_COPIA.csv"
-str_filename_LTR_GYPSY = "Lolium_rigidum-LTR_GYPSY.csv"
-vec_idx_chr_pos = [1, 2] ### for plotting the hits histogram, i.e. LTR files: specify the columns of chromosome ID, and the start or end position
-str_filename_groupings_and_coordinates = "Lolium_rigidum-for_plotting.plg"
-vec_idx_groups_chr_pos = [4, 2, 3, 3] ### for drawing the chords, i.e. paralog positions: specify the columns of orthogroup ID, chromosome ID and start or end position
-n = 7 ## haploid chromosome number
-n_int_tick_length_bp = 100*1e+6 # make this adjustable
-n_int_tick_label_size=7
-n_int_chrom_name_size=7
+# str_filename_fasta = "Lolium_rigidum.fasta"
+# str_fname_output_svg = "Lolium_rigidum_1.svg"
+# str_filename_LTR_COPIA = "Lolium_rigidum-LTR_COPIA.csv"
+# str_filename_LTR_GYPSY = "Lolium_rigidum-LTR_GYPSY.csv"
+# vec_idx_chr_pos = [1, 2] ### for plotting the hits histogram, i.e. LTR files: specify the columns of chromosome ID, and the start or end position
+# str_filename_groupings_and_coordinates = "Lolium_rigidum-for_plotting.plg"
+# vec_idx_groups_chr_pos = [4, 2, 3, 3] ### for drawing the chords, i.e. paralog positions: specify the columns of orthogroup ID, chromosome ID and start or end position
+# n = 7 ## haploid chromosome number
+# n_int_tick_length_bp = 100*1e+6 # make this adjustable
+# n_int_tick_label_size=10
+# n_int_chrom_name_size=10
 
-@time execute(str_filename_fasta, str_fname_output_svg, str_filename_LTR_COPIA, str_filename_LTR_GYPSY, vec_idx_chr_pos, str_filename_groupings_and_coordinates, vec_idx_groups_chr_pos, n, n_int_tick_length_bp, n_int_tick_label_size, n_int_chrom_name_size,
-              recompute=false)
+# @time execute(str_filename_fasta, str_fname_output_svg, str_filename_LTR_COPIA, str_filename_LTR_GYPSY, vec_idx_chr_pos, str_filename_groupings_and_coordinates, vec_idx_groups_chr_pos, n, n_int_tick_length_bp, n_int_tick_label_size, n_int_chrom_name_size,
+#               recompute=false)
 
 
 ### MISC TEST
-function execute2(;recompute=false, cleanup=false)
+function execute2(; recompute=false, cleanup=false)
     str_filename_fasta = "Lolium_rigidum.fasta"
     str_fname_output_svg = "Lolium_rigidum.svg"
     str_filename_LTR_COPIA = "Lolium_rigidum-LTR_COPIA.csv"
@@ -950,8 +956,9 @@ function execute2(;recompute=false, cleanup=false)
     vec_idx_groups_chr_pos = [4, 2, 3, 3]
     n = 7 ## haploid chromosome number
     n_int_tick_length_bp = 100*1e+6 # make this adjustable
-    n_int_tick_label_size=7
-    n_int_chrom_name_size=7
+    n_int_tick_label_size=12
+    n_int_chrom_name_size=12
+    # n_int_stats_label_size=10
 
     ### To (re)run the genome statistics computation or to use the saved genome statistics data
     str_filename_output_jld2 = string(join(split(str_filename_fasta, ".")[1:(end-1)], "."), "-statistics.jld2")
@@ -1108,7 +1115,8 @@ function execute2(;recompute=false, cleanup=false)
                                 r=r, w=w,
                                 n_int_tick_length_bp=n_int_tick_length_bp,
                                 n_int_tick_label_size=n_int_tick_label_size,
-                                n_int_chrom_name_size=n_int_chrom_name_size)
+                                n_int_chrom_name_size=n_int_chrom_name_size,
+                                add_legend=false)
     ### Plot 1 layer 1: GC content
     r=1.00; w=0.15
     annotate!(plt1, 0.0, (r-w/2), ("a", 10, :gray, :center))
@@ -1116,6 +1124,7 @@ function execute2(;recompute=false, cleanup=false)
                     r=r, w=w,
                     n_int_total_chunks_across_genome=1000,
                     vec_colours_GC=palette(:thermometer, 7),
+                    n_int_tick_label_size=n_int_tick_label_size,
                     lane_id="a")
     int_n_chromosomes_whole_assembly = PlotGenome.fun_add_comma_separator_on_large_positive_integers(int_n_chromosomes_whole_assembly)
     int_size_whole_assembly = PlotGenome.fun_add_comma_separator_on_large_positive_integers(int_size_whole_assembly)
@@ -1125,15 +1134,15 @@ function execute2(;recompute=false, cleanup=false)
     N50 = PlotGenome.fun_add_comma_separator_on_large_positive_integers(N50)
     L90 = PlotGenome.fun_add_comma_separator_on_large_positive_integers(L90)
     N90 = PlotGenome.fun_add_comma_separator_on_large_positive_integers(N90)
-    annotate!(plt1, -1.5, 1.25,(string("Whole assembly:\n  n=", int_n_chromosomes_whole_assembly,
-                                    "\n  size=", int_size_whole_assembly, " bp",
-                                    "\n",
-                                    "\nPseudo-chromosomes:\n  n=", int_n_chromosomes,
-                                    "\n  size=", int_size, " bp",
-                                    "\n  L50=", L50, " chromosomes",
-                                    "\n  N50=", N50, " bp",
-                                    "\n  L90=", L90, " chromosomes",
-                                    "\n  N90=", N90, " bp"), 8, :gray, :left))
+    # annotate!(plt1, -1.5, 1.25,(string("Whole assembly:\n  n=", int_n_chromosomes_whole_assembly,
+    #                                 "\n  size=", int_size_whole_assembly, " bp",
+    #                                 "\n",
+    #                                 "\nPseudo-chromosomes:\n  n=", int_n_chromosomes,
+    #                                 "\n  size=", int_size, " bp",
+    #                                 "\n  L50=", L50, " chromosomes",
+    #                                 "\n  N50=", N50, " bp",
+    #                                 "\n  L90=", L90, " chromosomes",
+    #                                 "\n  N90=", N90, " bp"), n_int_stats_label_size, :gray, :left))
     ### Plot 1 layer 2: Ty1-Copia LTR histogram
     r=0.75; w=0.15
     annotate!(plt1, 0.0, (r-w/2), ("b", 10, :gray, :center))
@@ -1159,7 +1168,8 @@ function execute2(;recompute=false, cleanup=false)
                             r=r, w=w,
                             n_int_tick_length_bp=n_int_tick_length_bp,
                             n_int_tick_label_size=n_int_tick_label_size,
-                            n_int_chrom_name_size=n_int_chrom_name_size)
+                            n_int_chrom_name_size=n_int_chrom_name_size,
+                            add_legend=false)
                             r = r-w; w=0.05
     PlotGenome.fun_add_chords!(plt2,
                     str_filename_groupings_and_coordinates,
@@ -1186,7 +1196,7 @@ function execute2(;recompute=false, cleanup=false)
     savefig(plt3, str_fname_output_svg)
 end
 
-# @time execute2(recompute=false)
+@time execute2()
 
 ### MISC: C-value into bp
 _2C_in_pg_ = 5.494
