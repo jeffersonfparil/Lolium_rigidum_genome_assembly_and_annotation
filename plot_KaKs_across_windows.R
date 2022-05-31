@@ -1,5 +1,5 @@
 args = commandArgs(trailingOnly=TRUE)
-# args = c("APX-OG0002614.kaks.tmp", "0.001")
+# args = c("EPSPS-OG0006242.aln.pw.kaks.tmp", "0.001")
 fname_input = args[1]
 alpha = as.numeric(args[2])
 
@@ -19,7 +19,7 @@ df = data.frame(
     KaKs=dat$Ka.Ks,
     p=dat$P.Value.Fisher.
 )
-df$KaKs[is.na(df$KaKs)] = 0.0
+df$KaKs[is.na(df$KaKs)] = 1.0
 
 alignments = unique(df$Species_alignment2)
 n = ceiling(sqrt(length(alignments)))
@@ -40,5 +40,6 @@ for (aln in alignments) {
     for (j in idx){
         text(x=subdf$Position_ini[j], y=subdf$KaKs[j], lab="*", col="red", cex=2)
     }
+    abline(h=1, lty=2, col="red")
 }
 dev.off()

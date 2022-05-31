@@ -1031,7 +1031,7 @@ done
 rm species_names.tmp
 ```
 
-## Identify herbicide TSR and NTSR genes
+## Identify EPSPS and detoxification genes
 1. Download protein sequences of genes from UniProt (https://www.uniprot.org) (Outputs: ${GENE}.faa)
 ```{sh}
 ###############################
@@ -1041,28 +1041,6 @@ DIR_ORTHOGROUP_SEQS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_*/Orthogroup_Sequence
 DIR_GENES=${DIR}/TSR_NTSR_GENES
 mkdir $DIR_GENES
 cd $DIR_GENES
-
-#################
-### CLETHODIM ###
-#################
-### TARGET: Acetyl Co-A carboxylase
-echo 'acetyl-coenzyme a carboxylase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]" '
-wget https://www.uniprot.org/uniprot/Q38970.fasta
-wget https://www.uniprot.org/uniprot/Q9LD43.fasta
-echo 'acetyl-coenzyme a carboxylase AND organism:"Oryza sativa (Rice) [4530]"'
-wget https://www.uniprot.org/uniprot/P0C2Y2.fasta
-echo 'acetyl-coenzyme a carboxylase AND organism:"Zea mays (Maize) [4577]"'
-wget https://www.uniprot.org/uniprot/Q41743.fasta
-wget https://www.uniprot.org/uniprot/A0A1D6J3Q3.fasta
-echo 'acetyl-coenzyme a carboxylase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
-wget https://www.uniprot.org/uniprot/Q3HWZ8.fasta
-wget https://www.uniprot.org/uniprot/A5JJU5.fasta
-wget https://www.uniprot.org/uniprot/Q7XHK2.fasta
-echo 'acetyl-coenzyme a carboxylase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
-wget https://www.uniprot.org/uniprot/A0A4D6X5K8.fasta
-wget https://www.uniprot.org/uniprot/Q8VWG1.fasta
-cat *.fasta > ACCase.faa
-rm *.fasta
 
 ##################
 ### GLYPHOSATE ###
@@ -1088,127 +1066,9 @@ wget https://www.uniprot.org/uniprot/A0A2D2AP54.fasta
 cat *.fasta > EPSPS.faa
 rm *.fasta
 
-#################
-### INTERCEPT ### Imazamox, and
-################# Imazapyr
-### TARGET: Acetolactate synthase a.k.a. acetohydroxy acid synthase
-echo 'acetolactate synthase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
-wget https://www.uniprot.org/uniprot/A0A178VL64.fasta
-wget https://www.uniprot.org/uniprot/P17597.fasta
-echo 'acetolactate synthase AND organism:"Oryza sativa (Rice) [4530]"'
-wget https://www.uniprot.org/uniprot/A0A5J6D4R6.fasta
-wget https://www.uniprot.org/uniprot/Q01LD9.fasta
-echo 'acetolactate synthase AND organism:"Zea mays (Maize) [4577]"'
-wget https://www.uniprot.org/uniprot/Q41769.fasta
-wget https://www.uniprot.org/uniprot/K7TWQ8.fasta
-echo 'acetolactate synthase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
-wget https://www.uniprot.org/uniprot/A0A5B9T5W5.fasta
-wget https://www.uniprot.org/uniprot/A7XBQ0.fasta
-echo 'acetolactate synthase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
-wget https://www.uniprot.org/uniprot/Q9FUD0.fasta
-wget https://www.uniprot.org/uniprot/A0A2R4NC54.fasta
-cat *.fasta > ALS.faa
-rm *.fasta
-
-###############
-### LUXIMAX ###
-############### Cinmethylin
-### TARGET: acyl-acp thioesterase
-echo 'acyl-acp thioesterase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
-wget https://www.uniprot.org/uniprot/Q42561.fasta
-wget https://www.uniprot.org/uniprot/Q9SJE2.fasta
-wget https://www.uniprot.org/uniprot/Q9SV64.fasta
-wget https://www.uniprot.org/uniprot/Q8W583.fasta
-wget https://www.uniprot.org/uniprot/F4HX80.fasta
-echo 'acyl-acp thioesterase AND organism:"Oryza sativa (Rice) [4530]"'
-echo "NONE!"
-echo 'acyl-acp thioesterase AND organism:"Zea mays (Maize) [4577]"'
-wget https://www.uniprot.org/uniprot/A0A3L6FUI9.fasta
-wget https://www.uniprot.org/uniprot/A0A077D597.fasta
-wget https://www.uniprot.org/uniprot/A0A3L6FVN3.fasta
-wget https://www.uniprot.org/uniprot/A0A3L6E7J9.fasta
-wget https://www.uniprot.org/uniprot/K7V747.fasta
-echo 'acyl-acp thioesterase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
-echo "NONE!"
-echo 'acyl-acp thioesterase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
-echo "NONE!"
-cat *.fasta > AACPT.faa
-rm *.fasta
-
-#################
-### OVERWATCH ###
-################# Bixlozone
-### TARGET: deoxyxylulose 5-phosphate synthase (DXS)
-echo 'deoxyxylulose 5-phosphate synthase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
-wget https://www.uniprot.org/uniprot/Q38854.fasta
-wget https://www.uniprot.org/uniprot/Q8LAD0.fasta
-wget https://www.uniprot.org/uniprot/Q9XFS9.fasta
-wget https://www.uniprot.org/uniprot/Q0WUB4.fasta
-echo 'deoxyxylulose 5-phosphate synthase AND organism:"Oryza sativa (Rice) [4530]"'
-echo "NONE!"
-echo 'deoxyxylulose 5-phosphate synthase AND organism:"Zea mays (Maize) [4577]"'
-echo "NONE!"
-echo 'deoxyxylulose 5-phosphate synthase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
-echo "NONE!"
-echo 'deoxyxylulose 5-phosphate synthase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
-echo "NONE!"
-cat *.fasta > DXS.faa
-rm *.fasta
-
-#################
-### BOXERGOLD ### S-metolachlor, and
-################# Prosulfocarb
-##############
-### SAKURA ###
-############## Pyroxasulfone
-#################
-### TRIALLATE ###
-#################
-### TARGET: fatty acid elongase (FAE)
-echo 'fatty acid elongase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
-wget https://www.uniprot.org/uniprot/Q38860.fasta
-wget https://www.uniprot.org/uniprot/V9Z5W3.fasta
-wget https://www.uniprot.org/uniprot/Q5XEP9.fasta
-wget https://www.uniprot.org/uniprot/Q9MAM3.fasta
-wget https://www.uniprot.org/uniprot/Q570B4.fasta
-echo 'fatty acid elongase AND organism:"Oryza sativa (Rice) [4530]"'
-echo "NONE!"
-echo 'fatty acid elongase AND organism:"Zea mays (Maize) [4577]"'
-wget https://www.uniprot.org/uniprot/A0A1D6MV48.fasta
-wget https://www.uniprot.org/uniprot/A0A1D6L0Y4.fasta
-wget https://www.uniprot.org/uniprot/A0A3L6FEW8.fasta
-wget https://www.uniprot.org/uniprot/Q6A4M2.fasta
-wget https://www.uniprot.org/uniprot/A0A1D6P2P8.fasta
-echo 'fatty acid elongase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
-echo "NONE!"
-echo 'fatty acid elongase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
-echo "NONE!"
-cat *.fasta > FAE.faa
-rm *.fasta
-
-################
-### ATRAZINE ###
-################
-### TARGET: Photosystem II protein D1
-echo 'Photosystem II protein D1 AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
-wget https://www.uniprot.org/uniprot/P83755.fasta
-wget https://www.uniprot.org/uniprot/A0A1B1W4S7.fasta
-echo 'Photosystem II protein D1 AND organism:"Oryza sativa (Rice) [4530]"'
-wget https://www.uniprot.org/uniprot/P0C432.fasta
-wget https://www.uniprot.org/uniprot/A0A0K0LK42.fasta
-echo 'Photosystem II protein D1 AND organism:"Zea mays (Maize) [4577]"'
-wget https://www.uniprot.org/uniprot/P48183.fasta
-wget https://www.uniprot.org/uniprot/A0A3L6DET6.fasta
-echo 'Photosystem II protein D1 AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
-echo "NONE!"
-echo 'Photosystem II protein D1 AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
-wget https://www.uniprot.org/uniprot/B8Q684.fasta
-cat *.fasta > psbA.faa
-rm *.fasta
-
-################
-### PARAQUAT ###
-################
+# ################
+# ### PARAQUAT ###
+# ################
 ############################
 ### DETOXIFICATION GENES ###
 ############################
@@ -1318,7 +1178,7 @@ cat *.fasta > GPX.faa
 rm *.fasta
 
 ################################
-### 7.) cytochrome P450 (CYP450)
+### 6.) cytochrome P450 (CYP450)
 echo 'cytochrome P450 AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
 wget https://www.uniprot.org/uniprot/O65782.fasta
 wget https://www.uniprot.org/uniprot/Q9SMP5.fasta
@@ -1339,7 +1199,7 @@ cat *.fasta > CYP450.faa
 rm *.fasta
 
 ##############################################
-### 8.) ATP-binding cassette transporter (ABC)
+### 7.) ATP-binding cassette transporter (ABC)
 echo 'ABC transporter AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
 wget https://www.uniprot.org/uniprot/Q9LVM1.fasta
 wget https://www.uniprot.org/uniprot/Q94FB9.fasta
@@ -1359,6 +1219,146 @@ echo 'ABC transporter AND organism:"Lolium multiflorum (Italian ryegrass) (Loliu
 echo "NONE!"
 cat *.fasta > ABC.faa
 rm *.fasta
+
+# #################
+# ### CLETHODIM ###
+# #################
+# ### TARGET: Acetyl Co-A carboxylase
+# echo 'acetyl-coenzyme a carboxylase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]" '
+# wget https://www.uniprot.org/uniprot/Q38970.fasta
+# wget https://www.uniprot.org/uniprot/Q9LD43.fasta
+# echo 'acetyl-coenzyme a carboxylase AND organism:"Oryza sativa (Rice) [4530]"'
+# wget https://www.uniprot.org/uniprot/P0C2Y2.fasta
+# echo 'acetyl-coenzyme a carboxylase AND organism:"Zea mays (Maize) [4577]"'
+# wget https://www.uniprot.org/uniprot/Q41743.fasta
+# wget https://www.uniprot.org/uniprot/A0A1D6J3Q3.fasta
+# echo 'acetyl-coenzyme a carboxylase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+# wget https://www.uniprot.org/uniprot/Q3HWZ8.fasta
+# wget https://www.uniprot.org/uniprot/A5JJU5.fasta
+# wget https://www.uniprot.org/uniprot/Q7XHK2.fasta
+# echo 'acetyl-coenzyme a carboxylase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+# wget https://www.uniprot.org/uniprot/A0A4D6X5K8.fasta
+# wget https://www.uniprot.org/uniprot/Q8VWG1.fasta
+# cat *.fasta > ACCase.faa
+# rm *.fasta
+
+# #################
+# ### INTERCEPT ### Imazamox, and
+# ################# Imazapyr
+# ### TARGET: Acetolactate synthase a.k.a. acetohydroxy acid synthase
+# echo 'acetolactate synthase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+# wget https://www.uniprot.org/uniprot/A0A178VL64.fasta
+# wget https://www.uniprot.org/uniprot/P17597.fasta
+# echo 'acetolactate synthase AND organism:"Oryza sativa (Rice) [4530]"'
+# wget https://www.uniprot.org/uniprot/A0A5J6D4R6.fasta
+# wget https://www.uniprot.org/uniprot/Q01LD9.fasta
+# echo 'acetolactate synthase AND organism:"Zea mays (Maize) [4577]"'
+# wget https://www.uniprot.org/uniprot/Q41769.fasta
+# wget https://www.uniprot.org/uniprot/K7TWQ8.fasta
+# echo 'acetolactate synthase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+# wget https://www.uniprot.org/uniprot/A0A5B9T5W5.fasta
+# wget https://www.uniprot.org/uniprot/A7XBQ0.fasta
+# echo 'acetolactate synthase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+# wget https://www.uniprot.org/uniprot/Q9FUD0.fasta
+# wget https://www.uniprot.org/uniprot/A0A2R4NC54.fasta
+# cat *.fasta > ALS.faa
+# rm *.fasta
+
+# ###############
+# ### LUXIMAX ###
+# ############### Cinmethylin
+# ### TARGET: acyl-acp thioesterase
+# echo 'acyl-acp thioesterase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+# wget https://www.uniprot.org/uniprot/Q42561.fasta
+# wget https://www.uniprot.org/uniprot/Q9SJE2.fasta
+# wget https://www.uniprot.org/uniprot/Q9SV64.fasta
+# wget https://www.uniprot.org/uniprot/Q8W583.fasta
+# wget https://www.uniprot.org/uniprot/F4HX80.fasta
+# echo 'acyl-acp thioesterase AND organism:"Oryza sativa (Rice) [4530]"'
+# echo "NONE!"
+# echo 'acyl-acp thioesterase AND organism:"Zea mays (Maize) [4577]"'
+# wget https://www.uniprot.org/uniprot/A0A3L6FUI9.fasta
+# wget https://www.uniprot.org/uniprot/A0A077D597.fasta
+# wget https://www.uniprot.org/uniprot/A0A3L6FVN3.fasta
+# wget https://www.uniprot.org/uniprot/A0A3L6E7J9.fasta
+# wget https://www.uniprot.org/uniprot/K7V747.fasta
+# echo 'acyl-acp thioesterase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+# echo "NONE!"
+# echo 'acyl-acp thioesterase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+# echo "NONE!"
+# cat *.fasta > AACPT.faa
+# rm *.fasta
+
+# #################
+# ### OVERWATCH ###
+# ################# Bixlozone
+# ### TARGET: deoxyxylulose 5-phosphate synthase (DXS)
+# echo 'deoxyxylulose 5-phosphate synthase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+# wget https://www.uniprot.org/uniprot/Q38854.fasta
+# wget https://www.uniprot.org/uniprot/Q8LAD0.fasta
+# wget https://www.uniprot.org/uniprot/Q9XFS9.fasta
+# wget https://www.uniprot.org/uniprot/Q0WUB4.fasta
+# echo 'deoxyxylulose 5-phosphate synthase AND organism:"Oryza sativa (Rice) [4530]"'
+# echo "NONE!"
+# echo 'deoxyxylulose 5-phosphate synthase AND organism:"Zea mays (Maize) [4577]"'
+# echo "NONE!"
+# echo 'deoxyxylulose 5-phosphate synthase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+# echo "NONE!"
+# echo 'deoxyxylulose 5-phosphate synthase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+# echo "NONE!"
+# cat *.fasta > DXS.faa
+# rm *.fasta
+
+# #################
+# ### BOXERGOLD ### S-metolachlor, and
+# ################# Prosulfocarb
+# ##############
+# ### SAKURA ###
+# ############## Pyroxasulfone
+# #################
+# ### TRIALLATE ###
+# #################
+# ### TARGET: fatty acid elongase (FAE)
+# echo 'fatty acid elongase AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+# wget https://www.uniprot.org/uniprot/Q38860.fasta
+# wget https://www.uniprot.org/uniprot/V9Z5W3.fasta
+# wget https://www.uniprot.org/uniprot/Q5XEP9.fasta
+# wget https://www.uniprot.org/uniprot/Q9MAM3.fasta
+# wget https://www.uniprot.org/uniprot/Q570B4.fasta
+# echo 'fatty acid elongase AND organism:"Oryza sativa (Rice) [4530]"'
+# echo "NONE!"
+# echo 'fatty acid elongase AND organism:"Zea mays (Maize) [4577]"'
+# wget https://www.uniprot.org/uniprot/A0A1D6MV48.fasta
+# wget https://www.uniprot.org/uniprot/A0A1D6L0Y4.fasta
+# wget https://www.uniprot.org/uniprot/A0A3L6FEW8.fasta
+# wget https://www.uniprot.org/uniprot/Q6A4M2.fasta
+# wget https://www.uniprot.org/uniprot/A0A1D6P2P8.fasta
+# echo 'fatty acid elongase AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+# echo "NONE!"
+# echo 'fatty acid elongase AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+# echo "NONE!"
+# cat *.fasta > FAE.faa
+# rm *.fasta
+
+# ################
+# ### ATRAZINE ###
+# ################
+# ### TARGET: Photosystem II protein D1
+# echo 'Photosystem II protein D1 AND organism:"Arabidopsis thaliana (Mouse-ear cress) [3702]"'
+# wget https://www.uniprot.org/uniprot/P83755.fasta
+# wget https://www.uniprot.org/uniprot/A0A1B1W4S7.fasta
+# echo 'Photosystem II protein D1 AND organism:"Oryza sativa (Rice) [4530]"'
+# wget https://www.uniprot.org/uniprot/P0C432.fasta
+# wget https://www.uniprot.org/uniprot/A0A0K0LK42.fasta
+# echo 'Photosystem II protein D1 AND organism:"Zea mays (Maize) [4577]"'
+# wget https://www.uniprot.org/uniprot/P48183.fasta
+# wget https://www.uniprot.org/uniprot/A0A3L6DET6.fasta
+# echo 'Photosystem II protein D1 AND organism:"Lolium rigidum (Annual ryegrass) [89674]"'
+# echo "NONE!"
+# echo 'Photosystem II protein D1 AND organism:"Lolium multiflorum (Italian ryegrass) (Lolium perenne subsp. multiflorum) [4521]"'
+# wget https://www.uniprot.org/uniprot/B8Q684.fasta
+# cat *.fasta > psbA.faa
+# rm *.fasta
 ```
 
 2. Generate BLAST database for each orthogroup (Outputs: ${ORTHOGROUP}.*)
@@ -1487,10 +1487,10 @@ done
 rm *.tmp
 ```
 
-## dN/dS assessment: For the sress-related genes which are not more enriched (well we're including everything not just the ones that were not enriched just to be thorough), are there signs of selection?
+## dN/dS assessment of EPSPS gene
 Note: we use "gene" to refer to TSR and NTSR genes, and alignments even genes again for the genes within orthogroups within TSR/NTSR genes per species. Apologies for any misunderstandings.
 
-1. Extract CDS per gene (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${species}-${gene}-${ortho}.cds)
+1. Extract EPSPS CDS (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${species}-${gene}-${ortho}.cds)
 ```{sh}
 ### Extract species names and number of species
 head -n1 ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f2- > species_names.tmp
@@ -1515,23 +1515,29 @@ do
         col=$(echo $i + 1 | bc)
         cut -f${col} ${gene}-${ortho}-list_gene_names.tmp | \
             sed -z "s/, /\n/g" | \
-            sed "s/$species|//g" > \
+            sed "s/$species|//g" | \
+            sed "/^$/d" | \
+            sed "/\r/d" > \
             ${species}-${gene}-${ortho}-list_gene_names.tmp
-        if [ $(cat ${species}-${gene}-${ortho}-list_gene_names.tmp | wc -l) -lt 2 ]
-        then
-            rm ${species}-${gene}-${ortho}-list_gene_names.tmp
-        fi
+    if [ $(cat ${species}-${gene}-${ortho}-list_gene_names.tmp | wc -l) -lt 1 ]
+    then
+        rm ${species}-${gene}-${ortho}-list_gene_names.tmp
+    fi
     done
     rm  ${gene}-${ortho}-list_gene_names.tmp
 done
 ' > extract_gene_names.sh
 chmod +x extract_gene_names.sh
-time \
-parallel ./extract_gene_names.sh \
-    {} \
+# time \
+# parallel ./extract_gene_names.sh \
+#     {} \
+#     ${DIR_ORTHOGROUPS} \
+#     ${NSPECIES} \
+#     ::: $(ls *.ortho)
+time ./extract_gene_names.sh \
+    EPSPS.ortho \
     ${DIR_ORTHOGROUPS} \
-    ${NSPECIES} \
-    ::: $(ls *.ortho)
+    ${NSPECIES}
 
 ### Extract gene sequences
 echo '#!/bin/bash
@@ -1551,16 +1557,21 @@ do
                     false
 done
 cat ${species}-${gene}-${ortho}-*.cds.tmp > ${species}-${gene}-${ortho}.cds
-rm ${species}-${gene}-${ortho}-*.cds.tmp
 rm $f
 ' > extract_sequences_in_parallel.sh
 chmod +x extract_sequences_in_parallel.sh
+# time \
+# parallel ./extract_sequences_in_parallel.sh \
+#     {} \
+#     ${DIR} \
+#     ${SRC} \
+#     ::: $(ls *-list_gene_names.tmp)
 time \
 parallel ./extract_sequences_in_parallel.sh \
     {} \
     ${DIR} \
     ${SRC} \
-    ::: $(ls *-list_gene_names.tmp)
+    ::: $(ls *-EPSPS-*-list_gene_names.tmp)
 ```
 
 2. Merge per orthogropup prior to alignment (Outputs: ${gene}-${ortho}.cds)
@@ -1573,6 +1584,7 @@ do
     rm *-${ortho}.cds
     mv ${fname_output} ${fname_output%.tmp*}
 done
+rm *.tmp
 ```
 
 3. Align CDS per orthogroup per gene (Outputs: ${gene}-${ortho}.aln)
@@ -1845,25 +1857,26 @@ julia locate_paralogs.jl \
 ```{sh}
 echo '#!/bin/bash
 f=$1
-julia split_alignment_pairs.jl \
+SRC=$2
+julia ${SRC}/split_alignment_pairs.jl \
     ${f} \
-    60 \
-    30 \
+    15 \
+    15 \
     ${f}.windows.tmp
 
 KaKs_Calculator \
     -m MS \
     -i ${f}.windows.tmp \
-    -o ${f%.aln.pw*}.kaks.tmp
+    -o ${f%.tmp*}.kaks.tmp
 
-Rscript plot_KaKs_across_windows.R \
-    ${f%.aln.pw*}.kaks.tmp \
+Rscript ${SRC}/plot_KaKs_across_windows.R \
+    ${f%.tmp*}.kaks.tmp\
     0.001
 ' > KaKs_per_window_and_plot_in_parallel.sh
 chmod +x KaKs_per_window_and_plot_in_parallel.sh
 time \
 parallel ./KaKs_per_window_and_plot_in_parallel.sh \
-    {} ::: $(ls *.aln.pw)
+    {} ${SRC} ::: $(ls EPSPS-*.aln.pw)
 
 
 ```
