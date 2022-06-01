@@ -1640,29 +1640,36 @@ done
 echo '#!/bin/bash
 f=$1
 # f=$(ls *.aln | head -n1 | tail -n1)
-focal_aln=$(grep -A1 "^>Lolium_rigidum" $f | head -n1 | sed "s/^>//g")
-grep -A1 "^>Lolium_rigidum" $f | head -n2 | tail -n1 > ${f}.FOCAL_SEQ.tmp
-touch ${f}.pw.tmp
-### temp file without the focal alignment
-sed -e "/$focal_aln/,+1d" $f > ${f}.tmp
-for line in $(seq 4 2 $(cat ${f}.tmp | wc -l))
+
+for i in $(seq 1 $(grep "^>Lolium_rigidum" $f | wc -l))
 do
-    # line=4
-    curr_aln_name=$(head -n$(echo $line -1 | bc) ${f}.tmp | tail -n1 | sed "s/>//g")
-    name=${focal_aln}--:--${curr_aln_name}
-    echo $name >> ${f}.pw.tmp                           ### alignment pair name
-    cat ${f}.FOCAL_SEQ.tmp >> ${f}.pw.tmp               ### focal alignment
-    head -n${line} ${f}.tmp | tail -n1 >> ${f}.pw.tmp   ### current alignment
-    echo "" >> ${f}.pw.tmp
+    focal_aln=$(grep "^>Lolium_rigidum" $f | head -n${i} | tail -n1 | sed "s/^>//g")
+    grep -A1 "^>Lolium_rigidum" $f | head -n$(echo "$i * 2" | bc) | tail -n1 > ${f}.FOCAL_SEQ.tmp
+    touch ${f}-${i}.pw.tmp
+    ### temp file without the focal alignment
+    sed -e "/$focal_aln/,+1d" $f > ${f}.tmp
+    for line in $(seq 2 2 $(cat ${f}.tmp | wc -l))
+    do
+        # line=2
+        curr_aln_name=$(head -n$(echo $line -1 | bc) ${f}.tmp | tail -n1 | sed "s/>//g")
+        if [ ${focal_aln} != ${curr_aln_name} ]
+        then
+            name=${focal_aln}--:--${curr_aln_name}
+            echo $name >> ${f}-${i}.pw.tmp                           ### alignment pair name
+            cat ${f}.FOCAL_SEQ.tmp >> ${f}-${i}.pw.tmp               ### focal alignment
+            head -n${line} ${f}.tmp | tail -n1 >> ${f}-${i}.pw.tmp   ### current alignment
+            echo "" >> ${f}-${i}.pw.tmp
+        fi
+    done
+    ### Clean-up
+    mv ${f}-${i}.pw.tmp ${f}-${i}.pw
+    rm ${f}.FOCAL_SEQ.tmp ${f}.tmp
+    ### Remove single alignments
+    if [ $(cat ${f}-${i}.pw | wc -l) -eq 0 ]
+    then
+        rm ${f}-${i}.pw
+    fi
 done
-### Clean-up
-mv ${f}.pw.tmp ${f}.pw
-rm ${f}.FOCAL_SEQ.tmp ${f}.tmp
-### Remove single alignments
-if [ $(cat ${f}.pw | wc -l) -eq 0 ]
-then
-    rm ${f}.pw
-fi
 ' > prepare_pairwise_alignments_with_Lolium_rigidum_as_focus_in_parallel.sh
 chmod +x prepare_pairwise_alignments_with_Lolium_rigidum_as_focus_in_parallel.sh
 time \
@@ -1670,35 +1677,30 @@ parallel ./prepare_pairwise_alignments_with_Lolium_rigidum_as_focus_in_parallel.
     {} ::: $(ls *.aln)
 ```
 
-6. KaKs_calculator2 for pairwise orthogroup gene comparisons
+6. KaKs_calculator2 for pairwise orthogroup gene comparisons with sliding 15-bp windows
 ```{sh}
-time \
-parallel \
+echo '#!/bin/bash
+f=$1
+SRC=$2
+julia ${SRC}/split_alignment_pairs.jl \
+    ${f} \
+    15 \
+    15 \
+    ${f}.windows.tmp
+
 KaKs_Calculator \
     -m MS \
-    -i {1} \
-    -o {1}.kaks.tmp \
-    ::: $(ls *.aln.pw)
-```
+    -i ${f}.windows.tmp \
+    -o ${f%.tmp*}.kaks.tmp
 
-7. Find kaks file with significant (p<= 0.001) Ka/Ks > 1.0
-**NOTE**: If we find high dN/dS between a pair of sequences in Lolium rigidum while the focal alignment is not that different from those of other species,then we have to change the focal alignment to that gene,and re-run KaKs_calculator!
-```{sh}
-echo 'args = commandArgs(trailingOnly=TRUE)
-# args = c("GPX-OG0000728.aln.pw.kaks.tmp")
-f = args[1]
-p = 0.001
-dNdS = 1.00
-dat = read.delim(f, header=TRUE)
-idx = (dat$P.Value.Fisher. < p) & (dat$Ka.Ks > dNdS)
-if (sum(idx, na.rm=TRUE) > 0){
-    print(f)
-}
-' > find_signs_ofsignificant_selection.R
-for f in $(ls *.aln.pw.kaks.tmp)
-do
-    Rscript find_signs_ofsignificant_selection.R $f
-done
+Rscript ${SRC}/plot_KaKs_across_windows.R \
+    ${f%.tmp*}.kaks.tmp\
+    0.001
+' > KaKs_per_window_and_plot_in_parallel.sh
+chmod +x KaKs_per_window_and_plot_in_parallel.sh
+time \
+parallel ./KaKs_per_window_and_plot_in_parallel.sh \
+    {} ${SRC} ::: $(ls EPSPS-*.aln-*.pw)
 ```
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ##
@@ -1850,34 +1852,6 @@ julia locate_paralogs.jl \
     ${ORT} \
     ${GFF} \
     ${GFF%.gff*}.plg
-
-```
-
-## TESTING KaKs_Calucator2.0 with sliding windows
-```{sh}
-echo '#!/bin/bash
-f=$1
-SRC=$2
-julia ${SRC}/split_alignment_pairs.jl \
-    ${f} \
-    15 \
-    15 \
-    ${f}.windows.tmp
-
-KaKs_Calculator \
-    -m MS \
-    -i ${f}.windows.tmp \
-    -o ${f%.tmp*}.kaks.tmp
-
-Rscript ${SRC}/plot_KaKs_across_windows.R \
-    ${f%.tmp*}.kaks.tmp\
-    0.001
-' > KaKs_per_window_and_plot_in_parallel.sh
-chmod +x KaKs_per_window_and_plot_in_parallel.sh
-time \
-parallel ./KaKs_per_window_and_plot_in_parallel.sh \
-    {} ${SRC} ::: $(ls EPSPS-*.aln.pw)
-
 
 ```
 
