@@ -8,7 +8,7 @@ if (is.na(final_plot)){
     final_plot = FALSE
 }
 
-PLOT = function(dat, fname_input){
+PLOT = function(dat, fname_input, cex=1){
     dat$Sequence = gsub("_rna-", "_rna_", dat$Sequence)
     X = matrix(unlist(strsplit(as.character(dat$Sequence), "-")), ncol=12, byrow=TRUE)
     Y = matrix(unlist(strsplit(X[,11], "\\(")), ncol=2, byrow=TRUE)
@@ -31,13 +31,13 @@ PLOT = function(dat, fname_input){
     m = ceiling(length(alignments)/n)
 
     svg(paste0(fname_input, ".svg"), height=5*n, width=8*m)
-    par(mfrow=c(n,m))
+    par(mfrow=c(n,m), cex=cex)
     for (aln in alignments) {
         # aln = unique(df$Species_alignment2)[1]
         subdf = df[df$Species_alignment2 == aln, ]
         subdf = subdf[order(subdf$Position_ini, decreasing=FALSE), ]
         plot(subdf$Position_ini, subdf$KaKs, type="l",
-            main=paste0(subdf$Species1[1], "::", subdf$Species_alignment1[1], " vs ", subdf$Species2[1], "::", subdf$Species_alignment2[1]),
+            main=paste0(subdf$Species1[1], "::", subdf$Species_alignment1[1], " vs\n", subdf$Species2[1], "::", subdf$Species_alignment2[1]),
             sub=paste0(subdf$Gene[1], " (", subdf$Orthogroup[1], ")"),
             xlab="Position (bp)", ylab="Ka/Ks")
         grid()
@@ -63,10 +63,12 @@ if (!final_plot) {
 } else {
     fname_EPSPS = "EPSPS-OG0006242.aln-2.pw.kaks.tmp"
     dat = read.delim(fname_EPSPS, header=TRUE)
-    idx = list(Lolium_perenne =       grepl("Lolium_perenne", dat$Sequence),
-               Lolium_rigidum =       grepl("XP_047075249.1", dat$Sequence),
-               Arabidopsis_thaliana = grepl("NP_973996.1", dat$Sequence),
-               Oryza_sativa =         grepl("Oryza_sativa", dat$Sequence))
+    idx = list(Lolium_perenne =         grepl("Lolium_perenne", dat$Sequence),
+               Oryza_sativa =           grepl("Oryza_sativa", dat$Sequence),
+               Lolium_rigidum =         grepl("XP_047075249.1", dat$Sequence),
+               Sorghum_bicolor =        grepl("Sorghum_bicolor", dat$Sequence),
+               Arabidopsis_thaliana_1 = grepl("NP_973996.1", dat$Sequence),
+               Arabidopsis_thaliana_2 = grepl("NP_001324851.1", dat$Sequence))
     for (i in 1:length(idx)){
         if (!exists("subdat")){
             subdat = dat[idx[[i]], ]
@@ -74,5 +76,5 @@ if (!final_plot) {
             subdat = rbind(subdat, dat[idx[[i]], ])
         )
     }
-    PLOT(subdat, "Final_plot")
+    PLOT(subdat, "KaKs_ratio_EPSPS_gene", cex=1.5)
 }
