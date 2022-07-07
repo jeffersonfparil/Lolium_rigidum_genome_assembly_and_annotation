@@ -8,7 +8,7 @@ if (is.na(final_plot)){
     final_plot = FALSE
 }
 
-PLOT = function(dat, fname_input, cex=1){
+PLOT = function(dat, fname_input, alpha, cex=1){
     dat$Sequence = gsub("_rna-", "_rna_", dat$Sequence)
     X = matrix(unlist(strsplit(as.character(dat$Sequence), "-")), ncol=12, byrow=TRUE)
     Y = matrix(unlist(strsplit(X[,11], "\\(")), ncol=2, byrow=TRUE)
@@ -76,5 +76,5 @@ if (!final_plot) {
             subdat = rbind(subdat, dat[idx[[i]], ])
         )
     }
-    PLOT(subdat, "KaKs_ratio_EPSPS_gene", cex=1.5)
+    PLOT(subdat, "KaKs_ratio_EPSPS_gene", alpha, cex=1.5)
 }

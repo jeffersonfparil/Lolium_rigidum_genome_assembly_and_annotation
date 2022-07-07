@@ -939,13 +939,13 @@ We will use the distribution of four-fold degenerate sites (4DTv) across multi-c
 1. Prepare script to extract CDS, align, calculate 4DTv (pairwise), and divergence time (pairwise) in parallel
 ```{sh}
 echo '#!/bin/bash
-### NOTE: The file: dual_gene_list.geneNames contains the gene names of one species. The gene names are in the second column (space-delimited), and each gene is comma-space-delimited
+### NOTE: The file: multi_gene_list.geneNames contains the gene names of one species. The gene names are in the second column (space-delimited), and each gene is comma-space-delimited
 j=$1
 MACSE=$2
 # j=1017
-line=$(head -n${j} dual_gene_list.geneNames | tail -n1)
+line=$(head -n${j} multi_gene_list.geneNames | tail -n1)
 ORTHONAME=$(echo $line | cut -d" " -f1)
-# Extract CDS of these dual-copy genes
+# Extract CDS of these multi-copy genes
 for name in $(echo $line | cut -d" " -f2- | sed -z "s/, /\n/g")
 do
     # name=$(echo $line | cut -d" " -f2- | sed -z "s/, /\n/g" | head -n2 | tail -n1)
@@ -998,8 +998,8 @@ julia calculate_4DTv.jl ${ORTHONAME}.NT.cds ${ORTHONAME}.4DTv.tmp
 rm ${ORTHONAME}*.fasta
 rm ${ORTHONAME}.aligned.unsorted*.tmp ${ORTHONAME}.NT.cds ${ORTHONAME}.AA.prot
 ##### rm ${ORTHONAME}.axt.tmp ${ORTHONAME}.kaks.tmp
-' > parallel_extract_dual_gene_orthogroups.sh
-chmod +x parallel_extract_dual_gene_orthogroups.sh
+' > parallel_extract_multi_gene_orthogroups.sh
+chmod +x parallel_extract_multi_gene_orthogroups.sh
 ```
 
 2. Identify multi-copy paralogs (2 to 5 copies) per species, align, and estimate 4DTv
