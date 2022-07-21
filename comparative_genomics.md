@@ -1735,11 +1735,15 @@ function load_gene_names_and_coordinates(fname_annotations)
         update!(pb, position(file))
         if line[1][1] .!= "#"[1]
             if line[3] == "CDS"
-
                 if match(Regex("Name="), line[end]) != nothing
                     desc = split(line[end], ";"[1])
-                    id = split(desc[match.(Regex("Dbxref=GeneID:"), desc) .!= nothing][1], ","[1])[1]
+                    id = try
+                            split(desc[match.(Regex("Dbxref=GeneID:"), desc) .!= nothing][1], ","[1])[1]
+                        catch
+                            split(desc[match.(Regex("Dbxref=Genbank:"), desc) .!= nothing][1], ","[1])[2]
+                        end
                     geneID = replace(id, "Dbxref=GeneID:" => "")
+                    geneID = replace(id, "GeneID:" => "")
                     name = split(desc[match.(Regex("Name="), desc) .!= nothing][1], ","[1])[1]
                     gene = replace(name, "Name=" => "")
                     push!(temp_geneIDs, geneID)
