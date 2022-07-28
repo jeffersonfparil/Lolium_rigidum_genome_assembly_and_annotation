@@ -1,7 +1,7 @@
 # Comparative genomics
 
 ## Set working directories, executables, and output files
-```{sh}
+```shell
 DIR=/data/Lolium_rigidum_ASSEMBLY/COMPARATIVE_GENOMICS
 SRC=${DIR}/Lolium_rigidum_genome_assembly_and_annotation
 PATH=${PATH}:${DIR}/OrthoFinder
@@ -26,7 +26,7 @@ cd $DIR
 
 ## Download genomes, genome annotations, and predicted CDS sequences
 **Note:** The first column of the annotation files may not correspond to the chromosome IDs.
-```{sh}
+```shell
 ### Arabidopsis thaliana
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.fna.gz
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.gff.gz
@@ -88,17 +88,17 @@ rm GCF*.gz GCA*.gz
 ```
 
 ## Install R and Julia
-```{sh}
+```shell
 sudo apt install -y r-base julia
 ```
 
 ## Clone this repository
-```{sh}
+```shell
 git clone https://github.com/jeffersonfparil/Lolium_rigidum_genome_assembly_and_annotation.git
 ```
 
 ## Install OrthoFinder for classifying genes into orthologs, and paralogs, as well as to build a tree for the analysis of gene family evolution
-```{sh}
+```shell
 wget https://github.com/davidemms/OrthoFinder/releases/download/2.5.4/OrthoFinder.tar.gz
 tar -xvzf OrthoFinder.tar.gz
 cd OrthoFinder/
@@ -109,12 +109,12 @@ rm OrthoFinder.tar.gz
 ```
 
 ## Install HMMER for mapping CDS to PantherHMM gene family models
-```{sh}
+```shell
 sudo apt install -y hmmer
 ```
 
 ## Install CAFE5 to analyse gene family evolution
-```{sh}
+```shell
 wget https://github.com/hahnlab/CAFE5/releases/download/v5.0/CAFE5-5.0.0.tar.gz
 tar -xvzf CAFE5-5.0.0.tar.gz
 cd CAFE5/
@@ -127,7 +127,7 @@ rm CAFE5-5.0.0.tar.gz
 ```
 
 ## Install MACSE: Multiple Alignment of Coding SEquences Accounting for Frameshifts and Stop Codons
-```{sh}
+```shell
 mkdir MACSE/
 cd MACSE/
 wget https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar
@@ -137,7 +137,7 @@ cd -
 ```
 
 ## Install IQ-TREE for building trees with fossil root dates
-```{sh}
+```shell
 sudo apt install libeigen3-dev
 wget https://github.com/Cibiv/IQ-TREE/releases/download/v2.0.7/iqtree-2.0.7-Linux.tar.gz
 tar -xvzf iqtree-2.0.7-Linux.tar.gz
@@ -147,7 +147,7 @@ rm iqtree-2.0.7-Linux.tar.gz
 ```
 
 ## Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
-```{sh}
+```shell
 wget http://abacus.gene.ucl.ac.uk/software/paml4.9j.tgz
 tar -xvzf paml4.9j.tgz
 PATH=${PATH}:${DIR}/paml4.9j/bin
@@ -156,7 +156,7 @@ rm paml4.9j.tgz
 ```
 
 ## Install KaKs_Calculator2.0 to assess signatures of selection
-```{sh}
+```shell
 wget https://github.com/kullrich/kakscalculator2/archive/refs/tags/v2.0.1.tar.gz
 tar -xvzf v2.0.1.tar.gz
 cd kakscalculator2-2.0.1/src
@@ -169,23 +169,23 @@ rm v2.0.1.tar.gz
 
 ## Install R::ape
 1. Install BLAS and LAPACK libraries for R::ape package
-```{sh}
+```shell
 sudo apt install -y libblas-dev liblapack-dev
 ```
 
 2. Install R::ape library
-```{R}
+```R
 install.packages("ape")
 ```
 
 ## Install Julia packages: DataFrames, CSV, and ProgressMeter
-```{julia}
+```julia
 using Pkg
 Pkg.add(["DataFrames", "CSV", "ProgressMeter"])
 ```
 
 ## Download PantherHMM library including 15,619 protein family HMMs and their GO terms
-```{sh}
+```shell
 wget http://data.pantherdb.org/ftp/panther_library/current_release/PANTHER17.0_hmmscoring.tgz
 tar -xvzf PANTHER17.0_hmmscoring.tgz
 mv target/ PantherHMM_17.0/
@@ -198,7 +198,7 @@ cd -
 ```
 
 ## Use OrthoFinder to find orthologs and paralogs
-```{sh}
+```shell
 mkdir ORTHOGROUPS/
 cp *.faa ORTHOGROUPS/
 for f in ORTHOGROUPS/*.faa
@@ -218,13 +218,13 @@ DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May11/
 
 ## Assign orthogroups into gene families
 1. Define the location of the 15,619 protein family HMMs
-```{sh}
+```shell
 DIR_PANTHER=${DIR}/PantherHMM_17.0/famlib/rel/PANTHER17.0_altVersion/hmmscoring/PANTHER17.0/books
 GOT_PATHER=${DIR}/PantherHMM_17.0/PANTHER17.0_HMM_classifications
 ```
 
 2. Iteratively, for each genome's predicted protein sequences run hmmsearch in paralel for each PantherHMM protein family
-```{sh}
+```shell
 ### Add Orthogroup name to each protein sequence name and merge so that we can be more efficient with hmmsearch
 echo '#!/bin/bash
 f=$1
@@ -264,7 +264,7 @@ rm orthogroup_filenames*
 ```
 
 3. Find PantherHMM protein families for each orthogroup
-```{sh}
+```shell
 ### Prepare parallelisable HMMER search script
 echo '#!/bin/bash
 PROTFA=$1
@@ -299,7 +299,7 @@ rm ${MERGED_ORTHOGROUPS}-hhmer_gene_family_hits-*
 ```
 
 4. Find the best fitting gene family to each unique sequence per orthogroup. This means that each orthogroup can have multiple gene families. Next, add family name and GO terms to each gene family.
-```{sh}
+```shell
 grep "^>" ${MERGED_ORTHOGROUPS} | cut -d':' -f1 | sed 's/>//g' | sort | uniq > all_orthogroups.tmp
 time \
 julia orthogroup_classification_gene_family_GO_terms.jl \
@@ -312,7 +312,7 @@ julia orthogroup_classification_gene_family_GO_terms.jl \
 ```
 
 ## Preliminary assessment of the distribution of the genes, orthogroups and gene family classifications.
-```{sh}
+```shell
 time \
 julia count_genes_per_ortholog_paralog_classes.jl \
         ORTHOGROUPS/orthogroups_gene_counts_families_go.out \
@@ -320,7 +320,7 @@ julia count_genes_per_ortholog_paralog_classes.jl \
 ```
 
 ## Infer gene family expansion and contraction in each species using CAFE5 (at alpha=1%)
-```{sh}
+```shell
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 rev ${ORTHOUT} | cut -f5- | rev > col2_to_coln.tmp
 awk -F'\t' '{print $(NF-1)}' ${ORTHOUT} > col1.tmp
@@ -345,7 +345,7 @@ grep -v "^#" ${DIR}/CAFE_Gamma1000_results/Gamma_clade_results.txt | \
 
 ## GO term enrichment analysis of expanded gene families
 1. Extract gene names of the expanded and contracted gene families in *Lolium rigidum*
-```{sh}
+```shell
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 n=$(head -n1 ${DIR}/CAFE_Gamma1000_results/Gamma_change.tab | sed -z "s/\t/\n/g" | grep -n "Lolium_rigidum" | cut -d":" -f1)
 cut -f1,${n} ${DIR}/CAFE_Gamma1000_results/Gamma_change.tab | grep -v "+0" | grep "+" | cut -f1 > expanded_orthogroups_for_grep.tmp
@@ -368,7 +368,7 @@ grep -wf contracted_orthogroups.pthr.tmp PTHR17.0_rice | cut -f3 > contracted_or
 - Export as table
 
 3. `expanded_orthogroups.goea`
-```{sh}
+```shell
 Analysis Type:	PANTHER Overrepresentation Test (Released 20220202)
 Annotation Version and Release Date:	GO Ontology database DOI:  10.5281/zenodo.6399963 Released 2022-03-22
 Analyzed List:	upload_1 (Oryza sativa)
@@ -762,19 +762,19 @@ Unclassified (UNCLASSIFIED)	26261	4759	9093.72	-	.52	0.00E00
 - (13) reactive oxygen species metabolic process 
 
 5. Clean-up
-```{sh}
+```shell
 rm *.tmp
 ```
 
 ## Build tree using single-gene orthogroups
 1. Identify single-copy orthogroups and their respective gene names across all **6 species**:
-```{sh}
+```shell
 awk '($2 == 1) && ($3 == 1) && ($4 == 1) && ($5 == 1) && ($6 == 1) && ($7 == 1)' $ORTHOUT | cut -f1 > single_gene_list.grep
 grep -f single_gene_list.grep ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv > single_gene_list.geneNames
 ```
 
 2. Extract the CDS of these genes (Outputs: ${ORTHONAME}.fasta [includes sequences from each species]):
-```{sh}
+```shell
 echo '#!/bin/bash
 i=$1
 line=$(head -n${i} single_gene_list.geneNames | tail -n1)
@@ -801,7 +801,7 @@ parallel \
 ```
 
 3. Align CDS (Outputs: ${ORTHOLOG}.NT.cds [nucleotide alignments] and ${ORTHOLOG}.AA.prot [amino acid alignments])
-```{sh}
+```shell
 echo '#!/bin/bash
 f=$1
 MACSE=$2
@@ -835,7 +835,7 @@ parallel \
 ```
 
 4. Build the tree (Output: ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex)
-```{sh}
+```shell
 TYPE=NT.cds
 ### Extract sequences per species (Outputs: ${ORTHONAME}-${SPECIES}.fasta)
 parallel \
@@ -906,7 +906,7 @@ iqtree2 \
 ```
 
 5. **Additional**: Compute pairwise 4DTv (Output: ORTHOGROUPS_SINGLE_GENE.NT.4DTv)
-```{sh}
+```shell
 ### Compute the transversion rate among 4-fold degenerate sites (Output: ${ORTHOLOG}.NT.cds.4DTv.tmp)
 time \
 parallel \
@@ -925,7 +925,7 @@ done
 ```
 
 6. Clean-up
-```{sh}
+```shell
 rm OG*.fasta
 rm OG*.NT.cds
 rm single_gene_list.*
@@ -937,7 +937,7 @@ rm *.tmp
 ## Assess whole genome duplication (WGD) events 
 We will use the distribution of four-fold degenerate sites (4DTv) across multi-copy paralogs within genomes and across sing-copy gene orthologs between pairs of species
 1. Prepare script to extract CDS, align, calculate 4DTv (pairwise), and divergence time (pairwise) in parallel
-```{sh}
+```shell
 echo '#!/bin/bash
 ### NOTE: The file: multi_gene_list.geneNames contains the gene names of one species. The gene names are in the second column (space-delimited), and each gene is comma-space-delimited
 j=$1
@@ -1003,7 +1003,7 @@ chmod +x parallel_extract_multi_gene_orthogroups.sh
 ```
 
 2. Identify multi-copy paralogs (2 to 5 copies) per species, align, and estimate 4DTv
-```{sh}
+```shell
 head -n1 ${ORTHOUT} | rev | cut -f5- | rev | cut -f2- | sed -z "s/\t/\n/g" > species_names.tmp
 time \
 for i in $(seq 1 $(cat species_names.tmp | wc -l))
@@ -1033,7 +1033,7 @@ rm species_names.tmp
 
 ## Identify EPSPS and detoxification genes
 1. Download protein sequences of genes from UniProt (https://www.uniprot.org) (Outputs: ${GENE}.faa)
-```{sh}
+```shell
 ###############################
 ### SET WORKING DIRECTORIES ###
 ###############################
@@ -1362,7 +1362,7 @@ rm *.fasta
 ```
 
 2. Generate BLAST database for each orthogroup (Outputs: ${ORTHOGROUP}.*)
-```{sh}
+```shell
 echo '#!/bin/bash
 f=$1
 # f=$(find $DIR_ORTHOGROUP_SEQS -name "*fa" | head -n1)
@@ -1383,7 +1383,7 @@ done
 ```
 
 3. Blastp (Outputs: ${GENE}-${ORTHOGROUP}.blastout)
-```{sh}
+```shell
 echo '#!/bin/bash
 GENE=$1
 f=$2
@@ -1419,7 +1419,7 @@ rm *.tmp
 
 ## Enrichment of stress-related genes: Do we have more ortholog members for herbicide and stress-related genes in Lolium rigidum compared with the other species?
 1. Extract orthologs per gene (Outputs: ${GENE}.ortho)
-```{sh}
+```shell
 echo 'args = commandArgs(trailingOnly=TRUE)
 # args = c("EPSPS")
 gene = args[1]
@@ -1448,7 +1448,7 @@ mv *.blastout BLASTOUT/
 ```
 
 2. Infer gene family expansion and contraction (Outpus: ${GENE}.conex)
-```{sh}
+```shell
 ### Input files
 ORTHOUT=${DIR}/ORTHOGROUPS/orthogroups_gene_counts_families_go.out
 TREE=${DIR_ORTHOGROUPS}/Species_Tree/SpeciesTree_rooted.txt
@@ -1491,7 +1491,7 @@ rm *.tmp
 Note: we use "gene" to refer to TSR and NTSR genes, and alignments even genes again for the genes within orthogroups within TSR/NTSR genes per species. Apologies for any misunderstandings.
 
 1. Extract EPSPS CDS (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${species}-${gene}-${ortho}.cds)
-```{sh}
+```shell
 ### Extract species names and number of species
 head -n1 ${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv | cut -f2- > species_names.tmp
 NSPECIES=$(awk -F"\t" "{print NF}" species_names.tmp)
@@ -1575,7 +1575,7 @@ parallel ./extract_sequences_in_parallel.sh \
 ```
 
 2. Merge per orthogropup prior to alignment (Outputs: ${gene}-${ortho}.cds)
-```{sh}
+```shell
 for ortho in $(ls *.cds | cut -d"-" -f3 | cut -d"." -f1 | sort | uniq)
 do
     # ortho=$(ls *.cds | cut -d"-" -f3 | cut -d"." -f1 | sort | uniq | head -n13 | tail -n1)
@@ -1588,7 +1588,7 @@ rm *.tmp
 ```
 
 3. Align CDS per orthogroup per gene (Outputs: ${gene}-${ortho}.aln)
-```{sh}
+```shell
 echo '#!/bin/bash
 f=$1
 ext=$2
@@ -1622,7 +1622,7 @@ rm *.tmp *.AA.prot
 ```
 
 4. Remove alignments (also the corresponding cds) without Lolium rigidum genes (Outputs: ${gene}-${ortho}.aln)
-```{sh}
+```shell
 for f in $(ls *.aln)
 do
     # f=$(ls *.aln | head -n1 | tail -n1)
@@ -1636,7 +1636,7 @@ done
 ```
 
 5. Create pairwise cds alignments using the first Lolium rigidum alignment as the focal alignment per orthogroup per gene (Outputs: ${gene}-${ortho}.aln.pw)
-```{sh}
+```shell
 echo '#!/bin/bash
 f=$1
 # f=$(ls *.aln | head -n1 | tail -n1)
@@ -1678,7 +1678,7 @@ parallel ./prepare_pairwise_alignments_with_Lolium_rigidum_as_focus_in_parallel.
 ```
 
 6. KaKs_calculator2 for pairwise orthogroup gene comparisons with sliding 15-bp windows
-```{sh}
+```shell
 echo '#!/bin/bash
 f=$1
 SRC=$2
@@ -1708,7 +1708,7 @@ parallel ./KaKs_per_window_and_plot_in_parallel.sh \
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ##
 
 ## Locate paralogs in the Lolium rigidum genome for the Circos-like figure
-```{sh}
+```shell
 ORT=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
 GFF=${DIR}/Lolium_rigidum.gff
 
@@ -1860,7 +1860,7 @@ julia locate_paralogs.jl \
 ```
 
 ## OR OR OR SIMPLY USE PAML::codeml on these small datasets, i.e. per TSR/NTSR gene per orthogroup
-```{sh}
+```shell
 echo '
 **************
 *** INPUTS ***
