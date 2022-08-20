@@ -1518,7 +1518,7 @@ rm *.tmp
 ```
 
 ### dN/dS assessment of EPSPS gene
-Note: we use "gene" to refer to TSR and NTSR genes, and alignments even genes again for the genes within orthogroups within TSR/NTSR genes per species. Apologies for any misunderstandings.
+Note: we use "gene" to refer to TSR and NTSR genes, as well as orthogroups within TSR/NTSR genes per species. Apologies for any misunderstanding.
 
 1. Extract EPSPS CDS (i.e. all orthologs and paralogs within blast-hit orthologs) (Outputs: ${species}-${gene}-${ortho}.cds)
 ```shell
