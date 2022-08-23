@@ -51,14 +51,6 @@ tree$edge[,1] = rev(tree$edge[,1])
 tree$edge[,2] = rev(tree$edge[,2])
 tree$edge.length = rev(tree$edge.length)
 tree$node.label = rev(tree$node.label)
-# tree$tip.label = rev(tree$tip.label)
-
-# plot(tree); nodelabels()
-
-# tree = reorder.phylo(tree, order=c("cladewise", "postorder", "pruningwise")[1])
-
-# tree = ladderize(tree, right=FALSE)
-
 
 par(mar=c(0,0,0,0))
 plot(x=c(0,1), y=c(0,1), type="n", xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
@@ -75,6 +67,14 @@ plt = plot.phylo(tree, cex=1.5, direction="rightward")
 x_axis = round(seq(0, max(tree$edge.length), by=20))
 axis(side=1, line=1.5, at=max(x_axis)-x_axis, lab=x_axis)
 mtext(text="Million years ago", side=1, line=4.5, at=median(x_axis))
+
+# # Plot confidence in branches in python3
+# from Bio import Phylo
+# trees = Phylo.parse("ORTHOGROUPS_SINGLE_GENE.NT.timetree.nex", "nexus")
+# for tree in trees:
+#     print(tree)
+#     Phylo.draw(tree)
+
 
 # ### Insert photos
 # # system("wget https://upload.wikimedia.org/wikipedia/commons/c/c0/Lolium_rigidum_1.JPG")
@@ -214,7 +214,8 @@ df = droplevels(df[df$id %in% species_list, ])
 
 par(mar=c(5, 5, 5, 2))
 n = nlevels(df$id)
-colours = colours[c(1,2,4,2,4)]
+# colours = colours[c(1,2,4,2,4)]
+colours = c(colours[c(1,2,4)], "#969696", "#66c2a5")
 plot(0, 0, xlim=range(df$x), ylim=range(df$y), xlab="4DTv", ylab="Density", type="n")
 for (i in 1:n){
     # i = 1
