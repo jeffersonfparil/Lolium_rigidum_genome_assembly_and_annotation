@@ -39,7 +39,6 @@ PATH=${PATH}:${DIR}/CAFE5/bin
 MACSE=${DIR}/MACSE/macse_v2.06.jar
 PATH=${PATH}:${DIR}/iqtree-2.0.7-Linux/bin
 PATH=${PATH}:${DIR}/paml4.9j/bin
-PATH=${PATH}:${DIR}/paml4.9j/src
 PATH=${PATH}:${DIR}/kakscalculator2-2.0.1/src
 
 DIR_ORTHOGROUPS=${DIR}/ORTHOGROUPS/OrthoFinder/Results_May13
@@ -174,15 +173,6 @@ tar -xvzf iqtree-2.0.7-Linux.tar.gz
 PATH=${PATH}:${DIR}/iqtree-2.0.7-Linux/bin
 iqtree2 -h
 rm iqtree-2.0.7-Linux.tar.gz
-```
-
-### Install PAML (Phylogenetic Analysis by Maximum Likelihood) which includes MCMCTree for Bayesian phylogenetic analysis
-```shell
-wget http://abacus.gene.ucl.ac.uk/software/paml4.9j.tgz
-tar -xvzf paml4.9j.tgz
-PATH=${PATH}:${DIR}/paml4.9j/bin
-PATH=${PATH}:${DIR}/paml4.9j/src
-rm paml4.9j.tgz
 ```
 
 ### Install KaKs_Calculator2.0 to assess signatures of selection
@@ -1731,4 +1721,165 @@ chmod +x KaKs_per_window_and_plot_in_parallel.sh
 time \
 parallel ./KaKs_per_window_and_plot_in_parallel.sh \
     {} ${SRC} ::: $(ls EPSPS-*.aln-*.pw)
+```
+
+### Locate paralogs in the Lolium rigidum genome for the Circos-like figure
+```shell
+ORT=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
+GFF=${DIR}/Lolium_rigidum.gff
+
+echo '
+using ProgressMeter
+fname_paralogs = ARGS[1]
+fname_annotations = ARGS[2]
+fname_output = ARGS[3]
+# fname_paralogs = "ORTHOGROUPS/OrthoFinder/Results_May13/Orthogroups/Orthogroups.tsv"
+# fname_annotations = "Lolium_rigidum.gff"
+# fname_output = "Lolium_rigidum.plg"
+
+# Load gene names and start position into temproray vectors
+function load_gene_names_and_coordinates(fname_annotations)
+    temp_geneIDs = []
+    temp_genes = []
+    temp_chromosomes = []
+    temp_positions = []
+    file = open(fname_annotations, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    while !eof(file)
+        line = split(readline(file), "\t"[1])
+        update!(pb, position(file))
+        if line[1][1] .!= "#"[1]
+            if line[3] == "CDS"
+                if match(Regex("Name="), line[end]) != nothing
+                    desc = split(line[end], ";"[1])
+                    id = try
+                            split(desc[match.(Regex("Dbxref=GeneID:"), desc) .!= nothing][1], ","[1])[1]
+                        catch
+                            split(desc[match.(Regex("Dbxref=Genbank:"), desc) .!= nothing][1], ","[1])[2]
+                        end
+                    geneID = replace(id, "Dbxref=GeneID:" => "")
+                    geneID = replace(id, "GeneID:" => "")
+                    name = split(desc[match.(Regex("Name="), desc) .!= nothing][1], ","[1])[1]
+                    gene = replace(name, "Name=" => "")
+                    push!(temp_geneIDs, geneID)
+                    push!(temp_genes, gene)
+                    push!(temp_chromosomes, line[1])
+                    push!(temp_positions, parse(Int, line[4]))
+                end
+            else
+                continue
+            end
+        else
+            continue
+        end
+    end
+    close(file)
+    @time idx = sortperm(temp_genes)
+    temp_geneIDs = temp_geneIDs[idx]
+    temp_genes = temp_genes[idx]
+    temp_chromosomes = temp_chromosomes[idx]
+    temp_positions = temp_positions[idx]
+
+    # Use only one CDS/gene starting position
+    genes = []
+    chromosomes = []
+    positions = []
+    n = length(temp_genes)
+    i = 1
+    pb = Progress(n)
+    while i < n
+        id = temp_geneIDs[i]
+        g = temp_genes[i]
+        c = temp_chromosomes[i]
+        p = temp_positions[i]
+        push!(genes, g)
+        push!(chromosomes, c)
+        push!(positions, p)
+        while (i < n) & ( (g == temp_genes[i]) | (id == temp_geneIDs[i]) )
+            i += 1
+        end
+        update!(pb, i)
+    end
+    if genes[end] != temp_genes[n]
+        push!(genes, temp_genes[n])
+        push!(chromosomes, temp_chromosomes[n])
+        push!(positions, temp_positions[n])
+    end
+
+    return(genes, chromosomes, positions)
+end
+genes, chromosomes, positions = load_gene_names_and_coordinates(fname_annotations)
+
+# Add orthogroup labels, i.e. paralog classification
+function add_paralogs(fname_paralogs, genes)
+    paralogs = repeat(["None"], length(genes))
+    file = open(fname_paralogs, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    header = split(readline(file), "\t"[1])
+    idx = header .== "Lolium_rigidum"
+    while !eof(file)
+        line = split(readline(file), "\t"[1])
+        orthogroup = line[1]
+        gene_names = replace.(split(line[idx][1], ", "), "Lolium_rigidum|" => "")
+        for g in gene_names
+            # g = gene_names[1]
+            paralogs[genes .== g] .= orthogroup
+        end
+        update!(pb, position(file))
+    end
+    close(file)
+    return(paralogs)
+end
+paralogs = add_paralogs(fname_paralogs, genes)
+
+# Remove remove unclassified genes
+idx = paralogs .!= "None"
+paralogs = paralogs[idx]
+genes = genes[idx]
+chromosomes = chromosomes[idx]
+positions = positions[idx]
+
+# Save the list of gene names, chromosome, position, and ortholog info into a file
+file = open(fname_output, "a")
+for i in 1:length(genes)
+    line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
+    write(file, line)
+end
+close(file)
+
+# Save only the top 5 paralogs with the most genes
+vec_p = unique(paralogs)
+vec_p_counts = []
+@showprogress for p in vec_p
+    push!(vec_p_counts, sum(p .== paralogs))
+end
+
+idx = sortperm(vec_p_counts)
+vec_p = vec_p[idx][(end-4):end]
+vec_p_counts = vec_p_counts[idx][(end-3):end]
+
+file = open(replace(fname_output, ".plg"=>"-for_plotting.plg"), "a")
+for i in 1:length(paralogs)
+    if sum(paralogs[i] .== vec_p) > 0
+        line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
+        write(file, line)
+    end
+end
+close(file)
+' > locate_paralogs.jl
+
+time \
+julia locate_paralogs.jl \
+    ${ORT} \
+    ${GFF} \
+    ${GFF%.gff*}.plg
+
+### These top 5 most numureous orthogroups are:
+# OG0000001	47	PTHR44586	F-BOX DOMAIN CONTAINING PROTEIN, EXPRESSED
+# OG0000003	44	PTHR33070	OS06G0725500 PROTEIN
+# OG0000004	54	PTHR32141	FAMILY NOT NAMED
+# OG0000006	43	PTHR35546	F-BOX PROTEIN INTERACTION DOMAIN PROTEIN-RELATED
+# OG0000013	45	PTHR31175	AUXIN-RESPONSIVE FAMILY PROTEIN
 ```
