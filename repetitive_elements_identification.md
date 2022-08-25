@@ -218,7 +218,8 @@ RepeatMasker/RepeatMasker \
    close(file_output_GYPSY)
    ```
 
-## LTR_retriever
+## Assess the conitguity of the assembly using the ratio of intact LTR-RT (LTR retrotransposons) and the total LTR-RT
+1. Download and index the reference genome
 ```shell
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
 gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz > Lolium_rigidum.fasta
@@ -228,7 +229,10 @@ gt suffixerator \
    -db Lolium_rigidum.fasta \
    -indexname Lolium_rigidum.fasta \
    -tis -suf -lcp -des -ssp -sds -dna
+```
 
+2. Identify the LTRs and compute the LAIs
+```shell
 time \
 gt ltrharvest \
    -index Lolium_rigidum.fasta \
@@ -241,4 +245,30 @@ time \
    -genome Lolium_rigidum.fasta \
    -inharvest Lolium_rigidum_GENOME_HARVEST.scn \
    -threads 15
+```
+
+3. Assess the genome-wide LAI distribution
+```R
+dat = read.table("Lolium_rigidum.fasta.mod.out.LAI", header=TRUE)
+# str(dat)
+# dat$len = dat$To - dat$From
+X = droplevels(dat[grepl("NC", dat$Chr), ])
+X$Chr = as.factor(X$Chr)
+chr = unique(X$Chr)
+
+svg("Lolium_rigidum-LAI_distribution.svg", width=10, height=7)
+par(mfrow=c(2,2))
+hist(X$raw_LAI, xlab="Raw LAI", main="Raw LAI")
+legend("topleft", legend=paste0("µ=", round(dat$raw_LAI[1],2)), bty="n")
+hist(X$LAI, xlab="Standardised LAI", main="Standardised LAI")
+legend("topleft", legend=paste0("µ=", round(dat$LAI[1],2)), bty="n")
+colours = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628")[as.numeric(X$Chr)]
+xticks = aggregate(c(1:nrow(X)) ~ X$Chr, FUN=median)
+plot(X$raw_LAI, col=colours, xaxt="n", ylab="Raw LAI", xlab="Chromosome")
+grid()
+axis(side=1, at=xticks[,2], labels=c(1:7), tick=FALSE)
+plot(X$LAI, col=colours, xaxt="n", ylab="Standardized LAI", xlab="Chromosome")
+grid()
+axis(side=1, at=xticks[,2], labels=c(1:7), tick=FALSE)
+dev.off()
 ```
