@@ -23,6 +23,119 @@ This Whole Genome Shotgun project has been deposited at DDBJ/ENA/GenBank under t
 ## Assembly (CSIRO pipeline)
 Adapter sequences were removed from the resulting reads using TrimGalore (v 0.6.6). Long read sequencing was carried out on MinION and PromethION platforms. Basecalling was performed using guppy (v5.1; Wick et al, 2019) under the dna_r9.4.1_450bps_sup.cfg model. The long-read sequences were trimmed using Porechop (v0.2.4; Wick et al, 2017) and filtered using filtlong (v0.2.1) to obtain high quality reads. The long-reads were assembled using Flye (v2.9; Kolmogorov et al, 2020) with the minimum overlap parameter set to 6,000. Duplicate contigs were purged using purge_dups (v1.2.5; Guan et al, 2020) with the default settings. The long-reads were error-corrected and trimmed using Canu (v2.2; Koren et al, 2017), and used in three rounds of contig polishing using Racon (v1.4.22; Vaser et al, 2017). This was followed by three rounds of short-read-based polishing using Polca (MaSURCA v4.0.7; Zimin et al, 2013) to obtain the final contig assembly.
 
+### Assess the conitguity of the assembly using the ratio of intact LTR-RT (LTR retrotransposons) and the total LTR-RT
+1. Download and index the reference genome
+```shell
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
+gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz > Lolium_rigidum.fasta
+
+time \
+gt suffixerator \
+   -db Lolium_rigidum.fasta \
+   -indexname Lolium_rigidum.fasta \
+   -tis -suf -lcp -des -ssp -sds -dna
+```
+
+2. Identify the LTRs and compute the LAIs
+```shell
+time \
+gt ltrharvest \
+   -index Lolium_rigidum.fasta \
+   -similar 90 -vic 10 -seed 20 -seqids yes \
+   -minlenltr 100 -maxlenltr 10000 -mintsd 4 -maxtsd 6 \
+   -motif TGCA -motifmis 1 > Lolium_rigidum_GENOME_HARVEST.scn
+
+time \
+/usr/local/LTR_retriever-2.9.0/LTR_retriever \
+   -genome Lolium_rigidum.fasta \
+   -inharvest Lolium_rigidum_GENOME_HARVEST.scn \
+   -threads 15
+```
+
+3. Assess the genome-wide LAI distribution
+```R
+dat = read.table("Lolium_rigidum.fasta.mod.out.LAI", header=TRUE)
+# str(dat)
+# dat$len = dat$To - dat$From
+X = droplevels(dat[grepl("NC", dat$Chr), ])
+X$Chr = as.factor(X$Chr)
+chr = unique(X$Chr)
+
+svg("Lolium_rigidum-LAI_distribution.svg", width=10, height=7)
+par(mfrow=c(2,2))
+hist(X$raw_LAI, xlab="Raw LAI", main="Raw LAI")
+legend("topleft", legend=paste0("µ=", round(dat$raw_LAI[1],2)), bty="n")
+hist(X$LAI, xlab="Standardised LAI", main="Standardised LAI")
+legend("topleft", legend=paste0("µ=", round(dat$LAI[1],2)), bty="n")
+colours = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628")[as.numeric(X$Chr)]
+xticks = aggregate(c(1:nrow(X)) ~ X$Chr, FUN=median)
+plot(X$raw_LAI, col=colours, xaxt="n", ylab="Raw LAI", xlab="Chromosome")
+grid()
+axis(side=1, at=xticks[,2], labels=c(1:7), tick=FALSE)
+plot(X$LAI, col=colours, xaxt="n", ylab="Standardized LAI", xlab="Chromosome")
+grid()
+axis(side=1, at=xticks[,2], labels=c(1:7), tick=FALSE)
+dev.off()
+```
+
+### Assess genome completeness
+1. Download the genome
+```shell
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
+gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz > Lolium_rigidum.fasta
+rm GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
+```
+
+2. Install tools in bash
+```shell
+sudo apt install -y bedtools samtools default-jre r-base-core
+wget https://github.com/marbl/meryl/releases/download/v1.3/meryl-1.3.Linux-amd64.tar.xz
+tar -xJf meryl-1.3.Linux-amd64.tar.xz
+PATH=${PATH}:$(pwd)/meryl-1.3/bin
+meryl -h
+wget https://github.com/marbl/merqury/archive/v1.3.tar.gz
+tar -zxvf v1.3.tar.gz
+PATH=${PATH}:$(pwd)/merqury-1.3
+merqury.sh -h
+```
+
+3. Install R packages
+```R
+install.packages(c("argparse", "ggplot2", "scales"))
+```
+
+4. Prepare meryl databases
+```shell
+k=$(best_k.sh 2400000000 | tail -n1 |  awk '{print int($1+0.5)}')
+time \
+for f in $(find /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007 -name 'LOL-WGS2-1*.fastq.gz')
+do
+    # f=$(find /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007 -name '*.fastq.gz' | head -n5 | tail -n1)
+    meryl \
+        k=$k \
+        count \
+        output MERYL-$(basename $f | sed 's/.fastq.gz//g') \
+        threads=30 \
+        $f
+done
+
+### Merge
+time \
+meryl \
+    union-sum \
+    output MERYL \
+    MERYL-*
+```
+
+5. Run Merqury
+```shell
+time \
+merqury.sh \
+    MERYL \
+    Lolium_rigidum.fasta \
+    MERYL_Lolium_rigidum
+```
+
 ## Annotation
 The reads were demultiplexed and  error-corrected using Rcorrector (v1.0.4; Song et al, 2015). Adapters and low quality base pairs were trimmed using TrimGalore (v0.6.0). Ribosomal RNA sequences were discarded when one of the paired-end reads mapped to the sequences present in the SILVA database (v138.1; Quast et al, 2012) using Bowtie2 (v2.3; Langmead & Salzberg, 2012). After filtering, ~197 million reads were used for de novo transcriptome assembly using the De novo RNA-Seq Assembly Pipeline (Cabau et al, 2017) including the rice protein sequences (release 51) as guide and using both Trinity (v2.8.4; Haas et al, 2013) and Oases (v0.2.09; Schulz et al, 2012) as assemblers. The resulting two assemblies were merged into a single compacted meta-assembly. The filtered reads were re-mapped against the meta-assembly and transcripts with FPKM>1 were included in the transcriptome.
 The genome was annotated using NCBI’s genome annotation pipeline using the de novo assembled transcriptome.
@@ -1882,4 +1995,23 @@ julia locate_paralogs.jl \
 # OG0000004	54	PTHR32141	FAMILY NOT NAMED
 # OG0000006	43	PTHR35546	F-BOX PROTEIN INTERACTION DOMAIN PROTEIN-RELATED
 # OG0000013	45	PTHR31175	AUXIN-RESPONSIVE FAMILY PROTEIN
+```
+
+## Extract and assemble plastid genomes
+```shell
+python3 -m pip install
+git clone https://github.com/Kinggerm/GetOrganelle.git
+
+curl -L https://github.com/Kinggerm/GetOrganelleDB/releases/download/0.0.1/v0.0.1.tar.gz | tar zx
+python3 GetOrganelle/Utilities/get_organelle_config.py \
+    -a embplant_pt,embplant_mt \
+    --use-local ./0.0.1
+
+time \
+python3 GetOrganelle/get_organelle_from_reads.py \
+    -F embplant_pt,embplant_mt \
+    -1 /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007/LOL-WGS2-1_combined_R1.fastq.gz \
+    -2 /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007/LOL-WGS2-1_combined_R2.fastq.gz \
+    -t 20 \
+    -o Lolium_rigidum_PLASTIDS
 ```
