@@ -23,6 +23,34 @@ This Whole Genome Shotgun project has been deposited at DDBJ/ENA/GenBank under t
 ## Assembly (CSIRO pipeline)
 Adapter sequences were removed from the resulting reads using TrimGalore (v 0.6.6). Long read sequencing was carried out on MinION and PromethION platforms. Basecalling was performed using guppy (v5.1; Wick et al, 2019) under the dna_r9.4.1_450bps_sup.cfg model. The long-read sequences were trimmed using Porechop (v0.2.4; Wick et al, 2017) and filtered using filtlong (v0.2.1) to obtain high quality reads. The long-reads were assembled using Flye (v2.9; Kolmogorov et al, 2020) with the minimum overlap parameter set to 6,000. Duplicate contigs were purged using purge_dups (v1.2.5; Guan et al, 2020) with the default settings. The long-reads were error-corrected and trimmed using Canu (v2.2; Koren et al, 2017), and used in three rounds of contig polishing using Racon (v1.4.22; Vaser et al, 2017). This was followed by three rounds of short-read-based polishing using Polca (MaSURCA v4.0.7; Zimin et al, 2013) to obtain the final contig assembly.
 
+### Quick and dirty genome analysis with jellyfish and GenomeScope
+```shell
+sudo apt intall -y jellyfish
+git clone https://github.com/schatzlab/genomescope.git
+
+for f in $(find /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007 -name 'LOL-WGS2-1*.fastq.gz')
+do
+f_new=$(basename $f)
+f_new=${f_new%.gz*}
+gunzip --keep $f --stdout > $f_new
+done
+
+kmer=21
+jellyfish count \
+    --canonical \
+    --mer-len ${kmer} \
+    --size 1000000000 \
+    --threads 20 \
+    --output kmer-${kmer}.jf \
+    LOL-WGS2-1*.fastq
+
+jellyfish histo \
+    -t 10 \
+    kmer-${kmer}.jf > -${kmer}.hist
+
+
+```
+
 ### Assess the conitguity of the assembly using the ratio of intact LTR-RT (LTR retrotransposons) and the total LTR-RT
 1. Download and index the reference genome
 ```shell
@@ -78,7 +106,7 @@ axis(side=1, at=xticks[,2], labels=c(1:7), tick=FALSE)
 dev.off()
 ```
 
-### Assess genome completeness
+### Assess genome completeness using Meryl and Merqury
 1. Download the genome
 ```shell
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
@@ -106,7 +134,9 @@ install.packages(c("argparse", "ggplot2", "scales"))
 
 4. Prepare meryl databases
 ```shell
+### Find best kmer size
 k=$(best_k.sh 2400000000 | tail -n1 |  awk '{print int($1+0.5)}')
+### Prepare the Meryl databases
 time \
 for f in $(find /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007 -name 'LOL-WGS2-1*.fastq.gz')
 do
@@ -118,22 +148,30 @@ do
         threads=30 \
         $f
 done
-
-### Merge
+### Merge the databases
 time \
 meryl \
     union-sum \
-    output MERYL \
+    output MERYL.meryl \
     MERYL-*
 ```
 
 5. Run Merqury
 ```shell
+export MERQURY=$(pwd)/merqury-1.3
+export OMP_NUM_THREADS=31
 time \
 merqury.sh \
-    MERYL \
+    MERYL.meryl \
+    Lolium_rigidum.fasta \
+    MERYL_Lolium_rigidum_prelim
+
+time \
+merqury-1.3/eval/spectra-cn.sh \
+    MERYL.meryl \
     Lolium_rigidum.fasta \
     MERYL_Lolium_rigidum
+
 ```
 
 ## Annotation
