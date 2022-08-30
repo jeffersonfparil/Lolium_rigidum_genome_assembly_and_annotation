@@ -28,27 +28,36 @@ Adapter sequences were removed from the resulting reads using TrimGalore (v 0.6.
 sudo apt intall -y jellyfish
 git clone https://github.com/schatzlab/genomescope.git
 
-for f in $(find /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007 -name 'LOL-WGS2-1*.fastq.gz')
+for f in $(find /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007 -name 'LOL-WGS2-*.fastq.gz')
 do
 f_new=$(basename $f)
 f_new=${f_new%.gz*}
 gunzip --keep $f --stdout > $f_new
 done
-
-kmer=21
+readlen=$(head -n 10 $(ls LOL-WGS2-*.fastq | head -n1) | grep -A1 "^@" | head -n2 | tail -n1 | sed 's/N//g' | wc -c)
+time \
+for kmer in $(seq 15 25)
+do
+echo "###################################"
+echo ${kmer}
+# kmer=21
 jellyfish count \
-    --canonical \
     --mer-len ${kmer} \
     --size 1000000000 \
-    --threads 20 \
+    --threads 10 \
     --output kmer-${kmer}.jf \
-    LOL-WGS2-1*.fastq
-
+    LOL-WGS2-*.fastq
 jellyfish histo \
-    -t 10 \
-    kmer-${kmer}.jf > -${kmer}.hist
-
-
+    kmer-${kmer}.jf \
+    --threads 10 \
+    --output kmer-${kmer}.hist
+Rscript genomescope/genomescope.R \
+    kmer-${kmer}.hist \
+    ${kmer} \
+    ${readlen} \
+    GenomeScope_OUT-kmer-${kmer}
+mv kmer-* GenomeScope_OUT-kmer-${kmer}
+done
 ```
 
 ### Assess the conitguity of the assembly using the ratio of intact LTR-RT (LTR retrotransposons) and the total LTR-RT
