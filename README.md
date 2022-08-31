@@ -42,7 +42,7 @@ time \
 julia genome_statistics.jl
 ```
 
-### Quick and dirty genome analysis with jellyfish and GenomeScope
+### Genome size estimation with jellyfish and GenomeScope
 ```shell
 sudo apt intall -y jellyfish
 git clone https://github.com/schatzlab/genomescope.git
