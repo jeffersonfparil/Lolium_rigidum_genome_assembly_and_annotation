@@ -23,6 +23,23 @@ This Whole Genome Shotgun project has been deposited at DDBJ/ENA/GenBank under t
 ## Assembly (CSIRO pipeline)
 Adapter sequences were removed from the resulting reads using TrimGalore (v 0.6.6). Long read sequencing was carried out on MinION and PromethION platforms. Basecalling was performed using guppy (v5.1; Wick et al, 2019) under the dna_r9.4.1_450bps_sup.cfg model. The long-read sequences were trimmed using Porechop (v0.2.4; Wick et al, 2017) and filtered using filtlong (v0.2.1) to obtain high quality reads. The long-reads were assembled using Flye (v2.9; Kolmogorov et al, 2020) with the minimum overlap parameter set to 6,000. Duplicate contigs were purged using purge_dups (v1.2.5; Guan et al, 2020) with the default settings. The long-reads were error-corrected and trimmed using Canu (v2.2; Koren et al, 2017), and used in three rounds of contig polishing using Racon (v1.4.22; Vaser et al, 2017). This was followed by three rounds of short-read-based polishing using Polca (MaSURCA v4.0.7; Zimin et al, 2013) to obtain the final contig assembly.
 
+### Genome statistics and CIRCOS-like figure
+```shell
+### Count the number of each feature
+grep -v "^#" Lolium_rigidum.gff | cut -f 3 | sort | uniq -c > Lolium_rigidum_annotation_counts.txt
+### Extract the coordinates of genes
+awk '{if ($3=="gene") print}' Lolium_rigidum.gff | cut -f4-5 > Lolium_rigidum_annotation_gene_coordinates.txt
+### Find the mean length of gene models
+echo 'dat = read.table("Lolium_rigidum_annotation_gene_coordinates.txt", header=FALSE)
+MEAN_GENE_MODEL_LENGTH = mean(apply(dat, MARGIN=1, FUN=function(x){abs(diff(x))}))
+print(MEAN_GENE_MODEL_LENGTH)
+' > find_mean_gene_model_length.R
+Rscript find_mean_gene_model_length.R
+### Plot genome assembl diagram
+time \
+julia genome_statistics.jl
+```
+
 ### Quick and dirty genome analysis with jellyfish and GenomeScope
 ```shell
 sudo apt intall -y jellyfish
