@@ -50,31 +50,35 @@ julia genome_statistics.jl
 # rm Lolium_rigidum-${k}mer.jf.out.tmp
 # done
 
-sudo apt -y install libgd-dev
-wget http://circos.ca/distribution/circos-current.tgz
-tar -xvzf circos-current.tgz
-export PATH=${PATH}:$(pwd)/circos-0.69-9/bin
-cd circos-0.69-9/bin/
-list.modules
-test.modules
-sudo cpan install Font::TTF::Font Config::General Math::Bezier SVG Set:IntSpan Math::Round Regexp::Common Params:Validate Math::VecStat Text::Format Statistics::Basic
+### CIRCOS installation
+# sudo apt -y install libgd-dev
+# wget http://circos.ca/distribution/circos-current.tgz
+# tar -xvzf circos-current.tgz
+# export PATH=${PATH}:$(pwd)/circos-0.69-9/bin
+# cd circos-0.69-9/bin/
+# list.modules
+# test.modules
+# sudo cpan install Font::TTF::Font Config::General Math::Bezier SVG Set:IntSpan Math::Round Regexp::Common Params:Validate Math::VecStat Text::Format Statistics::Basic
 
-mkdir srctemp/
-cd srctemp/
-curl -O http://www.ijg.org/files/jpegsrc.v8d.tar.gz
-tar -xzvf jpegsrc.v8d.tar.gz
-cd jpeg-8d/
-./configure
-make
-sudo make install
-cd -
-curl -O ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng-1.5.10.tar.gz
-tar -xzvf libpng-1.5.10.tar.gz
-cd libpng-1.5.10
-./configure
-make
-sudo make install
-cd -
+# mkdir srctemp/
+# cd srctemp/
+# curl -O http://www.ijg.org/files/jpegsrc.v8d.tar.gz
+# tar -xzvf jpegsrc.v8d.tar.gz
+# cd jpeg-8d/
+# ./configure
+# make
+# sudo make install
+# cd -
+# curl -O ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng-1.5.10.tar.gz
+# tar -xzvf libpng-1.5.10.tar.gz
+# cd libpng-1.5.10
+# ./configure
+# make
+# sudo make install
+# cd -
+# sudo cpan GD GD::Polyline
+# cd -
 
-sudo cpan GD zGD::Polyline
-cd -
+# cd example/
+# cd ..
+

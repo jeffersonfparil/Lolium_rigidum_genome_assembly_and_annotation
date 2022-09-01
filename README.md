@@ -20,10 +20,13 @@ This Whole Genome Shotgun project has been deposited at DDBJ/ENA/GenBank under t
 - MinION and PromethION
 - Hi-C (Illumina Hiseq X)
 
-## Assembly
+## Genome assembly
 
 ### CSIRO pipeline
-Adapter sequences were removed from the resulting reads using TrimGalore (v 0.6.6). Long read sequencing was carried out on MinION and PromethION platforms. Basecalling was performed using guppy (v5.1; Wick et al, 2019) under the dna_r9.4.1_450bps_sup.cfg model. The long-read sequences were trimmed using Porechop (v0.2.4; Wick et al, 2017) and filtered using filtlong (v0.2.1) to obtain high quality reads. The long-reads were assembled using Flye (v2.9; Kolmogorov et al, 2020) with the minimum overlap parameter set to 6,000. Duplicate contigs were purged using purge_dups (v1.2.5; Guan et al, 2020) with the default settings. The long-reads were error-corrected and trimmed using Canu (v2.2; Koren et al, 2017), and used in three rounds of contig polishing using Racon (v1.4.22; Vaser et al, 2017). This was followed by three rounds of short-read-based polishing using Polca (MaSURCA v4.0.7; Zimin et al, 2013) to obtain the final contig assembly.
+Short- and long-read DNA sequence data were generated and scaffolded using Hi-C sequence information. Short-read sequencing libraries were constructed using NEBNext Ultra II DNA Library Prep kit for Illumina (NEB, USA) and sequenced using HiSeq X platform (Illumina, Inc., San Diego, USA) ran in 150-bp paired-end mode. Adapter sequences were removed from the resulting reads using TrimGalore (v 0.6.6). Long read sequencing was carried out on MinION and PromethION platforms. Basecalling was performed using guppy (v5.1; Wick et al, 2019) under the dna_r9.4.1_450bps_sup.cfg model. The long-read sequences were trimmed using Porechop (v0.2.4; Wick et al, 2017) and filtered using filtlong (v0.2.1) to obtain high quality reads. The long-reads were assembled using Flye (v2.9; Kolmogorov et al, 2020) with the minimum overlap parameter set to 6,000, kmer size of 17, genome size of 2.25 Gb, and with no scaffolding. Duplicate contigs were purged using purge_dups (v1.2.5; Guan et al, 2020) with the default settings. The long-reads were error-corrected and trimmed using Canu (v2.2; Koren et al, 2017) under default settings, and used in three rounds of contig polishing using Racon (v1.4.22; Vaser et al, 2017) under default settings. This was followed by three rounds of short-read-based polishing using Polca (MaSURCA v4.0.7; Zimin et al, 2013)  to obtain the final contig assembly using default settings. This assembly was assessed using BUSCO (v5; Simão et al, 2015) against the Viridiplantae and Poales lineages’ gene sets.
+ 
+A Hi-C library was prepared using 20 mg of leaf tissue and the Arima HiC kit following the manufacturer’s instructions. The library was sequenced on Novaseq 6000 platform (Illumina, Inc., San Diego, USA) to generate 500 million reads. The final contig assembly was scaffolded based on the genomic topological information using ALLHiC (v1; Zhang et al, 2019) and manually curated using JuiceBox (v1.9.8; Dudchenko et al, 2017).
+
 
 ### Genome statistics and CIRCOS-like figure
 ```shell
@@ -77,9 +80,10 @@ Rscript genomescope/genomescope.R \
     GenomeScope_OUT-kmer-${kmer}
 mv kmer-* GenomeScope_OUT-kmer-${kmer}
 done
+### Result: at kmer=16 the error was minimised:which results to 2,261,492,244 (2.26 Gb)
 ```
 
-### Assess the conitguity of the assembly using the ratio of intact LTR-RT (LTR retrotransposons) and the total LTR-RT
+### Assess the contitguity of the assembly using the ratio of intact LTR-RT (LTR retrotransposons) and the total LTR-RT
 1. Download and index the reference genome
 ```shell
 wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
@@ -134,72 +138,219 @@ axis(side=1, at=xticks[,2], labels=c(1:7), tick=FALSE)
 dev.off()
 ```
 
-### Assess genome completeness using Meryl and Merqury
-1. Download the genome
-```shell
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/022/539/505/GCF_022539505.1_APGP_CSIRO_Lrig_0.1/GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
-gunzip -c GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz > Lolium_rigidum.fasta
-rm GCF_022539505.1_APGP_CSIRO_Lrig_0.1_genomic.fna.gz
-```
 
-2. Install tools in bash
+### Map the filtered RNAseq data into the assembly
 ```shell
-sudo apt install -y bedtools samtools default-jre r-base-core
-wget https://github.com/marbl/meryl/releases/download/v1.3/meryl-1.3.Linux-amd64.tar.xz
-tar -xJf meryl-1.3.Linux-amd64.tar.xz
-PATH=${PATH}:$(pwd)/meryl-1.3/bin
-meryl -h
-wget https://github.com/marbl/merqury/archive/v1.3.tar.gz
-tar -zxvf v1.3.tar.gz
-PATH=${PATH}:$(pwd)/merqury-1.3
-merqury.sh -h
-```
-
-3. Install R packages
-```R
-install.packages(c("argparse", "ggplot2", "scales"))
-```
-
-4. Prepare meryl databases
-```shell
-### Find best kmer size
-k=$(best_k.sh 2400000000 | tail -n1 |  awk '{print int($1+0.5)}')
-### Prepare the Meryl databases
+DIR=/data/Lolium_rigidum_ASSEMBLY/TRANSCRIPTOME_ASSEMBLY
+DIR_READS=/data/Lolium_rigidum_ASSEMBLY/TRANSCRIPTOME_ASSEMBLY/rRNAdepleted_reads
+DIR_REF=/data/Lolium_rigidum_ASSEMBLY/GENOME_ASSEMBLY
+cd $DIR
+### Install Hisat2
+git clone https://github.com/DaehwanKimLab/hisat2.git
+cd hisat2
+make
+PATH=${PATH}:$(pwd)
+sudo ln -s /usr/bin/python3 /usr/bin/python ### hisat2 needs python and python2 is now fully deprecated and we may have to specify that the default python is python3
+hisat2 -h
+cd $DIR
+### Prepare the reference genome index
+REF=${DIR_REF}/Lolium_rigidum.fasta
 time \
-for f in $(find /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007 -name 'LOL-WGS2-1*.fastq.gz')
-do
-    # f=$(find /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007 -name '*.fastq.gz' | head -n5 | tail -n1)
-    meryl \
-        k=$k \
-        count \
-        output MERYL-$(basename $f | sed 's/.fastq.gz//g') \
-        threads=30 \
-        $f
+hisat2-build \
+    ${REF} \
+    ${REF%.fasta*}
+### Align
+echo '#!/bin/bash
+R1=$1
+R2=$2
+REF=$3
+f=$(basename $R1)
+SAMOUT=${f%.fq*}.sam
+BAMOUT=${f%.fq*}.bam
+hisat2 \
+    -x ${REF} \
+    -1 ${R1} \
+    -2 ${R2} \
+    -S ${SAMOUT}
+samtools \
+    sort ${SAMOUT} \
+    -O BAM \
+    > ${BAMOUT}
+' > map_RNAseq.sh
+chmod +x map_RNAseq.sh
+time \
+parallel \
+--link \
+--jobs 11 \
+./map_RNAseq.sh \
+    {1} \
+    {2} \
+    ${DIR_REF}/Lolium_rigidum \
+    ::: $(find ${DIR_READS} -name '*.fq.1.gz' | sort) \
+    ::: $(find ${DIR_READS} -name '*.fq.2.gz' | sort)
+
+```
+
+## Transcriptome assembly
+```shell
+##########################################################################################################
+#
+#                                          Transcriptome assembly pipeline
+#                              (based on Trinity best practice from Harvard FAS)
+# https://informatics.fas.harvard.edu/best-practices-for-de-novo-transcriptome-assembly-with-trinity.html
+##########################################################################################################
+
+R1=`ls /data/Lolium_rigidum_ASSEMBLY/jeff_lolium/FASTQ/ILLUMINA/2020.9/30-409520043/N2006601_FA_30-409520043_SEQ/200908-X4A_L005/*R1* | grep -v determined`
+
+for f in $R1; do 
+    f_dest=`echo $f | cut -d'/' -f11 | sed 's/.gz//'`
+    gunzip -c $f > ./${f_dest} &
+    gunzip -c ${f/R1/R2} > ./${f_dest/R1/R2} 
 done
-### Merge the databases
-time \
-meryl \
-    union-sum \
-    output MERYL.meryl \
-    MERYL-*
-```
 
-5. Run Merqury
-```shell
-export MERQURY=$(pwd)/merqury-1.3
-export OMP_NUM_THREADS=31
-time \
-merqury.sh \
-    MERYL.meryl \
-    Lolium_rigidum.fasta \
-    MERYL_Lolium_rigidum_prelim
+R1=`ls *R1*fastq | grep -v WGS`
+R1=`echo $R1 | sed 's/ /,/g'`
+R2=`echo $R1 | sed 's/R1/R2/g'`
 
-time \
-merqury-1.3/eval/spectra-cn.sh \
-    MERYL.meryl \
-    Lolium_rigidum.fasta \
-    MERYL_Lolium_rigidum
+#How to count number of reads in fastq
+for i in *_R1.fastq; do
+    echo $(cat $i | wc -l)/4|bc
+done
 
+#Error correction and flagging.(https://github.com/mourisl/Rcorrector)
+perl /data/Software/rcorrector/run_rcorrector.pl -t 48 -1 $R1 -2 $R2
+
+#Filter out uncorrectable reads (https://github.com/harvardinformatics/TranscriptomeAssemblyTools)
+R1=`ls *R1*cor.fq | grep -v WGS`
+R2=`echo $R1 | sed 's/R1/R2/g'`
+
+parallel -j 12 --link 'python2.7 /data/Software/TranscriptomeAssemblyTools/FilterUncorrectabledPEfastq.py -1 {1} -2 {2} -s {3}' ::: `echo $R1` ::: `echo $R2` ::: `echo $R1 | sed 's/_combined_R1.cor.fq/_filter.log/g'`
+
+#Renaming/Overwritting for space keeping
+for i in unfixrm_*_combined_R*.cor.fq; do
+	mv $i ${i/unfixrm_/}
+done
+
+#Trim adapter and low quality bases from fastq files
+R1=`ls *R1*cor.fq | grep -v WGS`
+R2=`echo $R1 | sed 's/R1/R2/g'`
+
+#The command given by the workflow
+#./data/Software/TrimGalore-0.6.0/trim_galore --paired --retain_unpaired --phred33 --output_dir trimmed_reads --length 36 -q 5 --stringency 1 -e 0.1 $1 $2
+
+parallel -j 12 --link '/data/Software/TrimGalore-0.6.0/trim_galore --paired --retain_unpaired --phred33 --output_dir trimmed_reads --length 36 -q 5 --stringency 1 -e 0.1 {1} {2}' ::: `echo $R1` ::: `echo $R2`
+
+
+
+#remove rRNA using mapping mapping strategy to SILVA database
+# rRNA fasta were sourced from SILVA (https://www.arb-silva.de/no_cache/download/archive/release_138_1/Exports/) SSU+SSUParc
+
+#in RefGenomes directory
+zcat SILVA_138.1_* | sed 's/U/T/g' > SILVA_138.1_LSU+SSU.fasta
+#index the database
+bowtie2-build SILVA_138.1_LSU+SSU_noIUPAC.fasta SILVA_138.1_LSU+SSU_noIUPAC
+
+#from trimmed_reads dir
+for i in *trimmed_R1.fq; do
+	bowtie2 --quiet --very-sensitive-local --phred33  \
+	        -x /data/RefGenomes/SILVA_rRNA/SILVA_138.1 \
+	        -1 $i -2 ${i/R1/R2} \
+	        --threads 48 \
+	        --met-file ../rRNAdepleted_reads/${i/_trimmed_R1.fq/}_bowtie2_metrics.txt \
+	        --al-conc-gz ../rRNAdepleted_reads/${i/_trimmed_R1.fq/}_paired_aligned.fq.gz --un-conc-gz ../rRNAdepleted_reads/${i/_trimmed_R1.fq/}_paired_unaligned.fq.gz  \
+	        --al-gz ../rRNAdepleted_reads/${i/_trimmed_R1.fq/}_unpaired_aligned.fq.gz --un-gz ../rRNAdepleted_reads/${i/_trimmed_R1.fq/}_unpaired_unaligned.fq.gz \
+	        > 
+done
+
+
+# from trinity_assembly/ dir
+cat ../*1_paired_unaligned.fq.gz > ALL_TISSUES_R1.fq.gz
+cat *2_paired_unaligned.fq.gz > ALL_TISSUES_R2.fq.gz
+
+#Number of reads that were used for assembly
+echo $(zcat ALL_TISSUES_R1.fq.gz | wc -l)/4|bc
+
+
+for i in `ls ../rRNAdepleted_reads/*1_paired_unaligned.fq.1* | cut -d- -f1`; do 
+	out_prefix=`echo $i | cut -d'/' -f3`
+	#cat ${i}*paired_unaligned.fq.1.gz > ${out_prefix}_R1.fq.gz &
+	#cat ${i}*paired_unaligned.fq.2.gz > ${out_prefix}_R2.fq.gz
+	Trinity --seqType fq --max_memory 100G \
+	        --left ${out_prefix}_R1.fq.gz  --right ${out_prefix}_R2.fq.gz \
+	        --CPU 24 --output ${out_prefix}_trinity
+done
+
+
+#BUSCO FOR COMPLETENESS
+source /data/miniconda3/bin/activate busco
+
+busco -m transcriptome -i ../trinity_assembly/trinity_output.Trinity.fasta \
+      -c 24 -o ALL_TISSUES -l poales_odb10
+
+#Compacting an assembly with DRAP (http://www.sigenae.org/drap/index.html)
+#Pull the docker image
+sudo docker pull sigenae/drap
+#create a container
+sudo docker create --name drap --privileged -v /data/Lolium_rigidum_ASSEMBLY:/docker/scratch -i -t sigenae/drap:latest /bin/bash
+#run the container
+docker start drap
+docker exec -i -t drap /bin/bash
+
+#For the All tissues run
+/usr/local/src/drap/runDrap  \
+        --R1 ../trinity_assembly/ALL_TISSUES_R1.fq.gz  --R2 ../trinity_assembly/ALL_TISSUES_R2.fq.gz  \
+        --ref Oryza_sativa.pep.fasta  --dbg trinity  --outdir /docker/scratch/drap_out/ALL_TISSUES_drap_wTrinity \
+        --dbg-mem 24 --norm-mem 24
+
+/usr/local/src/drap/runDrap  \
+        --R1 ../trinity_assembly/ALL_TISSUES_R1.fq.gz  --R2 ../trinity_assembly/ALL_TISSUES_R2.fq.gz  \
+        --ref Oryza_sativa.pep.fasta  --dbg oases  --outdir /docker/scratch/drap_out/ALL_TISSUES_drap_wOases \
+        --dbg-mem 24 --norm-mem 24
+
+#for the tissue specific run
+for i in `ls ../trinity_assembly/*_R1.fq.gz | grep -v ALL_`; do
+    j=`echo $i | cut -d"/" -f3 | cut -d_ -f1`
+	/usr/local/src/drap/runDrap  \
+	        --R1 $i  --R2 ${i/R1/R2}  \
+	        --ref Oryza_sativa.pep.fasta  --dbg oases  --outdir /docker/scratch/drap_out/${j}_wOases \
+	        --dbg-mem 24 --norm-mem 24
+done
+
+
+#from outside the container to copy
+cp ../drap_out/*fa ../TRANSCRIPTOME_ASSEMBLY/docker_outpoint/drap_wTrinity/
+
+
+# The meta-assembler to merge tissue specific runs of Trinity + Oases
+for i in `ls ../trinity_assembly/*_R1.fq.gz | grep -v ALL_`; do
+    j=`echo $i | cut -d"/" -f3 | cut -d_ -f1`
+	/usr/local/src/drap/runMeta  \
+	        --drap-dirs /docker/scratch/drap_out/${j}_wOases,/docker/scratch/drap_out/${j}_wTrinity \
+	        --ref Oryza_sativa.pep.fasta \
+	        --outdir /docker/scratch/drap_out/${j}_Meta
+done
+
+# The meta assembly across all tisues
+j=`ls -d /docker/scratch/drap_out/*_Meta/ | sed 's/ /,/g'`
+/usr/local/src/drap/runMeta  \
+	        --drap-dirs `echo $j | sed 's/\/ /,/g'` \
+	        --ref Oryza_sativa.pep.fasta \
+	        --outdir /docker/scratch/drap_out/ALLTISSUES_Meta
+
+#And the meta of the ALL tissues with Trinity+Oases
+/usr/local/src/drap/runMeta  \
+	        --drap-dirs /docker/scratch/drap_out/ALL_TISSUES_drap_wTrinity,/docker/scratch/drap_out/ALL_TISSUES_drap_wOases \
+	        --ref Oryza_sativa.pep.fasta \
+	        --outdir /docker/scratch/drap_out/ALLTISSUES_drap_Trinity+Oases
+
+#Busco for completneess
+#activate the conda environment to get salmon et dependencies loaded for Trinity
+source /data/miniconda3/bin/activate busco
+
+for i in ../docker_outpoint/*/*fa; do
+    j=`echo $i | cut -d"/" -f3-4 | sed 's/\//_/g' | sed 's/.fa//g'`
+    busco -m transcriptome -i $i -c 24 -o $j -l poales_odb10
+done
 ```
 
 ## Annotation
@@ -2080,4 +2231,162 @@ python3 GetOrganelle/get_organelle_from_reads.py \
     -2 /data/Lolium_rigidum_ASSEMBLY/lolium_illumina/LOL-WGS2/N2009012_FA_30-434329113_SEQ/201110-X4A_L007/LOL-WGS2-1_combined_R2.fastq.gz \
     -t 20 \
     -o Lolium_rigidum_PLASTIDS
+```
+
+## Synteny maps between Lolium rigidum and Oryza sativa
+```shell
+ORT=${DIR_ORTHOGROUPS}/Orthogroups/Orthogroups.tsv
+GFF_Lr_=${DIR}/Lolium_rigidum.gff
+GFF_Os=${DIR}/Oryza-sativa.gff
+
+echo '
+using ProgressMeter
+fname_paralogs = ARGS[1]
+fname_annotations_Lr = ARGS[2]
+fname_annotations_Os = ARGS[3]
+fname_output = ARGS[4]
+# fname_paralogs = "ORTHOGROUPS/OrthoFinder/Results_May13/Orthogroups/Orthogroups.tsv"
+# fname_annotations_Lr = "Lolium_rigidum.gff"
+# fname_annotations_Os = "Oryza_sativa.gff"
+# fname_output = "Synteny_Lolium_rigidum_and_Oryza_sativa.plg"
+
+# Load gene names and start position into temproray vectors
+function load_gene_names_and_coordinates(fname_annotations)
+    temp_geneIDs = []
+    temp_genes = []
+    temp_chromosomes = []
+    temp_positions = []
+    file = open(fname_annotations, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    while !eof(file)
+        line = split(readline(file), "\t"[1])
+        update!(pb, position(file))
+        if line[1][1] .!= "#"[1]
+            if line[3] == "CDS"
+                if match(Regex("Name="), line[end]) != nothing
+                    desc = split(line[end], ";"[1])
+                    idx = match.(Regex("GeneID:"), desc) .!= nothing
+                    if sum(idx) > 0
+                        id = split(desc[idx][1], ","[1])[end]
+                        geneID = split(id, ":")[end]
+                        name = split(desc[match.(Regex("Name="), desc) .!= nothing][1], ","[1])[1]
+                        gene = split(name, "Name=")[end]
+                        push!(temp_geneIDs, geneID)
+                        push!(temp_genes, gene)
+                        push!(temp_chromosomes, line[1])
+                        push!(temp_positions, parse(Int, line[4]))
+                    end
+                end
+            else
+                continue
+            end
+        else
+            continue
+        end
+    end
+    close(file)
+    @time idx = sortperm(temp_genes)
+    temp_geneIDs = temp_geneIDs[idx]
+    temp_genes = temp_genes[idx]
+    temp_chromosomes = temp_chromosomes[idx]
+    temp_positions = temp_positions[idx]
+
+    # Use only one CDS/gene starting position
+    genes = []
+    chromosomes = []
+    positions = []
+    n = length(temp_genes)
+    i = 1
+    pb = Progress(n)
+    while i < n
+        id = temp_geneIDs[i]
+        g = temp_genes[i]
+        c = temp_chromosomes[i]
+        p = temp_positions[i]
+        push!(genes, g)
+        push!(chromosomes, c)
+        push!(positions, p)
+        while (i < n) & ( (g == temp_genes[i]) | (id == temp_geneIDs[i]) )
+            i += 1
+        end
+        update!(pb, i)
+    end
+    if genes[end] != temp_genes[n]
+        push!(genes, temp_genes[n])
+        push!(chromosomes, temp_chromosomes[n])
+        push!(positions, temp_positions[n])
+    end
+
+    return(genes, chromosomes, positions)
+end
+genes_Lr, chromosomes_Lr, positions_Lr = load_gene_names_and_coordinates(fname_annotations_Lr)
+genes_Os, chromosomes_Os, positions_Os = load_gene_names_and_coordinates(fname_annotations_Os)
+
+# Add orthogroup labels, i.e. paralog classification
+function add_paralogs(fname_paralogs, genes; species="Lolium_rigidum")
+    paralogs = repeat(["None"], length(genes))
+    file = open(fname_paralogs, "r")
+    seekend(file); n=position(file); seekstart(file)
+    pb = Progress(n)
+    header = split(readline(file), "\t"[1])
+    idx = header .== species
+    while !eof(file)
+        line = split(readline(file), "\t"[1])
+        orthogroup = line[1]
+        gene_names = replace.(split(line[idx][1], ", "), string(species, "|") => "")
+        for g in gene_names
+            # g = gene_names[1]
+            paralogs[genes .== g] .= orthogroup
+        end
+        update!(pb, position(file))
+    end
+    close(file)
+    return(paralogs)
+end
+paralogs_Lr = add_paralogs(fname_paralogs, genes_Lr)
+paralogs_Os = add_paralogs(fname_paralogs, genes_Os, species="Oryza_sativa")
+
+# Remove remove unclassified genes
+idx = paralogs .!= "None"
+paralogs = paralogs[idx]
+genes = genes[idx]
+chromosomes = chromosomes[idx]
+positions = positions[idx]
+
+# Save the list of gene names, chromosome, position, and ortholog info into a file
+file = open(fname_output, "a")
+for i in 1:length(genes)
+    line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
+    write(file, line)
+end
+close(file)
+
+# Save only the top 5 paralogs with the most genes
+vec_p = unique(paralogs)
+vec_p_counts = []
+@showprogress for p in vec_p
+    push!(vec_p_counts, sum(p .== paralogs))
+end
+
+idx = sortperm(vec_p_counts)
+vec_p = vec_p[idx][(end-4):end]
+vec_p_counts = vec_p_counts[idx][(end-3):end]
+
+file = open(replace(fname_output, ".plg"=>"-for_plotting.plg"), "a")
+for i in 1:length(paralogs)
+    if sum(paralogs[i] .== vec_p) > 0
+        line = string(join([genes[i], chromosomes[i], positions[i], paralogs[i]], "\t"), "\n")
+        write(file, line)
+    end
+end
+close(file)
+' > locate_paralogs.jl
+
+time \
+julia locate_paralogs.jl \
+    ${ORT} \
+    ${GFF} \
+    ${GFF%.gff*}.plg
+
 ```
