@@ -601,7 +601,9 @@ module PlotGenome
             if isa(vec_colours, Vector) == false
                 vec_colours = [vec_colours]
             end
-            vec_colours = repeat(vec_colours, Int.(ceil(n/length(vec_colours))))
+            if length(vec_colours) < n
+                vec_colours = repeat(vec_colours, Int.(ceil(n/length(vec_colours))))
+            end
         end
         ### Plot arcs per group setting the chromosome with the most sequences as the root or origin and the other chromosomes harbouring the sequences as the destination
         vec_str_root_chr = [""]
@@ -667,7 +669,8 @@ module PlotGenome
                             k = collect(1:n)[vec_str_groups .== grp]
                         end
                         # plot!(plt, vec1, vec2, linewidth=linewidth, color=k)
-                        plot!(plt, vec1, vec2, color=k)
+                        # plot!(plt, vec1, vec2, color=vec_colours[k])
+                        plot!(plt, vec1, vec2, color=vec_colours[k], linewidth=linewidth)
                     end
                 end    
             end

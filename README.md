@@ -2716,7 +2716,7 @@ function execute(; recompute=false, cleanup=false)
     str_filename_fasta = "Synteny_Lolium_rigidum_and_Oryza_sativa.fasta"
     str_fname_output_svg = "Synteny_Lolium_rigidum_and_Oryza_sativa.svg"
     str_filename_groupings_and_coordinates = "Synteny_Lolium_rigidum_and_Oryza_sativa-for_plotting.plg"
-    vec_idx_groups_chr_pos = [4, 2, 3, 3]
+    vec_idx_groups_chr_pos = [4, 2, 3, 3] ### for drawing the chords, i.e. paralog positions: specify the columns of orthogroup ID, chromosome ID and start or end position
     n = 7 + 12 ## haploid chromosome number
     n_int_tick_length_bp = 100*1e+6 # make this adjustable
     n_int_tick_label_size=12
@@ -2869,95 +2869,50 @@ function execute(; recompute=false, cleanup=false)
     vec_str_chromosome_names = vec_str_chromosome_names[vec_int_idx_sort_by_name]
     vec_int_chromosome_lengths = vec_int_chromosome_lengths[vec_int_idx_sort_by_name]
 
-    ### Base plot
-    l = @layout [a b]
-    plt1 = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), size=(700,700), axis=([], false), title="")
-    ### Plot 1 for the tick alone, i.e. will be occluded by the GC layer
+    ### Standardise the chromosome length of the rice chromosomes
+    vec_int_chromosome_lengths[1:12] = 10 .* vec_int_chromosome_lengths[1:12]
+    str_filename_groupings_and_coordinates_STD = string(str_filename_groupings_and_coordinates, ".Osativa-chrom-lengths-standardised.tmp")
+    file = open(str_filename_groupings_and_coordinates, "r")
+    file_out = open(str_filename_groupings_and_coordinates_STD, "w")
+    while !eof(file)
+        line = split(readline(file), "\t")
+        if isnothing(match(Regex("NC_02"), line[2])) == false
+            line[3] = string(10 * parse(Int, line[3]))
+        end
+        write(file_out, string(join(line, "\t"), "\n"))
+    end
+    close(file)
+    close(file_out)
+
+    ### Set two colours for the two genomes
+    vec_colours_chrom = vcat([repeat([palette(:default, n)[1]], 12), repeat([palette(:default, n)[2]], 7)]...)
+
+    ### Revise the chromosome names
+    vec_str_chromosome_names_NEW = vcat([string.("Os", collect(1:12)), string.("Lr", collect(1:7))]...)
+
+    ### Plot
+    plt = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), size=(700,700), axis=([], false), title="")
     r=1.00; w=0.15
-    PlotGenome.fun_plot_chrom_length_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths;
+    PlotGenome.fun_plot_chrom_length_layer!(plt, vec_str_chromosome_names_NEW, vec_int_chromosome_lengths;
                                 r=r, w=w,
-                                vec_colours_chrom=repeat(palette(:default), 2),
+                                vec_colours_chrom=vec_colours_chrom,
                                 n_int_tick_length_bp=n_int_tick_length_bp,
                                 n_int_tick_label_size=n_int_tick_label_size,
                                 n_int_chrom_name_size=n_int_chrom_name_size,
                                 add_legend=false)
-    ### Plot 1 layer 1: GC content
-    r=1.00; w=0.15
-    annotate!(plt1, 0.0, (r-w/2), ("a", 10, :gray, :center))
-    PlotGenome.fun_plot_GC_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths;
-                    r=r, w=w,
-                    n_int_total_chunks_across_genome=1000,
-                    vec_colours_GC=palette(:thermometer, 7),
-                    n_int_tick_label_size=n_int_tick_label_size,
-                    lane_id="a")
-    int_n_chromosomes_whole_assembly = PlotGenome.fun_add_comma_separator_on_large_positive_integers(int_n_chromosomes_whole_assembly)
-    int_size_whole_assembly = PlotGenome.fun_add_comma_separator_on_large_positive_integers(int_size_whole_assembly)
-    int_n_chromosomes = PlotGenome.fun_add_comma_separator_on_large_positive_integers(int_n_chromosomes)
-    int_size = PlotGenome.fun_add_comma_separator_on_large_positive_integers(int_size)
-    L50 = PlotGenome.fun_add_comma_separator_on_large_positive_integers(L50)
-    N50 = PlotGenome.fun_add_comma_separator_on_large_positive_integers(N50)
-    L90 = PlotGenome.fun_add_comma_separator_on_large_positive_integers(L90)
-    N90 = PlotGenome.fun_add_comma_separator_on_large_positive_integers(N90)
-    # annotate!(plt1, -1.5, 1.25,(string("Whole assembly:\n  n=", int_n_chromosomes_whole_assembly,
-    #                                 "\n  size=", int_size_whole_assembly, " bp",
-    #                                 "\n",
-    #                                 "\nPseudo-chromosomes:\n  n=", int_n_chromosomes,
-    #                                 "\n  size=", int_size, " bp",
-    #                                 "\n  L50=", L50, " chromosomes",
-    #                                 "\n  N50=", N50, " bp",
-    #                                 "\n  L90=", L90, " chromosomes",
-    #                                 "\n  N90=", N90, " bp"), n_int_stats_label_size, :gray, :left))
-    ### Plot 1 layer 2: Ty1-Copia LTR histogram
-    r=0.75; w=0.15
-    annotate!(plt1, 0.0, (r-w/2), ("b", 10, :gray, :center))
-    PlotGenome.fun_plot_hits_histogram_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths,
-                                str_filename_LTR_COPIA,
-                                r=r, w=w,
-                                n_int_window_size = 1e6,
-                                col=:black,
-                                col_background=:lightgray)
-    ### Plot 1 layer 3: Ty1-Gypsy LTR histogram
-    r=0.50; w=0.15
-    annotate!(plt1, 0.0, (r-w/2), ("c", 10, :gray, :center))
-    PlotGenome.fun_plot_hits_histogram_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths,
-                                str_filename_LTR_GYPSY,
-                                r=r, w=w,
-                                n_int_window_size = 1e6,
-                                col=:gray,
-                                col_background=:lightgray)
-    ### Plot 2: Chord diagram
-    plt2 = plot(xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), size=(700,700), axis=([], false), title="")
-    r = 1.0; w=0.10
-    PlotGenome.fun_plot_chrom_length_layer!(plt2, vec_str_chromosome_names, vec_int_chromosome_lengths;
-                            r=r, w=w,
-                            n_int_tick_length_bp=n_int_tick_length_bp,
-                            n_int_tick_label_size=n_int_tick_label_size,
-                            n_int_chrom_name_size=n_int_chrom_name_size,
-                            add_legend=false)
-                            r = r-w; w=0.05
-    PlotGenome.fun_add_chords!(plt2,
-                    str_filename_groupings_and_coordinates,
+    PlotGenome.fun_add_chords!(plt,
+                    str_filename_groupings_and_coordinates_STD,
                     vec_str_chromosome_names,
                     vec_int_chromosome_lengths,
                     delim='\t',
                     vec_idx_groups_chr_pos=vec_idx_groups_chr_pos,
+                    vec_colours=vec_colours_chrom,
+                    add_legend=false,
                     colour_per_chrom=true,
                     linewidth=1,
-                    r=r, w=w, header=false)
-    plt3 = plot(plt1, plt2, layout=l, size=(1400,700))
-    ### Clean-up
-    if cleanup
-        vec_files = readdir()
-        idx_fasta = match.(Regex(".fasta"), vec_files) .!= nothing
-        idx_GC = match.(Regex("-GC_content.txt"), vec_files) .!= nothing
-        idx_not_input_fasta = match.(Regex(str_filename_fasta), vec_files) .== nothing
-        for f in vec_files[(idx_fasta .& idx_not_input_fasta) .| idx_GC]
-            rm(f)
-        end
-    end
-
+                    r=r-w, w=w, header=false)
     ### Save as svg
-    savefig(plt3, str_fname_output_svg)
+    savefig(plt, str_fname_output_svg)
 end
 @time execute()
 ```
