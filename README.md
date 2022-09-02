@@ -2717,7 +2717,7 @@ function execute(; recompute=false, cleanup=false)
     str_fname_output_svg = "Synteny_Lolium_rigidum_and_Oryza_sativa.svg"
     str_filename_groupings_and_coordinates = "Synteny_Lolium_rigidum_and_Oryza_sativa-for_plotting.plg"
     vec_idx_groups_chr_pos = [4, 2, 3, 3]
-    n = 7 ## haploid chromosome number
+    n = 7 + 12 ## haploid chromosome number
     n_int_tick_length_bp = 100*1e+6 # make this adjustable
     n_int_tick_label_size=12
     n_int_chrom_name_size=12
@@ -2876,6 +2876,7 @@ function execute(; recompute=false, cleanup=false)
     r=1.00; w=0.15
     PlotGenome.fun_plot_chrom_length_layer!(plt1, vec_str_chromosome_names, vec_int_chromosome_lengths;
                                 r=r, w=w,
+                                vec_colours_chrom=repeat(palette(:default), 2),
                                 n_int_tick_length_bp=n_int_tick_length_bp,
                                 n_int_tick_label_size=n_int_tick_label_size,
                                 n_int_chrom_name_size=n_int_chrom_name_size,
