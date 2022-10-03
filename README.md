@@ -989,7 +989,8 @@ grep -wf contracted_orthogroups.pthr.tmp PTHR17.0_rice | cut -f3 > contracted_or
 - Paste the gene names in `expanded_orthogroups.forgo` into the text box.
 - Set to "Biological process"
 - Set the reference gene list to "Oryza sativa"
-- Set the correction to "Bonferron correction" and relaunch analysis
+- Launch the analysis
+- Set the correction to "Bonferroni correction" and relaunch analysis
 - Sort by decreasing "Fold Enrichment"
 - Export as table
 
